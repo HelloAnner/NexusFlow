@@ -1,8 +1,55 @@
 import { AuthLayout } from '@/components/layout'
 import { Button, Input } from '@/components/ui'
-import { Link } from 'react-router-dom'
+import { apiGet } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+
+interface RoleEntryResponse {
+  entry?: {
+    default_home?: string
+  }
+}
+
+function normalizeHomePath(path?: string) {
+  if (!path || path === '/dashboard') return '/'
+  return path.startsWith('/') ? path : '/'
+}
+
+async function loadDefaultHome() {
+  try {
+    const res = await apiGet<RoleEntryResponse>('/dashboard/role-entry')
+    return normalizeHomePath(res.entry?.default_home)
+  } catch {
+    return '/'
+  }
+}
 
 export function LoginPage() {
+  const { user, login } = useAuth()
+  const navigate = useNavigate()
+  const [loginName, setLoginName] = useState('Anner')
+  const [password, setPassword] = useState('1')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (user) return <Navigate to="/" replace />
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSubmitting(true)
+    setError(null)
+    try {
+      await login(loginName, password)
+      navigate(await loadDefaultHome(), { replace: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '登录失败')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <AuthLayout>
       <div className="flex w-[560px] flex-col justify-center gap-10 bg-bg-secondary p-10">
@@ -29,22 +76,43 @@ export function LoginPage() {
       </div>
 
       <div className="flex flex-1 items-center justify-center p-10">
-        <div className="w-[440px] rounded-2xl border border-border-subtle bg-bg-secondary p-8">
+        <form
+          onSubmit={handleSubmit}
+          className="w-[440px] rounded-2xl border border-border-subtle bg-bg-secondary p-8"
+        >
           <h2 className="mb-6 text-xl font-semibold text-text-primary">登录</h2>
           <div className="flex flex-col gap-5">
-            <Input label="登录账号" placeholder="请输入工号或账号" />
-            <Input label="密码" type="password" placeholder="请输入密码" />
-            <Button className="w-fit">登录</Button>
+            <Input
+              label="登录账号"
+              placeholder="请输入工号或账号"
+              value={loginName}
+              onChange={(event) => setLoginName(event.target.value)}
+            />
+            <Input
+              label="密码"
+              type="password"
+              placeholder="请输入密码"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
+            {error && (
+              <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">
+                {error}
+              </div>
+            )}
+            <Button className="w-fit" disabled={submitting}>
+              {submitting ? '登录中...' : '登录'}
+            </Button>
           </div>
           <div className="mt-6 flex items-center justify-between text-sm text-text-muted">
             <Link to="#" className="hover:text-text-primary">
               忘记密码
             </Link>
-            <Link to="#" className="hover:text-text-primary">
+            <Link to="/register/invitation" className="hover:text-text-primary">
               邀请注册
             </Link>
           </div>
-        </div>
+        </form>
       </div>
     </AuthLayout>
   )

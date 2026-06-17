@@ -1,265 +1,176 @@
 import { MainLayout } from '@/components/layout'
+import { EmptyState, StatCard } from '@/components/ui'
+import { apiGet } from '@/lib/api'
+import { formatDate, numberValue, riskLabel } from '@/lib/format'
+import { useApiData } from '@/lib/useApiData'
 import { cn } from '@/lib/utils'
-import {
-  ganttDimensionTabs,
-  ganttGranularityOptions,
-  ganttItems,
-  ganttStartDate,
-  ganttToday,
-  ganttWeeks,
-  type GanttDimension,
-  type GanttGranularity,
-} from '@/mocks/gantt'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
-const TREE_COL_WIDTHS = [140, 60, 60, 60, 40] // 任务名称、负责人、开始、截止、进度
-const WEEK_COL_WIDTH = 44
-const WEEK_COUNT = ganttWeeks.length
-
-function parseDate2025(mmdd: string): Date {
-  const [m, d] = mmdd.split('/').map(Number)
-  return new Date(2025, m - 1, d)
+interface GanttItem {
+  id: string
+  type?: string
+  title: string
+  start?: string | null
+  end?: string | null
+  progress?: number | string | null
+  status?: string
+  risk_level?: string
+  target_url?: string
+  readonly?: boolean
 }
 
-function daysBetween(a: Date, b: Date): number {
-  const msPerDay = 24 * 60 * 60 * 1000
-  return Math.round((b.getTime() - a.getTime()) / msPerDay)
+interface GanttData {
+  items: GanttItem[]
+  summary: {
+    in_progress?: number
+    acceptance_pending?: number
+    archived?: number
+  }
 }
 
-function dateToPercent(date: Date): number {
-  const days = daysBetween(ganttStartDate, date)
-  const weeks = days / 7
-  return (weeks / WEEK_COUNT) * 100
+const dimensionTabs = [
+  { value: 'task', label: '任务' },
+  { value: 'person', label: '人员' },
+  { value: 'department', label: '部门' },
+  { value: 'project', label: '项目' },
+]
+
+const granularityOptions = [
+  { value: 'week', label: '周' },
+  { value: 'month', label: '月' },
+]
+
+function dateDays(date: Date) {
+  return Math.floor(date.getTime() / 86400000)
 }
 
-function formatProgress(value: number | null): string {
-  if (value === null) return '—'
-  return `${Math.round(value)}%`
+function clampDate(value?: string | null) {
+  const date = value ? new Date(value) : new Date()
+  return Number.isNaN(date.getTime()) ? new Date() : date
+}
+
+async function loadGantt() {
+  const now = new Date()
+  const start = new Date(now)
+  start.setDate(start.getDate() - 30)
+  const end = new Date(now)
+  end.setDate(end.getDate() + 90)
+  const [items, summary] = await Promise.all([
+    apiGet<{ items: GanttItem[] }>('/gantt', { start: start.toISOString(), end: end.toISOString() }),
+    apiGet<GanttData['summary']>('/gantt/summary'),
+  ])
+  return { items: items.items, summary }
 }
 
 export function GanttChartPage() {
-  const [dimension, setDimension] = useState<GanttDimension>('project')
-  const [granularity, setGranularity] = useState<GanttGranularity>('week')
+  const [dimension, setDimension] = useState('project')
+  const [granularity, setGranularity] = useState('week')
   const [riskOnly, setRiskOnly] = useState(false)
+  const { data, loading, error } = useApiData(loadGantt)
+  const items = (data?.items ?? []).filter((item) => !riskOnly || (item.risk_level && item.risk_level !== 'none'))
 
-  const todayPct = dateToPercent(ganttToday)
+  const range = useMemo(() => {
+    const dates = items.flatMap((item) => [clampDate(item.start), clampDate(item.end)])
+    const min = dates.length ? new Date(Math.min(...dates.map((d) => d.getTime()))) : new Date()
+    const max = dates.length ? new Date(Math.max(...dates.map((d) => d.getTime()))) : new Date()
+    min.setDate(min.getDate() - 7)
+    max.setDate(max.getDate() + 14)
+    return { min, max, days: Math.max(1, dateDays(max) - dateDays(min)) }
+  }, [items])
+
+  const ticks = useMemo(() => {
+    const count = granularity === 'week' ? 12 : 6
+    return Array.from({ length: count }).map((_, index) => {
+      const date = new Date(range.min)
+      date.setDate(range.min.getDate() + Math.round((range.days / count) * index))
+      return formatDate(date.toISOString())
+    })
+  }, [granularity, range])
 
   return (
     <MainLayout title="甘特图" subtitle="项目与任务时间线">
       <div className="flex flex-col gap-4">
-        {/* Controls */}
+        {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
+        <div className="grid grid-cols-3 gap-4">
+          <StatCard label="进行中" value={data?.summary.in_progress ?? 0} />
+          <StatCard label="待验收" value={data?.summary.acceptance_pending ?? 0} />
+          <StatCard label="已归档" value={data?.summary.archived ?? 0} />
+        </div>
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="inline-flex items-center gap-1 rounded-md bg-bg-secondary p-1">
-              {ganttDimensionTabs.map((t) => (
+              {dimensionTabs.map((tab) => (
                 <button
-                  key={t.value}
-                  onClick={() => setDimension(t.value)}
-                  className={cn(
-                    'rounded-sm px-4 py-1.5 text-sm transition-fast',
-                    dimension === t.value
-                      ? 'bg-primary-fill font-semibold text-primary-text'
-                      : 'text-text-muted hover:bg-hover-bg'
-                  )}
+                  key={tab.value}
+                  onClick={() => setDimension(tab.value)}
+                  className={cn('rounded-sm px-4 py-1.5 text-sm transition-fast', dimension === tab.value ? 'bg-primary-fill font-semibold text-primary-text' : 'text-text-muted hover:bg-hover-bg')}
                 >
-                  {t.label}
+                  {tab.label}
                 </button>
               ))}
             </div>
             <div className="inline-flex items-center gap-1 rounded-md bg-bg-secondary p-1">
-              {ganttGranularityOptions.map((g) => (
+              {granularityOptions.map((option) => (
                 <button
-                  key={g.value}
-                  onClick={() => setGranularity(g.value)}
-                  className={cn(
-                    'rounded-sm px-3 py-1.5 text-sm transition-fast',
-                    granularity === g.value
-                      ? 'bg-primary-fill font-semibold text-primary-text'
-                      : 'text-text-muted hover:bg-hover-bg'
-                  )}
+                  key={option.value}
+                  onClick={() => setGranularity(option.value)}
+                  className={cn('rounded-sm px-3 py-1.5 text-sm transition-fast', granularity === option.value ? 'bg-primary-fill font-semibold text-primary-text' : 'text-text-muted hover:bg-hover-bg')}
                 >
-                  {g.label}
+                  {option.label}
                 </button>
               ))}
             </div>
           </div>
-
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-text-muted">2025年5月 - 8月</span>
-            <button
-              onClick={() => setRiskOnly((v) => !v)}
-              className={cn(
-                'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-fast',
-                riskOnly ? 'bg-color-error-bg text-color-error' : 'text-text-muted hover:bg-hover-bg'
-              )}
-            >
-              <span className="h-2 w-2 rounded-full bg-color-error" />
-              只看风险
-            </button>
-          </div>
+          <button
+            onClick={() => setRiskOnly((value) => !value)}
+            className={cn('flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-fast', riskOnly ? 'bg-color-error-bg text-color-error' : 'text-text-muted hover:bg-hover-bg')}
+          >
+            <span className="h-2 w-2 rounded-full bg-color-error" />
+            只看风险
+          </button>
         </div>
 
-        {/* Gantt */}
-        <div className="flex overflow-hidden rounded-lg border border-border-subtle bg-bg-secondary">
-          {/* Left Tree */}
-          <div className="flex w-[360px] flex-col border-r border-border-subtle">
-            {/* Tree Header */}
-            <div className="flex h-10 items-center border-b border-border-subtle bg-bg-tertiary text-xs text-text-muted">
-              <div className="flex items-center px-3" style={{ width: TREE_COL_WIDTHS[0] }}>
-                任务名称
-              </div>
-              <div className="flex items-center px-2" style={{ width: TREE_COL_WIDTHS[1] }}>
-                负责人
-              </div>
-              <div className="flex items-center px-2" style={{ width: TREE_COL_WIDTHS[2] }}>
-                开始
-              </div>
-              <div className="flex items-center px-2" style={{ width: TREE_COL_WIDTHS[3] }}>
-                截止
-              </div>
-              <div className="flex items-center px-2" style={{ width: TREE_COL_WIDTHS[4] }}>
-                进度
-              </div>
+        <div className="flex min-h-[520px] overflow-hidden rounded-lg border border-border-subtle bg-bg-secondary">
+          <div className="flex w-[420px] flex-col border-r border-border-subtle">
+            <div className="grid h-10 grid-cols-[1fr_90px_90px_70px] items-center border-b border-border-subtle bg-bg-tertiary px-3 text-xs text-text-muted">
+              <span>任务名称</span><span>开始</span><span>截止</span><span>风险</span>
             </div>
-
-            {/* Tree Rows */}
             <div className="flex flex-col overflow-y-auto">
-              {ganttItems.map((item) => (
-                <div
-                  key={item.id}
-                  className={cn(
-                    'flex h-8 items-center border-b border-border-subtle text-sm last:border-b-0',
-                    item.isGroup ? 'bg-bg-secondary font-medium' : 'bg-bg-primary hover:bg-hover-bg'
-                  )}
-                >
-                  <div
-                    className="flex items-center truncate px-3 text-text-primary"
-                    style={{ width: TREE_COL_WIDTHS[0], paddingLeft: item.level > 0 ? 24 : 12 }}
-                  >
-                    {item.name}
-                  </div>
-                  <div
-                    className="flex items-center truncate px-2 text-text-secondary"
-                    style={{ width: TREE_COL_WIDTHS[1] }}
-                  >
-                    {item.owner ?? '—'}
-                  </div>
-                  <div
-                    className="flex items-center px-2 text-text-secondary"
-                    style={{ width: TREE_COL_WIDTHS[2] }}
-                  >
-                    {item.start}
-                  </div>
-                  <div
-                    className="flex items-center px-2 text-text-secondary"
-                    style={{ width: TREE_COL_WIDTHS[3] }}
-                  >
-                    {item.end}
-                  </div>
-                  <div
-                    className="flex items-center px-2 text-text-secondary"
-                    style={{ width: TREE_COL_WIDTHS[4] }}
-                  >
-                    {formatProgress(item.progress)}
-                  </div>
+              {items.map((item) => (
+                <div key={item.id} className="grid h-10 grid-cols-[1fr_90px_90px_70px] items-center border-b border-border-subtle px-3 text-sm last:border-b-0 hover:bg-hover-bg">
+                  <span className="truncate font-medium text-text-primary">{item.title}</span>
+                  <span className="text-text-secondary">{formatDate(item.start)}</span>
+                  <span className="text-text-secondary">{formatDate(item.end)}</span>
+                  <span className="text-text-muted">{riskLabel(item.risk_level)}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right Timeline */}
           <div className="flex flex-1 flex-col overflow-auto">
-            {/* Timeline Header */}
-            <div className="flex h-10 shrink-0 border-b border-border-subtle bg-bg-tertiary">
-              {ganttWeeks.map((week) => (
-                <div
-                  key={week}
-                  className="flex items-center justify-center border-r border-border-subtle text-xs text-text-muted last:border-r-0"
-                  style={{ minWidth: WEEK_COL_WIDTH }}
-                >
-                  {week}
-                </div>
+            <div className="grid h-10 shrink-0 border-b border-border-subtle bg-bg-tertiary" style={{ gridTemplateColumns: `repeat(${ticks.length}, minmax(90px, 1fr))` }}>
+              {ticks.map((tick) => (
+                <div key={tick} className="flex items-center justify-center border-r border-border-subtle text-xs text-text-muted last:border-r-0">{tick}</div>
               ))}
             </div>
-
-            {/* Timeline Rows */}
             <div className="relative flex flex-col">
-              {/* Grid lines */}
-              <div className="pointer-events-none absolute inset-0 flex">
-                {Array.from({ length: WEEK_COUNT }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="border-r border-border-subtle last:border-r-0"
-                    style={{ minWidth: WEEK_COL_WIDTH }}
-                  />
-                ))}
-              </div>
-
-              {/* Today line */}
-              <div
-                className="pointer-events-none absolute top-0 bottom-0 z-10 w-0.5 bg-color-error"
-                style={{ left: `${todayPct}%` }}
-              />
-
-              {ganttItems.map((item) => {
-                const start = parseDate2025(item.start)
-                const end = parseDate2025(item.end)
-                const left = dateToPercent(start)
-                const right = dateToPercent(end)
-                const width = Math.max(right - left, 0.5)
-
+              {items.map((item) => {
+                const start = clampDate(item.start)
+                const end = clampDate(item.end)
+                const left = ((dateDays(start) - dateDays(range.min)) / range.days) * 100
+                const width = Math.max(((dateDays(end) - dateDays(start)) / range.days) * 100, 1)
+                const progress = numberValue(item.progress)
                 return (
-                  <div
-                    key={item.id}
-                    className="relative h-8 border-b border-border-subtle last:border-b-0"
-                    style={{ minWidth: WEEK_COL_WIDTH * WEEK_COUNT }}
-                  >
-                    {item.isMilestone ? (
-                      <div
-                        className="absolute top-1/2 z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-primary-fill"
-                        style={{ left: `${left}%` }}
-                        title={`${item.name} ${item.start}`}
-                      />
-                    ) : (
-                      <>
-                        {/* Background bar */}
-                        <div
-                          className="absolute top-1/2 h-3 -translate-y-1/2 rounded-full bg-bg-tertiary"
-                          style={{ left: `${left}%`, width: `${width}%` }}
-                        />
-                        {/* Progress fill */}
-                        {item.progress !== null && (
-                          <div
-                            className="absolute top-1/2 h-3 -translate-y-1/2 rounded-full bg-primary-fill"
-                            style={{ left: `${left}%`, width: `${width * (item.progress / 100)}%` }}
-                          />
-                        )}
-                      </>
-                    )}
+                  <div key={item.id} className="relative h-10 border-b border-border-subtle last:border-b-0">
+                    <div className="absolute top-1/2 h-3 -translate-y-1/2 rounded-full bg-bg-tertiary" style={{ left: `${left}%`, width: `${width}%` }} />
+                    <div className="absolute top-1/2 h-3 -translate-y-1/2 rounded-full bg-primary-fill" style={{ left: `${left}%`, width: `${width * (progress / 100)}%` }} />
+                    {item.risk_level && item.risk_level !== 'none' && <span className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-color-error" style={{ left: `${Math.min(left + width, 98)}%` }} />}
                   </div>
                 )
               })}
+              {!loading && items.length === 0 && <EmptyState title="暂无甘特数据" desc="当前时间范围内没有任务。" />}
             </div>
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center justify-end gap-6 text-xs text-text-muted">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-primary-fill" />
-            <span>已完成进度</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-color-error" />
-            <span>风险</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rotate-45 bg-primary-fill" />
-            <span>里程碑</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="h-3 w-0.5 bg-color-error" />
-            <span>今天</span>
           </div>
         </div>
       </div>

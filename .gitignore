@@ -49,6 +49,8 @@ test-results/
 playwright-report/
 .playwright-mcp/
 screenshots/
+e2e/artifacts/*
+!e2e/artifacts/.gitkeep
 frontend_*_check.png
 frontend_preview*.png
 page_summaries.txt

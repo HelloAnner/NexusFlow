@@ -1,41 +1,49 @@
 import { MainLayout } from '@/components/layout'
-import { Table, Thead, Tbody, Tr, Th, Td, Tag, Avatar, ProgressBar } from '@/components/ui'
-import { taskList } from '@/mocks/taskList'
+import { Avatar, EmptyState, ProgressBar, Table, Tag, Tbody, Td, Th, Thead, Tr } from '@/components/ui'
+import { apiGet } from '@/lib/api'
+import {
+  type ApiList,
+  type ApiTask,
+  formatDate,
+  numberValue,
+  priorityLabel,
+  taskStatusLabel,
+  taskStatusVariant,
+  textFromPayload,
+} from '@/lib/format'
+import { useApiData } from '@/lib/useApiData'
 import { ChevronDown, SlidersHorizontal } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 const filters = ['状态', '类型', '优先级', '负责人', '所属组织', '时间范围']
 
-const statusVariant: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
-  进行中: 'success',
-  待确认: 'warning',
-  待审批: 'error',
-  已完成: 'info',
-}
-
-const riskClass: Record<string, string> = {
-  正常: 'text-color-success',
-  低: 'text-color-info',
-  中: 'text-color-warning',
-  高: 'text-color-error',
-}
-
 const columns = [
   { label: '任务名称', width: 'w-[280px]' },
-  { label: '状态', width: 'w-[80px]' },
+  { label: '状态', width: 'w-[90px]' },
   { label: '类型', width: 'w-[90px]' },
-  { label: '负责人', width: 'w-[100px]' },
-  { label: '起止时间', width: 'w-[160px]' },
-  { label: '进度', width: 'w-[80px]' },
-  { label: '风险', width: 'w-[80px]' },
+  { label: '负责人', width: 'w-[120px]' },
+  { label: '起止时间', width: 'w-[180px]' },
+  { label: '进度', width: 'w-[100px]' },
+  { label: '优先级', width: 'w-[80px]' },
   { label: '操作', width: 'w-[60px]' },
 ]
 
+function loadTasks(q: string | null, status: string | null) {
+  return apiGet<ApiList<ApiTask>>('/tasks', { q, status, page_size: 50 })
+}
+
 export function TaskListPage() {
+  const [params] = useSearchParams()
+  const q = params.get('q')
+  const status = params.get('status')
+  const { data, loading, error } = useApiData(() => loadTasks(q, status), [q, status])
+  const tasks = data?.items ?? []
+
   return (
     <MainLayout title="任务">
       <div className="flex h-full flex-col gap-5">
-        {/* Filter Bar */}
+        {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
+
         <div className="flex items-center gap-2">
           {filters.map((label) => (
             <button
@@ -54,7 +62,6 @@ export function TaskListPage() {
           </button>
         </div>
 
-        {/* Task Table Card */}
         <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border-subtle bg-bg-secondary">
           <div className="flex-1 overflow-auto">
             <Table>
@@ -68,78 +75,59 @@ export function TaskListPage() {
                 </Tr>
               </Thead>
               <Tbody>
-                {taskList.map((task) => (
-                  <Tr key={task.id}>
-                    <Td className="w-[280px]">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-base font-medium text-text-primary">{task.name}</span>
-                        <span className="text-xs text-text-muted">{task.desc}</span>
-                      </div>
-                    </Td>
-                    <Td className="w-[80px]">
-                      <Tag variant={statusVariant[task.status] ?? 'info'}>{task.status}</Tag>
-                    </Td>
-                    <Td className="w-[90px]">
-                      <span className="text-sm text-text-secondary">{task.type}</span>
-                    </Td>
-                    <Td className="w-[100px]">
-                      <div className="flex items-center gap-2">
-                        <Avatar name={task.owner} />
-                        <span className="text-sm text-text-secondary">{task.owner}</span>
-                      </div>
-                    </Td>
-                    <Td className="w-[160px]">
-                      <span className="text-sm text-text-secondary">{task.dateRange}</span>
-                    </Td>
-                    <Td className="w-[80px]">
-                      <div className="flex flex-col gap-2">
-                        {task.progress !== null ? (
-                          <ProgressBar value={task.progress} className="h-1" />
-                        ) : (
-                          <div className="h-1 w-full rounded-full bg-bg-tertiary" />
-                        )}
-                        <span className="text-xs text-text-muted">
-                          {task.progress !== null ? `${task.progress}%` : '—'}
+                {tasks.map((task) => {
+                  const progress = numberValue(task.progress)
+                  const owner = textFromPayload(task.payload, 'owner_name', task.owner_id ?? '未设置')
+                  return (
+                    <Tr key={task.id}>
+                      <Td className="w-[280px]">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-base font-medium text-text-primary">{task.name}</span>
+                          <span className="text-xs text-text-muted">{task.summary || task.task_no || '无描述'}</span>
+                        </div>
+                      </Td>
+                      <Td className="w-[90px]">
+                        <Tag variant={taskStatusVariant(task.status)}>{taskStatusLabel(task.status)}</Tag>
+                      </Td>
+                      <Td className="w-[90px]">
+                        <span className="text-sm text-text-secondary">{task.sub_type || '常规'}</span>
+                      </Td>
+                      <Td className="w-[120px]">
+                        <div className="flex items-center gap-2">
+                          <Avatar name={owner} />
+                          <span className="truncate text-sm text-text-secondary">{owner}</span>
+                        </div>
+                      </Td>
+                      <Td className="w-[180px]">
+                        <span className="text-sm text-text-secondary">
+                          {formatDate(task.start_at)} - {formatDate(task.due_at)}
                         </span>
-                      </div>
-                    </Td>
-                    <Td className="w-[80px]">
-                      <span className={`text-sm ${riskClass[task.risk] ?? 'text-text-secondary'}`}>
-                        {task.risk}
-                      </span>
-                    </Td>
-                    <Td className="w-[60px]">
-                      <Link
-                        to={`/tasks/${task.id}`}
-                        className="text-sm text-text-muted hover:text-text-primary"
-                      >
-                        详情
-                      </Link>
-                    </Td>
-                  </Tr>
-                ))}
+                      </Td>
+                      <Td className="w-[100px]">
+                        <div className="flex flex-col gap-2">
+                          <ProgressBar value={progress} className="h-1" />
+                          <span className="text-xs text-text-muted">{Math.round(progress)}%</span>
+                        </div>
+                      </Td>
+                      <Td className="w-[80px]">{priorityLabel(task.priority)}</Td>
+                      <Td className="w-[60px]">
+                        <Link to={`/tasks/${task.id}`} className="text-sm text-text-muted hover:text-text-primary">
+                          详情
+                        </Link>
+                      </Td>
+                    </Tr>
+                  )
+                })}
               </Tbody>
             </Table>
+            {!loading && tasks.length === 0 && <EmptyState title="暂无任务" desc="当前条件下没有可见任务。" />}
           </div>
 
-          {/* Table Footer */}
           <div className="flex items-center justify-between border-t border-border-subtle px-4 py-3">
-            <span className="text-sm text-text-muted">共 6 条</span>
+            <span className="text-sm text-text-muted">{loading ? '加载中...' : `共 ${tasks.length} 条`}</span>
             <div className="inline-flex items-center gap-1">
-              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sm text-text-muted transition-fast hover:bg-hover-bg">
-                &lt;
-              </button>
               <button className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary-fill text-sm font-medium text-primary-text">
                 1
-              </button>
-              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sm text-text-muted transition-fast hover:bg-hover-bg">
-                2
-              </button>
-              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sm text-text-muted transition-fast hover:bg-hover-bg">
-                3
-              </button>
-              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md text-sm text-text-muted transition-fast hover:bg-hover-bg">
-                &gt;
               </button>
             </div>
           </div>

@@ -5,30 +5,74 @@ import {
   BarChart3,
   Folder,
   Users,
+  Building2,
   AlertCircle,
   FileText,
   Wrench,
   Settings,
   Shield,
   Plus,
+  Bell,
+  ListTodo,
 } from 'lucide-react'
 import { NavItem, SearchInput, Button, Avatar } from '@/components/ui'
-import { Link, useLocation } from 'react-router-dom'
+import { apiGet } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
+import { useApiData } from '@/lib/useApiData'
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 const mainNav = [
   { path: '/', label: '首页', icon: LayoutDashboard },
-  { path: '/tasks', label: '任务', icon: CheckSquare },
-  { path: '/gantt', label: '甘特图', icon: BarChart3 },
-  { path: '/projects', label: '项目', icon: Folder },
-  { path: '/people', label: '人员', icon: Users },
-  { path: '/conflicts', label: '冲突中心', icon: AlertCircle },
-  { path: '/resources', label: '资料库', icon: FileText },
-  { path: '/tools', label: '工具台', icon: Wrench },
-  { path: '/config', label: '配置中心', icon: Settings },
+  { path: '/tasks', label: '任务', icon: CheckSquare, actions: ['task.create', 'task.dispatch', 'task.accept'] },
+  { path: '/gantt', label: '甘特图', icon: BarChart3, businessOnly: true },
+  { path: '/projects', label: '项目', icon: Folder, actions: ['project.create', 'project.manage', 'project.manage_member'] },
+  { path: '/orgs', label: '组织', icon: Building2, actions: ['org.manage', 'person.manage'] },
+  { path: '/people', label: '人员', icon: Users, actions: ['person.manage'] },
+  { path: '/conflicts', label: '冲突中心', icon: AlertCircle, actions: ['task.dispatch', 'task.approve'] },
+  { path: '/todos', label: '待办中心', icon: ListTodo, businessOnly: true },
+  { path: '/notifications', label: '通知中心', icon: Bell, businessOnly: true },
+  { path: '/reports', label: '报表中心', icon: BarChart3, actions: ['report.export'] },
+  { path: '/resources', label: '资料库', icon: FileText, actions: ['resource.upload', 'resource.download'] },
+  { path: '/tools', label: '工具台', icon: Wrench, businessOnly: true },
+  { path: '/config', label: '配置中心', icon: Settings, actions: ['config.publish', 'admin.manage'] },
 ]
+
+interface PermissionResponse {
+  roles?: string[]
+  actions?: string[]
+  pending?: boolean
+}
+
+function canAccess(
+  item: (typeof mainNav)[number],
+  permissions: PermissionResponse,
+  fallbackActions: string[] = []
+) {
+  if (item.path === '/') return true
+  const roles = permissions.roles ?? []
+  const actions = permissions.actions ?? fallbackActions
+  if (roles.includes('sa')) return true
+  if (permissions.pending) return false
+  if ('actions' in item && item.actions) {
+    return item.actions.some((action) => actions.includes(action))
+  }
+  return !('businessOnly' in item) || item.businessOnly
+}
 
 export function Sidebar({ className }: { className?: string }) {
   const location = useLocation()
+  const { user } = useAuth()
+  const { data } = useApiData<PermissionResponse>(() => apiGet('/permissions/me'), [])
+  const permissions = data ?? {
+    roles: user?.role_codes ?? [],
+    actions: user?.actions ?? [],
+    pending: user?.account_status === 'pending' || user?.role_codes.includes('pending'),
+  }
+  const showAdmin =
+    permissions.roles?.includes('sa') ||
+    permissions.actions?.some((action) => ['admin.manage', 'admin.invitation_manage'].includes(action))
   return (
     <aside
       className={cn(
@@ -44,18 +88,20 @@ export function Sidebar({ className }: { className?: string }) {
       </Link>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
-        {mainNav.map((item) => (
+        {mainNav.filter((item) => canAccess(item, permissions, user?.actions ?? [])).map((item) => (
           <Link key={item.path} to={item.path} className="w-full">
             <NavItem icon={item.icon} label={item.label} active={location.pathname === item.path} />
           </Link>
         ))}
       </nav>
 
-      <div className="mt-4 border-t border-border-subtle pt-4">
-        <Link to="/admin" className="w-full">
-          <NavItem icon={Shield} label="系统管理" active={location.pathname === '/admin'} />
-        </Link>
-      </div>
+      {showAdmin && (
+        <div className="mt-4 border-t border-border-subtle pt-4">
+          <Link to="/admin" className="w-full">
+            <NavItem icon={Shield} label="系统管理" active={location.pathname === '/admin'} />
+          </Link>
+        </div>
+      )}
     </aside>
   )
 }
@@ -66,6 +112,16 @@ export interface TopHeaderProps {
   className?: string
 }
 export function TopHeader({ title, subtitle, className }: TopHeaderProps) {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const [q, setQ] = useState('')
+  const canCreateTask = user?.role_codes.includes('sa') || user?.actions.includes('task.create')
+
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (q.trim()) navigate(`/search?q=${encodeURIComponent(q.trim())}`)
+  }
+
   return (
     <header className={cn('flex h-[70px] items-center justify-between px-8 py-4', className)}>
       <div className="flex flex-col">
@@ -73,12 +129,29 @@ export function TopHeader({ title, subtitle, className }: TopHeaderProps) {
         {subtitle && <span className="text-sm text-text-muted">{subtitle}</span>}
       </div>
       <div className="flex items-center gap-4">
-        <SearchInput placeholder="搜索任务、项目、人员..." className="w-64" />
-        <Button className="h-10 px-4">
-          <Plus className="h-4 w-4" />
-          新建任务
-        </Button>
-        <Avatar name="张" className="h-9 w-9" />
+        <form onSubmit={handleSearch}>
+          <SearchInput
+            placeholder="搜索任务、项目、人员..."
+            className="w-64"
+            value={q}
+            onChange={(event) => setQ(event.target.value)}
+          />
+        </form>
+        {canCreateTask && (
+          <Link to="/tasks/new">
+            <Button className="h-10 px-4">
+              <Plus className="h-4 w-4" />
+              新建任务
+            </Button>
+          </Link>
+        )}
+        <button
+          className="rounded-md px-2 py-1 transition-fast hover:bg-hover-bg"
+          onClick={() => void logout()}
+          title="退出登录"
+        >
+          <Avatar name={user?.login_name ?? '用户'} className="h-9 w-9" />
+        </button>
       </div>
     </header>
   )

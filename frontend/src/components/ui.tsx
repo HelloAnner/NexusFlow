@@ -78,7 +78,7 @@ export function Select({ label, options, className, children, ...props }: Select
 }
 
 // ---------- SearchInput ----------
-export interface SearchInputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+export type SearchInputProps = React.InputHTMLAttributes<HTMLInputElement>
 export function SearchInput({ className, ...props }: SearchInputProps) {
   return (
     <div

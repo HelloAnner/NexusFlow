@@ -1,104 +1,168 @@
 import { MainLayout } from '@/components/layout'
-import { Panel, StatCard, Tag, Badge } from '@/components/ui'
+import { Badge, EmptyState, Panel, StatCard, Tag } from '@/components/ui'
+import { apiGet } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
+import {
+  type ApiConflict,
+  type ApiList,
+  type ApiTask,
+  formatDate,
+  riskLabel,
+  riskVariant,
+  taskStatusLabel,
+  taskStatusVariant,
+} from '@/lib/format'
+import { useApiData } from '@/lib/useApiData'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
-const stats = [
-  { label: '进行中任务', value: '24', sub: '较上周 +3' },
-  { label: '待处理审批', value: '7', sub: '2个即将超时' },
-  { label: '部门负载', value: '87%', sub: '3人超载' },
-  { label: '本周到期', value: '12', sub: '其中重点 4' },
-]
+interface DashboardData {
+  dashboard: {
+    widgets?: {
+      todos?: { count?: number }
+      my_tasks?: { count?: number }
+      conflicts?: { count?: number }
+    }
+  }
+  tasks: ApiList<ApiTask>
+  todos: ApiList<{ id: string; title: string; todo_type?: string; action_url?: string; status?: string }>
+  conflicts: ApiList<ApiConflict>
+  activities: ApiList<{ id: string; event_type?: string; object_type?: string; created_at?: string }>
+}
 
-const tasks = [
-  { id: '1', name: 'Q2 科研项目里程碑评审', end: '6月20日', status: '进行中', tag: 'success' as const },
-  { id: '2', name: '部门月度汇报PPT', end: '6月18日', status: '待确认', tag: 'warning' as const },
-  { id: '3', name: '跨部门人员协调：市场支持', end: '6月19日', status: '待审批', tag: 'error' as const },
-  { id: '4', name: '新员工培训资料准备', end: '6月25日', status: '进行中', tag: 'success' as const },
-  { id: '5', name: '出差：北京技术交流', end: '6月22日', status: '进行中', tag: 'success' as const },
-]
-
-const todos = [
-  { id: '1', title: '确认市场支持任务人员安排', type: '审批' },
-  { id: '2', title: '审核李明的阶段成果', type: '验收' },
-  { id: '3', title: '处理王芳的负载冲突', type: '冲突' },
-  { id: '4', title: '补充科研项目资料', type: '资料' },
-]
-
-const risks = [
-  { id: '1', title: 'Q2 科研项目', desc: '延期风险', tag: '2天' },
-  { id: '2', title: '王芳', desc: '负载超载', tag: '6月18-19日' },
-  { id: '3', title: '市场支持任务', desc: '跨部门未审批', tag: '待处理' },
-]
+async function loadDashboard() {
+  const [dashboard, tasks, todos, conflicts, activities] = await Promise.all([
+    apiGet<DashboardData['dashboard']>('/dashboard'),
+    apiGet<ApiList<ApiTask>>('/tasks', { page_size: 5 }),
+    apiGet<DashboardData['todos']>('/todos', { status: 'open', page_size: 5 }),
+    apiGet<ApiList<ApiConflict>>('/conflicts', { status: 'open', page_size: 5 }),
+    apiGet<DashboardData['activities']>('/dashboard/recent-activities'),
+  ])
+  return { dashboard, tasks, todos, conflicts, activities }
+}
 
 export function DashboardPage() {
+  const { user } = useAuth()
+  const { data, loading, error } = useApiData(loadDashboard)
   const dateStr = format(new Date(), 'yyyy年M月d日 EEEE', { locale: zhCN })
+  const widgets = data?.dashboard.widgets
+  const taskItems = data?.tasks.items ?? []
+  const todoItems = data?.todos.items ?? []
+  const conflictItems = data?.conflicts.items ?? []
+  const activityItems = data?.activities.items.slice(0, 5) ?? []
+
   return (
-    <MainLayout title="早上好，张主任" subtitle={dateStr}>
+    <MainLayout title={`早上好，${user?.login_name ?? '同事'}`} subtitle={dateStr}>
       <div className="flex flex-col gap-6">
+        {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
+
         <div className="grid grid-cols-4 gap-5">
-          {stats.map((s) => (
-            <StatCard key={s.label} label={s.label} value={s.value} sub={s.sub} />
-          ))}
+          <StatCard label="进行中任务" value={widgets?.my_tasks?.count ?? taskItems.length} sub="来自真实任务数据" />
+          <StatCard label="待处理审批" value={widgets?.todos?.count ?? todoItems.length} sub="待办与审批入口" />
+          <StatCard label="冲突风险" value={widgets?.conflicts?.count ?? conflictItems.length} sub="待处理冲突" />
+          <StatCard label="最近动态" value={activityItems.length} sub="系统事件流" />
         </div>
 
         <div className="grid grid-cols-[1fr_340px] gap-6">
-          <Panel title="我的任务" right={<Link to="/tasks" className="flex items-center text-sm text-text-muted hover:text-text-primary">查看全部 <ChevronRight className="h-4 w-4" /></Link>}>
-            <div className="mb-2 text-sm text-text-muted">6 个进行中任务</div>
-            <div className="flex flex-col">
-              {tasks.map((t) => (
-                <Link
-                  key={t.id}
-                  to={`/tasks/${t.id}`}
-                  className="group flex items-center justify-between border-b border-border-subtle py-4 last:border-b-0 hover:bg-hover-bg -mx-5 px-5 transition-fast"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="text-base font-medium text-text-primary group-hover:text-text-primary">
-                      {t.name}
-                    </span>
-                    <span className="text-sm text-text-muted">截止 {t.end}</span>
-                  </div>
-                  <Tag variant={t.tag}>{t.status}</Tag>
-                </Link>
-              ))}
-            </div>
+          <Panel
+            title="我的任务"
+            right={
+              <Link to="/tasks" className="flex items-center text-sm text-text-muted hover:text-text-primary">
+                查看全部 <ChevronRight className="h-4 w-4" />
+              </Link>
+            }
+          >
+            <div className="mb-2 text-sm text-text-muted">{loading ? '加载中...' : `${taskItems.length} 个任务`}</div>
+            {taskItems.length === 0 && !loading ? (
+              <EmptyState title="暂无任务" desc="当前账号可见范围内暂无任务。" />
+            ) : (
+              <div className="flex flex-col">
+                {taskItems.map((task) => (
+                  <Link
+                    key={task.id}
+                    to={`/tasks/${task.id}`}
+                    className="-mx-5 flex items-center justify-between border-b border-border-subtle px-5 py-4 transition-fast last:border-b-0 hover:bg-hover-bg"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="text-base font-medium text-text-primary">{task.name}</span>
+                      <span className="text-sm text-text-muted">截止 {formatDate(task.due_at)}</span>
+                    </div>
+                    <Tag variant={taskStatusVariant(task.status)}>{taskStatusLabel(task.status)}</Tag>
+                  </Link>
+                ))}
+              </div>
+            )}
           </Panel>
 
           <div className="flex flex-col gap-6">
-            <Panel title="我的待办">
-              <div className="flex flex-col">
-                {todos.map((td) => (
-                  <div
-                    key={td.id}
-                    className="flex items-center justify-between border-b border-border-subtle py-3 last:border-b-0"
-                  >
-                    <span className="text-base text-text-primary">{td.title}</span>
-                    <Badge>{td.type}</Badge>
-                  </div>
-                ))}
-              </div>
+            <Panel
+              title="我的待办"
+              right={
+                <Link to="/todos" className="flex items-center text-sm text-text-muted hover:text-text-primary">
+                  查看全部 <ChevronRight className="h-4 w-4" />
+                </Link>
+              }
+            >
+              {todoItems.length === 0 && !loading ? (
+                <EmptyState title="暂无待办" desc="当前没有需要处理的事项。" />
+              ) : (
+                <div className="flex flex-col">
+                  {todoItems.map((todo) => (
+                    <Link
+                      key={todo.id}
+                      to={todo.action_url || '/tasks'}
+                      className="flex items-center justify-between border-b border-border-subtle py-3 transition-fast last:border-b-0 hover:bg-hover-bg"
+                    >
+                      <span className="text-base text-text-primary">{todo.title}</span>
+                      <Badge>{todo.todo_type ?? '待办'}</Badge>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </Panel>
 
             <Panel title="风险提醒">
-              <div className="flex flex-col">
-                {risks.map((r) => (
-                  <div
-                    key={r.id}
-                    className="flex items-center justify-between border-b border-border-subtle py-4 last:border-b-0"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <span className="text-base font-medium text-text-primary">{r.title}</span>
-                      <span className="text-sm text-text-muted">{r.desc}</span>
-                    </div>
-                    <span className="text-sm text-color-error">{r.tag}</span>
-                  </div>
-                ))}
-              </div>
+              {conflictItems.length === 0 && !loading ? (
+                <EmptyState title="暂无风险" desc="当前没有待处理冲突。" />
+              ) : (
+                <div className="flex flex-col">
+                  {conflictItems.map((conflict) => (
+                    <Link
+                      key={conflict.id}
+                      to="/conflicts"
+                      className="flex items-center justify-between border-b border-border-subtle py-4 transition-fast last:border-b-0 hover:bg-hover-bg"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <span className="text-base font-medium text-text-primary">{conflict.task_id ?? '冲突记录'}</span>
+                        <span className="text-sm text-text-muted">{formatDate(conflict.conflict_date_start)}</span>
+                      </div>
+                      <Tag variant={riskVariant(conflict.risk_level)}>{riskLabel(conflict.risk_level)}</Tag>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </Panel>
           </div>
         </div>
+
+        <Panel title="最近动态">
+          {activityItems.length === 0 && !loading ? (
+            <EmptyState title="暂无动态" desc="系统暂无可展示的事件。" />
+          ) : (
+            <div className="grid grid-cols-5 gap-4">
+              {activityItems.map((event) => (
+                <div key={event.id} className="rounded-md bg-bg-tertiary p-4">
+                  <div className="text-sm font-medium text-text-primary">{event.event_type ?? '系统事件'}</div>
+                  <div className="mt-1 text-xs text-text-muted">
+                    {event.object_type ?? '对象'} · {formatDate(event.created_at)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Panel>
       </div>
     </MainLayout>
   )

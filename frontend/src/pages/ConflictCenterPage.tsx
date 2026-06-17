@@ -1,253 +1,153 @@
 import { MainLayout } from '@/components/layout'
-import {
-  Badge,
-  Button,
-  Panel,
-  StatCard,
-  Tabs,
-  Tag,
-} from '@/components/ui'
-import {
-  conflicts,
-  deptWarnings,
-  filterTabs,
-  myTasks,
-  risks,
-  summaryStats,
-  todos,
-  topStats,
-  typeDistribution,
-} from '@/mocks/conflictCenter'
-import { ChevronDown, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Badge, Button, EmptyState, Panel, StatCard, Tabs, Tag } from '@/components/ui'
+import { apiGet, apiPost } from '@/lib/api'
+import { type ApiConflict, type ApiList, conflictTypeLabel, formatDate, riskLabel, riskVariant } from '@/lib/format'
+import { useApiData } from '@/lib/useApiData'
+import { ChevronDown } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
-function LevelTag({ level }: { level: string }) {
-  const variant =
-    level === '高' ? 'error' : level === '中' ? 'warning' : 'success'
-  return <Tag variant={variant}>{level}</Tag>
+const filterTabs = [
+  { value: 'all', label: '全部' },
+  { value: 'open', label: '待处理' },
+  { value: 'resolved', label: '已解决' },
+  { value: 'forced', label: '强制排期' },
+]
+
+function statusLabel(status?: string) {
+  const map: Record<string, string> = {
+    open: '待处理',
+    processing: '处理中',
+    resolved: '已解决',
+    forced: '强制排期',
+  }
+  return map[status ?? ''] ?? status ?? '未知'
 }
 
-function StatusTag({ status }: { status: string }) {
-  const variant =
-    status === '待处理' ? 'warning' : status === '处理中' ? 'info' : 'success'
-  return <Tag variant={variant}>{status}</Tag>
+function statusVariant(status?: string) {
+  if (status === 'resolved') return 'success'
+  if (status === 'forced') return 'error'
+  if (status === 'processing') return 'info'
+  return 'warning'
 }
 
 export function ConflictCenterPage() {
   const [activeTab, setActiveTab] = useState('all')
+  const [acting, setActing] = useState<string | null>(null)
+  const { data, loading, error, reload } = useApiData(
+    () => apiGet<ApiList<ApiConflict>>('/conflicts', { status: activeTab === 'all' ? undefined : activeTab, page_size: 100 }),
+    [activeTab]
+  )
+  const conflicts = useMemo(() => data?.items ?? [], [data?.items])
+  const stats = useMemo(() => {
+    return {
+      total: conflicts.length,
+      high: conflicts.filter((item) => item.risk_level === 'high' || item.risk_level === 'critical').length,
+      open: conflicts.filter((item) => item.status === 'open').length,
+      overload: conflicts.filter((item) => item.conflict_type === 'overload').length,
+    }
+  }, [conflicts])
 
-  const filteredConflicts =
-    activeTab === 'all'
-      ? conflicts
-      : conflicts.filter((c) => {
-          const map: Record<string, string> = {
-            overload: '人员超载',
-            time: '时间冲突',
-            org: '跨组织冲突',
-            permission: '权限冲突',
-            resource: '资源冲突',
-          }
-          return c.type === map[activeTab]
-        })
+  async function resolve(id: string) {
+    setActing(id)
+    try {
+      await apiPost(`/conflicts/${id}/resolve`, { resolution_action: 'resolved', resolution_comment: '前端处理完成' })
+      await reload()
+    } finally {
+      setActing(null)
+    }
+  }
+
+  async function force(id: string) {
+    setActing(id)
+    try {
+      await apiPost(`/conflicts/${id}/force`, { reason: '业务确认强制排期' })
+      await reload()
+    } finally {
+      setActing(null)
+    }
+  }
 
   return (
     <MainLayout title="冲突中心" subtitle="负载、时间与资源冲突处理">
       <div className="flex flex-col gap-6">
-        {/* Top stats */}
+        {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
         <div className="grid grid-cols-4 gap-5">
-          {topStats.map((s) => (
-            <StatCard key={s.label} label={s.label} value={s.value} sub={s.sub} />
-          ))}
+          <StatCard label="冲突总数" value={stats.total} sub={loading ? '加载中' : '真实冲突数据'} />
+          <StatCard label="高风险" value={stats.high} />
+          <StatCard label="待处理" value={stats.open} />
+          <StatCard label="人员超载" value={stats.overload} />
         </div>
 
-        {/* Filter + sort */}
         <div className="flex items-center justify-between">
-          <Tabs
-            tabs={filterTabs}
-            value={activeTab}
-            onChange={setActiveTab}
-          />
-          <button className="flex items-center gap-1 text-sm text-text-muted hover:text-text-primary transition-fast">
+          <Tabs tabs={filterTabs} value={activeTab} onChange={setActiveTab} />
+          <button className="flex items-center gap-1 text-sm text-text-muted transition-fast hover:text-text-primary">
             按风险等级
             <ChevronDown className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Conflict content */}
         <div className="grid grid-cols-[1fr_340px] gap-6">
-          {/* Conflict list */}
           <div className="flex flex-col gap-4">
-            {filteredConflicts.map((c) => (
-              <div
-                key={c.id}
-                className="flex flex-col gap-4 rounded-lg border border-border-subtle bg-bg-secondary p-5"
-              >
+            {conflicts.map((conflict) => (
+              <div key={conflict.id} className="flex flex-col gap-4 rounded-lg border border-border-subtle bg-bg-secondary p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge>{c.type}</Badge>
-                    <LevelTag level={c.level} />
+                    <Badge>{conflictTypeLabel(conflict.conflict_type)}</Badge>
+                    <Tag variant={riskVariant(conflict.risk_level)}>{riskLabel(conflict.risk_level)}</Tag>
                   </div>
-                  <StatusTag status={c.status} />
+                  <Tag variant={statusVariant(conflict.status)}>{statusLabel(conflict.status)}</Tag>
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <h3 className="text-base font-semibold text-text-primary">
-                    {c.title}
-                  </h3>
-                  <p className="text-sm text-text-muted">{c.desc}</p>
+                  <h3 className="text-base font-semibold text-text-primary">{conflict.task_id ?? '冲突记录'}</h3>
+                  <p className="text-sm text-text-muted">
+                    {formatDate(conflict.conflict_date_start)} - {formatDate(conflict.conflict_date_end)}
+                    {conflict.overload_hours ? ` · 超载 ${conflict.overload_hours}h` : ''}
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-4 text-sm text-text-muted">
-                  <span>涉及：{c.target}</span>
-                  <span>{c.time}</span>
+                  <span>人员：{conflict.person_id ?? '未关联'}</span>
+                  <span>{formatDate(conflict.created_at)}</span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button variant="primary" className="h-8 px-4 text-sm">
+                  <Button variant="primary" className="h-8 px-4 text-sm" disabled={acting === conflict.id} onClick={() => void resolve(conflict.id)}>
                     处理
                   </Button>
-                  <Button variant="ghost" className="h-8 px-4 text-sm">
-                    转交
-                  </Button>
-                  <Button variant="ghost" className="h-8 px-4 text-sm">
-                    忽略
+                  <Button variant="danger" className="h-8 px-4 text-sm" disabled={acting === conflict.id} onClick={() => void force(conflict.id)}>
+                    强制排期
                   </Button>
                 </div>
               </div>
             ))}
+            {!loading && conflicts.length === 0 && <EmptyState title="暂无冲突" desc="当前筛选下没有冲突记录。" />}
           </div>
 
-          {/* Conflict summary */}
-          <div className="flex flex-col gap-6">
-            <Panel className="gap-5">
-              <div className="grid grid-cols-3 gap-2 rounded-lg bg-bg-tertiary p-4">
-                {summaryStats.map((s) => (
-                  <div key={s.label} className="flex flex-col items-center gap-1">
-                    <span className="text-xs text-text-muted">{s.label}</span>
-                    <span className="text-stat font-bold text-text-primary">
-                      {s.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <h4 className="text-sm font-semibold text-text-primary">
-                  按类型分布
-                </h4>
-                <div className="flex flex-col">
-                  {typeDistribution.map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex items-center justify-between border-b border-border-subtle py-2.5 last:border-b-0"
-                    >
-                      <span className="text-sm text-text-secondary">
-                        {item.label}
-                      </span>
-                      <span className="text-sm font-medium text-text-primary">
-                        {item.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <h4 className="text-sm font-semibold text-text-primary">
-                  部门负载预警
-                </h4>
-                <div className="flex flex-col">
-                  {deptWarnings.map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex items-center justify-between border-b border-border-subtle py-2.5 last:border-b-0"
-                    >
-                      <span className="text-sm text-text-secondary">
-                        {item.label}
-                      </span>
-                      <span className="text-sm font-medium text-text-primary">
-                        {item.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Panel>
-          </div>
-        </div>
-
-        {/* Related section */}
-        <div className="grid grid-cols-[1fr_380px] gap-6">
-          <Panel
-            title="我的任务"
-            right={
-              <Link
-                to="/tasks"
-                className="flex items-center text-sm text-text-muted hover:text-text-primary"
-              >
-                查看全部 <ChevronRight className="h-4 w-4" />
-              </Link>
-            }
-          >
-            <div className="mb-2 text-sm text-text-muted">
-              {myTasks.length} 个进行中任务
+          <Panel className="gap-5">
+            <div className="grid grid-cols-3 gap-2 rounded-lg bg-bg-tertiary p-4">
+              <Mini label="全部" value={stats.total} />
+              <Mini label="高风险" value={stats.high} />
+              <Mini label="待处理" value={stats.open} />
             </div>
-            <div className="flex flex-col">
-              {myTasks.map((t) => (
-                <Link
-                  key={t.id}
-                  to={`/tasks/${t.id}`}
-                  className="group flex items-center justify-between border-b border-border-subtle py-4 last:border-b-0 hover:bg-hover-bg -mx-5 px-5 transition-fast"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="text-base font-medium text-text-primary group-hover:text-text-primary">
-                      {t.name}
-                    </span>
-                    <span className="text-sm text-text-muted">截止 {t.end}</span>
-                  </div>
-                  <Tag variant={t.tag}>{t.status}</Tag>
-                </Link>
-              ))}
+            <div className="flex flex-col gap-3">
+              <h4 className="text-sm font-semibold text-text-primary">处理说明</h4>
+              <p className="text-sm leading-relaxed text-text-secondary">
+                冲突数据来自后端负载与排期计算。处理会写入冲突记录状态；强制排期需要权限并写入审计日志。
+              </p>
             </div>
           </Panel>
-
-          <div className="flex flex-col gap-6">
-            <Panel title="我的待办">
-              <div className="flex flex-col">
-                {todos.map((td) => (
-                  <div
-                    key={td.id}
-                    className="flex items-center justify-between border-b border-border-subtle py-3 last:border-b-0"
-                  >
-                    <span className="text-base text-text-primary">{td.title}</span>
-                    <Badge>{td.type}</Badge>
-                  </div>
-                ))}
-              </div>
-            </Panel>
-
-            <Panel title="风险提醒">
-              <div className="flex flex-col">
-                {risks.map((r) => (
-                  <div
-                    key={r.id}
-                    className="flex items-center justify-between border-b border-border-subtle py-4 last:border-b-0"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <span className="text-base font-medium text-text-primary">
-                        {r.title}
-                      </span>
-                      <span className="text-sm text-text-muted">{r.desc}</span>
-                    </div>
-                    <span className="text-sm text-color-error">{r.tag}</span>
-                  </div>
-                ))}
-              </div>
-            </Panel>
-          </div>
         </div>
       </div>
     </MainLayout>
+  )
+}
+
+function Mini({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <span className="text-xs text-text-muted">{label}</span>
+      <span className="text-stat font-bold text-text-primary">{value}</span>
+    </div>
   )
 }

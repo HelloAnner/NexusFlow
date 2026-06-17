@@ -1,0 +1,296 @@
+async fn list_todos(
+    State(state): State<Arc<AppState>>,
+    user: CurrentUser,
+    Query(query): Query<PageQuery>,
+) -> Result<Json<Value>, ApiError> {
+    user.require_business_access()?;
+    let rows = sqlx::query(
+        "SELECT to_jsonb(todo_items.*) AS item FROM todo_items
+         WHERE ($1::uuid IS NULL OR assignee_id = $1)
+           AND ($2::text IS NULL OR status = $2)
+         ORDER BY created_at DESC LIMIT $3 OFFSET $4",
+    )
+    .bind(if user.is_sa() { None } else { user.person_id })
+    .bind(query.status.clone())
+    .bind(query.limit())
+    .bind(query.offset())
+    .fetch_all(&state.db)
+    .await?;
+    Ok(Json(
+        json!({ "items": rows.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()? }),
+    ))
+}
+
+async fn complete_todo(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    user: CurrentUser,
+) -> Result<Json<Value>, ApiError> {
+    sqlx::query("UPDATE todo_items SET status = 'completed' WHERE id = $1 AND ($2::bool OR assignee_id = $3)")
+        .bind(id)
+        .bind(user.is_sa())
+        .bind(user.person_id)
+        .execute(&state.db)
+        .await?;
+    Ok(Json(json!({ "id": id, "status": "completed" })))
+}
+
+async fn list_notifications(
+    State(state): State<Arc<AppState>>,
+    user: CurrentUser,
+    Query(query): Query<PageQuery>,
+) -> Result<Json<Value>, ApiError> {
+    user.require_business_access()?;
+    let rows = sqlx::query(
+        "SELECT to_jsonb(notifications.*) AS item FROM notifications
+         WHERE ($1::uuid IS NULL OR receiver_id = $1)
+         ORDER BY created_at DESC LIMIT $2 OFFSET $3",
+    )
+    .bind(if user.is_sa() { None } else { user.person_id })
+    .bind(query.limit())
+    .bind(query.offset())
+    .fetch_all(&state.db)
+    .await?;
+    Ok(Json(
+        json!({ "items": rows.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()? }),
+    ))
+}
+
+async fn read_notification(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    user: CurrentUser,
+) -> Result<Json<Value>, ApiError> {
+    sqlx::query(
+        "UPDATE notifications SET read_at = now() WHERE id = $1 AND ($2::bool OR receiver_id = $3)",
+    )
+    .bind(id)
+    .bind(user.is_sa())
+    .bind(user.person_id)
+    .execute(&state.db)
+    .await?;
+    Ok(Json(json!({ "id": id, "read": true })))
+}
+
+async fn list_reports(
+    State(state): State<Arc<AppState>>,
+    user: CurrentUser,
+) -> Result<Json<Value>, ApiError> {
+    user.require_business_access()?;
+    let rows = sqlx::query("SELECT report_type, count(*) AS count, max(generated_at) AS latest FROM report_snapshots GROUP BY report_type ORDER BY report_type")
+        .fetch_all(&state.db)
+        .await?;
+    let items: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            json!({
+                "report_type": r.get::<String, _>("report_type"),
+                "count": r.get::<i64, _>("count"),
+                "latest": r.try_get::<DateTime<Utc>, _>("latest").ok()
+            })
+        })
+        .collect();
+    Ok(Json(json!({ "items": items })))
+}
+
+async fn get_report(
+    State(state): State<Arc<AppState>>,
+    Path(report_type): Path<String>,
+    user: CurrentUser,
+) -> Result<Json<Value>, ApiError> {
+    user.require_business_access()?;
+    let item = sqlx::query("SELECT to_jsonb(report_snapshots.*) AS item FROM report_snapshots WHERE report_type = $1 ORDER BY generated_at DESC LIMIT 1")
+        .bind(&report_type)
+        .fetch_optional(&state.db)
+        .await?
+        .map(|r| json_row(&r, "item"))
+        .transpose()?;
+    Ok(Json(
+        json!({ "report_type": report_type, "snapshot": item }),
+    ))
+}
+
+async fn export_report(
+    State(state): State<Arc<AppState>>,
+    Path(report_type): Path<String>,
+    user: CurrentUser,
+    Json(payload): Json<Value>,
+) -> Result<Json<Value>, ApiError> {
+    user.require_action("report.export")?;
+    let id = sqlx::query_scalar::<_, Uuid>(
+        "INSERT INTO report_snapshots(report_type, scope_type, scope_id, period_start, period_end, payload)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id",
+    )
+    .bind(&report_type)
+    .bind(value_str(&payload, "scope_type", "user"))
+    .bind(value_uuid(&payload, "scope_id").or(user.person_id))
+    .bind(parse_date(&payload, "period_start"))
+    .bind(parse_date(&payload, "period_end"))
+    .bind(payload.clone())
+    .fetch_one(&state.db)
+    .await?;
+    audit(
+        &state.db,
+        user.person_id,
+        "report_snapshot",
+        Some(id),
+        "report.export",
+        json!({}),
+        payload,
+        "",
+        None,
+    )
+    .await?;
+    Ok(Json(json!({ "id": id, "status": "generated" })))
+}
+
+async fn list_tools(
+    State(state): State<Arc<AppState>>,
+    user: CurrentUser,
+) -> Result<Json<Value>, ApiError> {
+    user.require_business_access()?;
+    let rows = sqlx::query(
+        "SELECT to_jsonb(t.*) AS item FROM tool_entries t
+         WHERE t.enabled AND (
+           $1::bool OR NOT EXISTS (SELECT 1 FROM tool_permissions tp WHERE tp.tool_id = t.id)
+           OR EXISTS (
+             SELECT 1 FROM tool_permissions tp WHERE tp.tool_id = t.id
+             AND ((tp.subject_type = 'person' AND tp.subject_id = $2) OR (tp.subject_type = 'role' AND tp.subject_id = ANY($3)))
+           )
+         )
+         ORDER BY category, name",
+    )
+    .bind(user.is_sa())
+    .bind(user.person_id)
+    .bind(&user.role_ids)
+    .fetch_all(&state.db)
+    .await?;
+    Ok(Json(
+        json!({ "items": rows.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()? }),
+    ))
+}
+
+async fn get_tool(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    user: CurrentUser,
+) -> Result<Json<Value>, ApiError> {
+    user.require_business_access()?;
+    Ok(Json(get_json_by_id(&state.db, "tool_entries", id).await?))
+}
+
+async fn create_tool(
+    State(state): State<Arc<AppState>>,
+    user: CurrentUser,
+    Json(payload): Json<Value>,
+) -> Result<Json<Value>, ApiError> {
+    user.require_action("tool.manage")?;
+    let id = sqlx::query_scalar::<_, Uuid>(
+        "INSERT INTO tool_entries(name, category, entry_type, entry_url, enabled, icon, description, payload)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id",
+    )
+    .bind(value_str(&payload, "name", ""))
+    .bind(value_str(&payload, "category", "common"))
+    .bind(value_str(&payload, "entry_type", "external"))
+    .bind(value_str(&payload, "entry_url", ""))
+    .bind(value_bool(&payload, "enabled", true))
+    .bind(value_str(&payload, "icon", ""))
+    .bind(value_str(&payload, "description", ""))
+    .bind(payload.clone())
+    .fetch_one(&state.db)
+    .await?;
+    Ok(Json(json!({ "id": id })))
+}
+
+async fn update_tool(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    user: CurrentUser,
+    Json(payload): Json<Value>,
+) -> Result<Json<Value>, ApiError> {
+    user.require_action("tool.manage")?;
+    sqlx::query(
+        "UPDATE tool_entries SET name = COALESCE($2, name), category = COALESCE($3, category), entry_type = COALESCE($4, entry_type),
+         entry_url = COALESCE($5, entry_url), enabled = COALESCE($6, enabled), icon = COALESCE($7, icon), description = COALESCE($8, description),
+         payload = payload || $9, updated_at = now() WHERE id = $1",
+    )
+    .bind(id)
+    .bind(payload.get("name").and_then(Value::as_str))
+    .bind(payload.get("category").and_then(Value::as_str))
+    .bind(payload.get("entry_type").and_then(Value::as_str))
+    .bind(payload.get("entry_url").and_then(Value::as_str))
+    .bind(payload.get("enabled").and_then(Value::as_bool))
+    .bind(payload.get("icon").and_then(Value::as_str))
+    .bind(payload.get("description").and_then(Value::as_str))
+    .bind(payload.clone())
+    .execute(&state.db)
+    .await?;
+    Ok(Json(json!({ "id": id })))
+}
+
+async fn tool_context(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    user: CurrentUser,
+    Json(payload): Json<Value>,
+) -> Result<Json<Value>, ApiError> {
+    user.require_business_access()?;
+    let source_type = value_str(&payload, "source_type", "manual");
+    let source_id = value_uuid(&payload, "source_id");
+    if source_type == "project" {
+        if let Some(source_id) = source_id {
+            ensure_project_visible(&state.db, &user, source_id).await?;
+        }
+    }
+    if source_type == "task" {
+        if let Some(source_id) = source_id {
+            ensure_task_visible(&state.db, &user, source_id).await?;
+        }
+    }
+    Ok(Json(json!({
+        "tool_id": id,
+        "source_type": source_type,
+        "source_id": source_id,
+        "user": { "person_id": user.person_id, "roles": user.role_codes },
+        "sensitive_context_included": false
+    })))
+}
+
+async fn record_tool_usage(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    user: CurrentUser,
+    Json(payload): Json<Value>,
+) -> Result<Json<Value>, ApiError> {
+    user.require_business_access()?;
+    let usage_id = sqlx::query_scalar::<_, Uuid>(
+        "INSERT INTO tool_usage_logs(tool_id, user_id, source_type, source_id, payload) VALUES ($1,$2,$3,$4,$5) RETURNING id",
+    )
+    .bind(id)
+    .bind(user.person_id)
+    .bind(value_str(&payload, "source_type", "manual"))
+    .bind(value_uuid(&payload, "source_id"))
+    .bind(payload)
+    .fetch_one(&state.db)
+    .await?;
+    Ok(Json(json!({ "id": usage_id })))
+}
+
+async fn tool_usage(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    user: CurrentUser,
+) -> Result<Json<Value>, ApiError> {
+    user.require_business_access()?;
+    let rows = sqlx::query(
+        "SELECT to_jsonb(tool_usage_logs.*) AS item FROM tool_usage_logs WHERE tool_id = $1 AND ($2::bool OR user_id = $3) ORDER BY used_at DESC LIMIT 100",
+    )
+    .bind(id)
+    .bind(user.is_sa())
+    .bind(user.person_id)
+    .fetch_all(&state.db)
+    .await?;
+    Ok(Json(
+        json!({ "items": rows.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()? }),
+    ))
+}
