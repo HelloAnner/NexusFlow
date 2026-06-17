@@ -25,6 +25,8 @@ __pycache__/
 dist/
 build/
 out/
+target/
+backend/target/
 .next/
 .nuxt/
 .svelte-kit/
@@ -47,6 +49,10 @@ test-results/
 playwright-report/
 .playwright-mcp/
 screenshots/
+frontend_*_check.png
+frontend_preview*.png
+page_summaries.txt
+page_summary_*.txt
 
 # Package manager caches
 .npm/
