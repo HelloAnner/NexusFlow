@@ -53,6 +53,8 @@ e2e/artifacts/*
 !e2e/artifacts/.gitkeep
 frontend_*_check.png
 frontend_preview*.png
+sa_admin*.png
+new_task*.png
 page_summaries.txt
 page_summary_*.txt
 

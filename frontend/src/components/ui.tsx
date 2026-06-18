@@ -199,8 +199,9 @@ export interface PanelProps {
   children: React.ReactNode
   className?: string
   right?: React.ReactNode
+  footer?: React.ReactNode
 }
-export function Panel({ title, children, className, right }: PanelProps) {
+export function Panel({ title, children, className, right, footer }: PanelProps) {
   return (
     <div className={cn('flex flex-col gap-4 rounded-lg border border-border-subtle bg-bg-secondary p-5', className)}>
       <div className="flex items-center justify-between">
@@ -210,6 +211,7 @@ export function Panel({ title, children, className, right }: PanelProps) {
         {right}
       </div>
       {children}
+      {footer && <div className="pt-2">{footer}</div>}
     </div>
   )
 }

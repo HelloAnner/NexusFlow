@@ -5,7 +5,7 @@ import { type ApiList, type ApiPerson, type ApiProject, accountStatusLabel, form
 import { useApiData } from '@/lib/useApiData'
 import { AlertTriangle, CheckCircle2, Plus, Save, Send, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 const steps = ['基本信息', '负责人和成员', '分工草案', '冲突检查', '确认发布']
@@ -248,7 +248,7 @@ export function NewTaskPage() {
 
   return (
     <MainLayout title="新建任务" subtitle="按派发向导完成负责人、分工和冲突检查">
-      <div className="mx-auto flex w-full max-w-[1080px] flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-[760px] flex-col gap-6">
         <StepHeader activeStep={activeStep} />
 
         {(error || submitError) && (
@@ -257,53 +257,42 @@ export function NewTaskPage() {
           </div>
         )}
 
-        <form onSubmit={handleNext} className="grid grid-cols-[1fr_320px] gap-6">
-          <div className="flex flex-col gap-6">
-            {activeStep === 0 && <BasicStep form={form} loading={loading} projects={projects} updateField={updateField} />}
-            {activeStep === 1 && (
-              <PeopleStep
-                form={form}
-                people={people}
-                members={members}
-                newMemberId={newMemberId}
-                setNewMemberId={setNewMemberId}
-                selectOwner={selectOwner}
-                addMember={addMember}
-                removeMember={removeMember}
+        <form onSubmit={handleNext} className="flex flex-col gap-6">
+          {(() => {
+            const footer = (
+              <StepActions
+                activeStep={activeStep}
+                canGoNext={canGoNext}
+                acting={acting}
+                draftTaskId={draftTaskId}
+                preview={preview}
+                saveDraft={saveDraft}
+                submitDispatch={submitDispatch}
+                setActiveStep={setActiveStep}
               />
-            )}
-            {activeStep === 2 && <DivisionStep people={people} members={members} updateMember={updateMember} removeMember={removeMember} />}
-            {activeStep === 3 && <PreviewStep preview={preview} draftTaskId={draftTaskId} runPreview={runPreview} acting={acting} />}
-            {activeStep === 4 && <ConfirmStep form={form} people={people} projects={projects} members={members} preview={preview} />}
-          </div>
-
-          <Panel title="发布摘要" className="self-start">
-            <Summary form={form} people={people} projects={projects} members={members} preview={preview} draftTaskId={draftTaskId} />
-            <div className="mt-2 flex flex-col gap-3">
-              <div className="flex gap-3">
-                <Button type="button" variant="ghost" className="h-9 flex-1 px-3 text-sm" disabled={activeStep === 0} onClick={() => setActiveStep((prev) => Math.max(prev - 1, 0))}>上一步</Button>
-                {activeStep < 4 && (
-                  <Button className="h-9 flex-1 px-3 text-sm" disabled={!canGoNext || acting !== null}>
-                    {activeStep === 2 ? '保存并检查' : '下一步'}
-                  </Button>
+            )
+            return (
+              <>
+                {activeStep === 0 && <BasicStep form={form} loading={loading} projects={projects} updateField={updateField} footer={footer} />}
+                {activeStep === 1 && (
+                  <PeopleStep
+                    form={form}
+                    people={people}
+                    members={members}
+                    newMemberId={newMemberId}
+                    setNewMemberId={setNewMemberId}
+                    selectOwner={selectOwner}
+                    addMember={addMember}
+                    removeMember={removeMember}
+                    footer={footer}
+                  />
                 )}
-              </div>
-              {activeStep >= 3 && (
-                <Button type="button" variant="secondary" className="h-9 px-3 text-sm" disabled={acting !== null || !draftTaskId} onClick={() => setActiveStep(4)}>
-                  进入确认发布
-                </Button>
-              )}
-              <Button type="button" variant="secondary" className="h-9 px-3 text-sm" disabled={acting !== null || !canGoNext} onClick={() => void saveDraft().then((id) => navigate(`/tasks/${id}`))}>
-                <Save className="h-4 w-4" />保存草稿
-              </Button>
-              {activeStep === 4 && (
-                <Button type="button" className="h-9 px-3 text-sm" disabled={acting !== null || !draftTaskId} onClick={() => void submitDispatch()}>
-                  <Send className="h-4 w-4" />{preview?.requires_approval ? '提交协调' : '直接发布'}
-                </Button>
-              )}
-              <Link to="/tasks" className="inline-flex"><Button type="button" variant="ghost" className="h-9 w-full px-3 text-sm">取消</Button></Link>
-            </div>
-          </Panel>
+                {activeStep === 2 && <DivisionStep people={people} members={members} updateMember={updateMember} removeMember={removeMember} footer={footer} />}
+                {activeStep === 3 && <PreviewStep preview={preview} draftTaskId={draftTaskId} runPreview={runPreview} acting={acting} footer={footer} />}
+                {activeStep === 4 && <ConfirmStep form={form} people={people} projects={projects} members={members} preview={preview} footer={footer} />}
+              </>
+            )
+          })()}
         </form>
       </div>
     </MainLayout>
@@ -312,10 +301,10 @@ export function NewTaskPage() {
 
 function StepHeader({ activeStep }: { activeStep: number }) {
   return (
-    <div className="flex items-center gap-2 overflow-x-auto rounded-lg border border-border-subtle bg-bg-secondary p-3 text-sm">
+    <div className="flex items-center justify-center gap-2 overflow-x-auto rounded-lg border border-border-subtle bg-bg-secondary p-3 text-sm">
       {steps.map((label, index) => (
         <div key={label} className="flex items-center gap-2">
-          <div className={`flex items-center gap-2 rounded-md px-3 py-1.5 font-medium ${index === activeStep ? 'bg-primary-fill text-primary-text' : index < activeStep ? 'bg-color-success-bg text-color-success' : 'text-text-muted'}`}>
+          <div className={`flex items-center gap-2 rounded-md px-3 py-1.5 font-medium ${index === activeStep ? 'bg-primary-fill text-primary-text' : index < activeStep ? 'bg-color-success-bg text-color-success' : 'bg-bg-tertiary text-text-muted'}`}>
             <span>{index + 1}</span>
             <span>{label}</span>
           </div>
@@ -326,10 +315,62 @@ function StepHeader({ activeStep }: { activeStep: number }) {
   )
 }
 
-function BasicStep({ form, loading, projects, updateField }: { form: FormState; loading: boolean; projects: ApiProject[]; updateField: (field: keyof FormState, value: string) => void }) {
+function StepActions({
+  activeStep,
+  canGoNext,
+  acting,
+  draftTaskId,
+  preview,
+  saveDraft,
+  submitDispatch,
+  setActiveStep,
+}: {
+  activeStep: number
+  canGoNext: boolean
+  acting: string | null
+  draftTaskId: string | null
+  preview: DispatchPreview | null
+  saveDraft: () => Promise<string | undefined>
+  submitDispatch: () => Promise<void>
+  setActiveStep: (step: number) => void
+}) {
+  const navigate = useNavigate()
+  return (
+    <div className="flex flex-wrap items-center justify-end gap-3">
+      <Link to="/tasks">
+        <Button type="button" variant="ghost" className="h-9 px-4 text-sm">取消</Button>
+      </Link>
+      {activeStep > 0 && (
+        <Button type="button" variant="ghost" className="h-9 px-4 text-sm" disabled={acting !== null} onClick={() => setActiveStep(Math.max(activeStep - 1, 0))}>
+          上一步
+        </Button>
+      )}
+      {activeStep < 4 && (
+        <Button className="h-9 px-4 text-sm" disabled={!canGoNext || acting !== null}>
+          {activeStep === 2 ? '保存并检查' : '下一步'}
+        </Button>
+      )}
+      {activeStep >= 3 && activeStep !== 4 && (
+        <Button type="button" variant="secondary" className="h-9 px-4 text-sm" disabled={acting !== null || !draftTaskId} onClick={() => setActiveStep(4)}>
+          进入确认发布
+        </Button>
+      )}
+      <Button type="button" variant="secondary" className="h-9 px-4 text-sm" disabled={acting !== null || !canGoNext} onClick={() => void saveDraft().then((id) => id && navigate(`/tasks/${id}`))}>
+        <Save className="h-4 w-4" />保存草稿
+      </Button>
+      {activeStep === 4 && (
+        <Button type="button" className="h-9 px-4 text-sm" disabled={acting !== null || !draftTaskId} onClick={() => void submitDispatch()}>
+          <Send className="h-4 w-4" />{preview?.requires_approval ? '提交协调' : '直接发布'}
+        </Button>
+      )}
+    </div>
+  )
+}
+
+function BasicStep({ form, loading, projects, updateField, footer }: { form: FormState; loading: boolean; projects: ApiProject[]; updateField: (field: keyof FormState, value: string) => void; footer?: React.ReactNode }) {
   const projectOptions = [{ value: '', label: loading ? '项目加载中' : '不关联项目' }].concat(projects.map((project) => ({ value: project.id, label: project.name })))
   return (
-    <Panel title="基本信息">
+    <Panel title="基本信息" footer={footer}>
       <Input label="任务标题" placeholder="请输入任务标题" value={form.title} onChange={(event) => updateField('title', event.target.value)} required />
       <div className="grid grid-cols-2 gap-5">
         <Select label="任务类型" options={taskTypeOptions} value={form.type} onChange={(event) => updateField('type', event.target.value)} />
@@ -347,7 +388,7 @@ function BasicStep({ form, loading, projects, updateField }: { form: FormState; 
   )
 }
 
-function PeopleStep({ form, people, members, newMemberId, setNewMemberId, selectOwner, addMember, removeMember }: {
+function PeopleStep({ form, people, members, newMemberId, setNewMemberId, selectOwner, addMember, removeMember, footer }: {
   form: FormState
   people: ApiPerson[]
   members: MemberDraft[]
@@ -356,12 +397,13 @@ function PeopleStep({ form, people, members, newMemberId, setNewMemberId, select
   selectOwner: (value: string) => void
   addMember: () => void
   removeMember: (value: string) => void
+  footer?: ReactNode
 }) {
   const selectedIds = members.map((member) => member.person_id)
   const ownerOptions = [{ value: '', label: '请选择负责人' }].concat(people.map((person) => ({ value: person.id, label: `${person.name} · ${workStatusLabel(person.work_status)}` })))
   const addOptions = [{ value: '', label: '选择成员' }].concat(people.filter((person) => !selectedIds.includes(person.id)).map((person) => ({ value: person.id, label: person.name })))
   return (
-    <Panel title="负责人和成员">
+    <Panel title="负责人和成员" footer={footer}>
       <Select label="负责人" value={form.ownerId} onChange={(event) => selectOwner(event.target.value)} options={ownerOptions} required />
       <div className="grid grid-cols-[1fr_auto] gap-3">
         <Select label="添加成员" value={newMemberId} onChange={(event) => setNewMemberId(event.target.value)} options={addOptions} />
@@ -395,9 +437,9 @@ function PeopleStep({ form, people, members, newMemberId, setNewMemberId, select
   )
 }
 
-function DivisionStep({ people, members, updateMember, removeMember }: { people: ApiPerson[]; members: MemberDraft[]; updateMember: (id: string, patch: Partial<MemberDraft>) => void; removeMember: (id: string) => void }) {
+function DivisionStep({ people, members, updateMember, removeMember, footer }: { people: ApiPerson[]; members: MemberDraft[]; updateMember: (id: string, patch: Partial<MemberDraft>) => void; removeMember: (id: string) => void; footer?: ReactNode }) {
   return (
-    <Panel title="分工草案">
+    <Panel title="分工草案" footer={footer}>
       <Table>
         <Thead><Tr><Th>成员</Th><Th>工作内容</Th><Th>起止时间</Th><Th>总工时</Th><Th>每日投入</Th><Th>操作</Th></Tr></Thead>
         <Tbody>
@@ -427,10 +469,10 @@ function DivisionStep({ people, members, updateMember, removeMember }: { people:
   )
 }
 
-function PreviewStep({ preview, draftTaskId, runPreview, acting }: { preview: DispatchPreview | null; draftTaskId: string | null; runPreview: () => Promise<void>; acting: string | null }) {
+function PreviewStep({ preview, draftTaskId, runPreview, acting, footer }: { preview: DispatchPreview | null; draftTaskId: string | null; runPreview: () => Promise<void>; acting: string | null; footer?: ReactNode }) {
   const conflicts = preview?.conflicts ?? []
   return (
-    <Panel title="冲突检查">
+    <Panel title="冲突检查" footer={footer}>
       <div className="grid grid-cols-3 gap-4">
         <Metric label="草稿任务" value={draftTaskId ? '已保存' : '未保存'} ok={Boolean(draftTaskId)} />
         <Metric label="协调审批" value={preview?.requires_approval ? '需要' : '不需要'} ok={!preview?.requires_approval} />
@@ -458,9 +500,9 @@ function PreviewStep({ preview, draftTaskId, runPreview, acting }: { preview: Di
   )
 }
 
-function ConfirmStep({ form, people, projects, members, preview }: { form: FormState; people: ApiPerson[]; projects: ApiProject[]; members: MemberDraft[]; preview: DispatchPreview | null }) {
+function ConfirmStep({ form, people, projects, members, preview, footer }: { form: FormState; people: ApiPerson[]; projects: ApiProject[]; members: MemberDraft[]; preview: DispatchPreview | null; footer?: ReactNode }) {
   return (
-    <Panel title="确认发布">
+    <Panel title="确认发布" footer={footer}>
       <div className="grid grid-cols-2 gap-4">
         <InfoBox label="任务名称" value={form.title} />
         <InfoBox label="任务周期" value={`${formatDate(form.start)} - ${formatDate(form.end)}`} />
@@ -473,20 +515,6 @@ function ConfirmStep({ form, people, projects, members, preview }: { form: FormS
         发布后会基于当前草稿创建派发记录；如存在跨部门、人员状态或负载问题，会进入协调审批。
       </div>
     </Panel>
-  )
-}
-
-function Summary({ form, people, projects, members, preview, draftTaskId }: { form: FormState; people: ApiPerson[]; projects: ApiProject[]; members: MemberDraft[]; preview: DispatchPreview | null; draftTaskId: string | null }) {
-  return (
-    <div className="flex flex-col divide-y divide-border-subtle">
-      <SummaryRow label="任务" value={form.title || '未填写'} />
-      <SummaryRow label="负责人" value={personName(people, form.ownerId)} />
-      <SummaryRow label="项目" value={projects.find((project) => project.id === form.projectId)?.name ?? '未关联'} />
-      <SummaryRow label="周期" value={form.start && form.end ? `${form.start} 至 ${form.end}` : '未设置'} />
-      <SummaryRow label="成员" value={`${members.length} 人`} />
-      <SummaryRow label="草稿" value={draftTaskId ? '已保存' : '未保存'} />
-      <SummaryRow label="协调" value={preview ? (preview.requires_approval ? '需要' : '不需要') : '未检查'} />
-    </div>
   )
 }
 
@@ -525,11 +553,3 @@ function InfoBox({ label, value }: { label: string; value: string }) {
   )
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 py-3">
-      <span className="text-sm text-text-muted">{label}</span>
-      <span className="break-all text-sm font-medium text-text-primary">{value}</span>
-    </div>
-  )
-}

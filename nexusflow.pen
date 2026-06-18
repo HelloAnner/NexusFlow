@@ -426,7 +426,8 @@
               "fill": "$text-muted",
               "content": "较上周 +3",
               "fontFamily": "$font-family",
-              "fontSize": "$text-xs"
+              "fontSize": "$text-xs",
+              "fontWeight": "normal"
             }
           ]
         },
@@ -524,7 +525,8 @@
               "fill": "$text-muted",
               "content": "Tab",
               "fontFamily": "$font-family",
-              "fontSize": "$text-sm"
+              "fontSize": "$text-sm",
+              "fontWeight": "normal"
             }
           ]
         },
@@ -2367,7 +2369,8 @@
                               "fill": "$text-secondary",
                               "content": "需求评审",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -2481,7 +2484,8 @@
                               "fill": "$text-secondary",
                               "content": "原型设计",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -2595,7 +2599,8 @@
                               "fill": "$text-secondary",
                               "content": "技术评审",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -2709,7 +2714,8 @@
                               "fill": "$text-secondary",
                               "content": "开发迭代一",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -2823,7 +2829,8 @@
                               "fill": "$text-secondary",
                               "content": "开发迭代二",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -2937,7 +2944,8 @@
                               "fill": "$text-secondary",
                               "content": "集成测试",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -3051,7 +3059,8 @@
                               "fill": "$text-secondary",
                               "content": "上线发布",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -3280,7 +3289,8 @@
                               "fill": "$text-secondary",
                               "content": "立项",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -3394,7 +3404,8 @@
                               "fill": "$text-secondary",
                               "content": "实验阶段",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -3508,7 +3519,8 @@
                               "fill": "$text-secondary",
                               "content": "论文撰写",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -3622,7 +3634,8 @@
                               "fill": "$text-secondary",
                               "content": "里程碑评审",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -3851,7 +3864,8 @@
                               "fill": "$text-secondary",
                               "content": "活动策划",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -3965,7 +3979,8 @@
                               "fill": "$text-secondary",
                               "content": "物料准备",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -4079,7 +4094,8 @@
                               "fill": "$text-secondary",
                               "content": "活动执行",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -4193,7 +4209,8 @@
                               "fill": "$text-secondary",
                               "content": "活动复盘",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-xs"
+                              "fontSize": "$text-xs",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -11674,7 +11691,8 @@
                               "fill": "$text-secondary",
                               "content": "权限模板",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-sm"
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -11698,7 +11716,8 @@
                               "fill": "$text-secondary",
                               "content": "通知规则",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-sm"
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -11722,7 +11741,8 @@
                               "fill": "$text-secondary",
                               "content": "系统集成",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-sm"
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -11746,7 +11766,8 @@
                               "fill": "$text-secondary",
                               "content": "系统参数",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-sm"
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -11770,7 +11791,8 @@
                               "fill": "$text-secondary",
                               "content": "安全设置",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-sm"
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -23313,7 +23335,8 @@
                               "fill": "$text-muted",
                               "content": "<",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-sm"
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -23362,7 +23385,8 @@
                               "fill": "$text-muted",
                               "content": "2",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-sm"
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -23386,7 +23410,8 @@
                               "fill": "$text-muted",
                               "content": "3",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-sm"
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -23410,7 +23435,8 @@
                               "fill": "$text-muted",
                               "content": ">",
                               "fontFamily": "$font-family",
-                              "fontSize": "$text-sm"
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
                             }
                           ]
                         }
