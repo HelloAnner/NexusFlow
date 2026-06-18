@@ -6,7 +6,9 @@ async fn org_tree(
     let rows = sqlx::query(
         "SELECT jsonb_build_object(
           'id', id, 'name', name, 'code', code, 'org_type', org_type, 'parent_id', parent_id,
-          'path', path, 'leader_ids', leader_ids, 'enabled', enabled, 'payload', payload
+          'path', path, 'leader_ids', leader_ids, 'deputy_leader_ids', deputy_leader_ids,
+          'technical_supervisor_ids', technical_supervisor_ids, 'default_approver_ids', default_approver_ids,
+          'enabled', enabled, 'payload', payload
         ) AS item
          FROM organizations WHERE deleted_at IS NULL ORDER BY path, name",
     )
@@ -24,7 +26,12 @@ async fn list_orgs(
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
     let rows = sqlx::query(
-        "SELECT jsonb_build_object('id', id, 'name', name, 'code', code, 'org_type', org_type, 'parent_id', parent_id, 'path', path, 'enabled', enabled, 'payload', payload) AS item,
+        "SELECT jsonb_build_object(
+          'id', id, 'name', name, 'code', code, 'org_type', org_type, 'parent_id', parent_id,
+          'path', path, 'leader_ids', leader_ids, 'deputy_leader_ids', deputy_leader_ids,
+          'technical_supervisor_ids', technical_supervisor_ids, 'default_approver_ids', default_approver_ids,
+          'enabled', enabled, 'payload', payload
+        ) AS item,
           count(*) OVER() AS total
          FROM organizations
          WHERE deleted_at IS NULL AND ($1::text IS NULL OR name ILIKE '%' || $1 || '%' OR code ILIKE '%' || $1 || '%')
@@ -102,18 +109,21 @@ async fn update_org(
     sqlx::query(
         "UPDATE organizations SET
           name = COALESCE($2, name),
-          org_type = COALESCE($3, org_type),
-          leader_ids = COALESCE($4, leader_ids),
-          deputy_leader_ids = COALESCE($5, deputy_leader_ids),
-          technical_supervisor_ids = COALESCE($6, technical_supervisor_ids),
-          default_approver_ids = COALESCE($7, default_approver_ids),
-          payload = payload || $8,
+          code = COALESCE($3, code),
+          org_type = COALESCE($4, org_type),
+          leader_ids = COALESCE($5, leader_ids),
+          deputy_leader_ids = COALESCE($6, deputy_leader_ids),
+          technical_supervisor_ids = COALESCE($7, technical_supervisor_ids),
+          default_approver_ids = COALESCE($8, default_approver_ids),
+          enabled = COALESCE($9, enabled),
+          payload = payload || $10,
           updated_at = now(),
           version = version + 1
          WHERE id = $1",
     )
     .bind(id)
     .bind(payload.get("name").and_then(Value::as_str))
+    .bind(payload.get("code").and_then(Value::as_str))
     .bind(payload.get("org_type").and_then(Value::as_str))
     .bind(if payload.get("leader_ids").is_some() {
         Some(value_uuid_vec(&payload, "leader_ids"))
@@ -135,9 +145,13 @@ async fn update_org(
     } else {
         None
     })
+    .bind(payload.get("enabled").and_then(Value::as_bool))
     .bind(payload.clone())
     .execute(&state.db)
     .await?;
+    if payload.get("code").is_some() {
+        refresh_org_subtree_path(&state.db, id).await?;
+    }
     audit(
         &state.db,
         user.person_id,
@@ -193,14 +207,24 @@ async fn list_users(
     let rows = sqlx::query(
         "SELECT jsonb_build_object(
           'id', p.id, 'name', p.name, 'employee_no', p.employee_no, 'account_id', p.account_id,
-          'primary_org_id', p.primary_org_id, 'work_status', p.work_status, 'daily_standard_hours', p.daily_standard_hours,
+          'primary_org_id', p.primary_org_id, 'primary_org_name', primary_org.name,
+          'org_memberships', COALESCE(memberships.items, '[]'::jsonb),
+          'management_level', p.management_level, 'professional_level', p.professional_level,
+          'work_status', p.work_status, 'daily_standard_hours', p.daily_standard_hours,
           'dispatch_enabled', p.dispatch_enabled, 'account_status', p.account_status, 'system_role_ids', p.system_role_ids,
           'payload', p.payload
         ) AS item,
           count(*) OVER() AS total
          FROM persons p
+         LEFT JOIN organizations primary_org ON primary_org.id = p.primary_org_id
+         LEFT JOIN LATERAL (
+           SELECT jsonb_agg(jsonb_build_object('org_id', pom.org_id, 'org_name', o.name, 'membership_type', pom.membership_type, 'active', pom.active) ORDER BY o.path, o.name) AS items
+           FROM person_org_memberships pom
+           JOIN organizations o ON o.id = pom.org_id
+           WHERE pom.person_id = p.id AND pom.active AND o.deleted_at IS NULL
+         ) memberships ON true
          WHERE p.deleted_at IS NULL
-           AND ($1::text IS NULL OR p.name ILIKE '%' || $1 || '%' OR p.employee_no ILIKE '%' || $1 || '%')
+           AND ($1::text IS NULL OR concat_ws(' ', p.name, p.employee_no, p.work_status, p.account_status, primary_org.name, p.payload->>'role_name', p.payload->>'email') ILIKE '%' || $1 || '%')
            AND ($2::text IS NULL OR p.work_status = $2)
            AND ($3::uuid IS NULL OR p.primary_org_id = $3 OR EXISTS (
              SELECT 1 FROM person_org_memberships pom WHERE pom.person_id = p.id AND pom.org_id = $3 AND pom.active
@@ -287,6 +311,7 @@ async fn create_user(
         .bind(primary_org_id)
         .execute(&state.db)
         .await?;
+    sync_person_org_memberships(&state.db, id, &payload).await?;
     emit_event(
         &state.db,
         "person.created",
@@ -348,6 +373,7 @@ async fn update_user(
     .bind(payload.clone())
     .execute(&state.db)
     .await?;
+    sync_person_org_memberships(&state.db, id, &payload).await?;
     audit(
         &state.db,
         user.person_id,

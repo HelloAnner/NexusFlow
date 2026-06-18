@@ -138,17 +138,18 @@ export function Tag({ children, variant = 'success', className }: TagProps) {
 // ---------- Avatar ----------
 export interface AvatarProps {
   name?: string
+  src?: string | null
   className?: string
 }
-export function Avatar({ name = '张', className }: AvatarProps) {
+export function Avatar({ name = '张', src, className }: AvatarProps) {
   return (
     <div
       className={cn(
-        'flex h-7 w-7 items-center justify-center rounded-full bg-bg-tertiary text-xs font-semibold text-text-secondary',
+        'flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-bg-tertiary text-xs font-semibold text-text-secondary',
         className
       )}
     >
-      {name.charAt(0)}
+      {src ? <img src={src} alt={name} className="h-full w-full object-cover" /> : name.charAt(0)}
     </div>
   )
 }
@@ -394,26 +395,50 @@ export function MetricMini({ label, value, className }: MetricMiniProps) {
 }
 
 // ---------- Table helpers ----------
-export interface TableProps {
+export interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
   children: React.ReactNode
   className?: string
   style?: React.CSSProperties
 }
-export function Table({ children, className, style }: TableProps) {
-  return <table className={cn('w-full border-collapse text-sm', className)} style={style}>{children}</table>
+export function Table({ children, className, style, ...props }: TableProps) {
+  return <table className={cn('w-full border-collapse text-sm', className)} style={style} {...props}>{children}</table>
 }
 export function Thead({ children, className, style }: TableProps) {
   return <thead className={cn('bg-bg-tertiary text-text-muted', className)} style={style}>{children}</thead>
 }
-export function Tbody({ children, className, style }: TableProps) {
-  return <tbody className={cn('divide-y divide-border-subtle', className)} style={style}>{children}</tbody>
+
+interface TbodyProps extends React.HTMLAttributes<HTMLTableSectionElement> {
+  children: React.ReactNode
+  className?: string
+  style?: React.CSSProperties
 }
-export function Tr({ children, className, style }: TableProps) {
-  return <tr className={cn('hover:bg-hover-bg transition-fast', className)} style={style}>{children}</tr>
+export function Tbody({ children, className, style, ...props }: TbodyProps) {
+  return <tbody className={cn('divide-y divide-border-subtle', className)} style={style} {...props}>{children}</tbody>
 }
-export function Th({ children, className, style }: TableProps) {
-  return <th className={cn('px-4 py-3 text-left font-medium', className)} style={style}>{children}</th>
+
+interface TrProps extends React.HTMLAttributes<HTMLTableRowElement> {
+  children: React.ReactNode
+  className?: string
+  style?: React.CSSProperties
 }
-export function Td({ children, className, style }: TableProps) {
-  return <td className={cn('px-4 py-3 text-text-secondary', className)} style={style}>{children}</td>
+export function Tr({ children, className, style, ...props }: TrProps) {
+  return <tr className={cn('hover:bg-hover-bg transition-fast', className)} style={style} {...props}>{children}</tr>
+}
+
+interface ThProps extends React.ThHTMLAttributes<HTMLTableCellElement> {
+  children: React.ReactNode
+  className?: string
+  style?: React.CSSProperties
+}
+export function Th({ children, className, style, ...props }: ThProps) {
+  return <th className={cn('px-4 py-3 text-left font-medium', className)} style={style} {...props}>{children}</th>
+}
+
+interface TdProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
+  children: React.ReactNode
+  className?: string
+  style?: React.CSSProperties
+}
+export function Td({ children, className, style, ...props }: TdProps) {
+  return <td className={cn('px-4 py-3 text-text-secondary', className)} style={style} {...props}>{children}</td>
 }

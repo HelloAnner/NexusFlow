@@ -56,6 +56,15 @@ export interface ApiPerson {
   employee_no?: string | null
   account_id?: string | null
   primary_org_id?: string | null
+  primary_org_name?: string | null
+  org_memberships?: {
+    org_id: string
+    org_name?: string | null
+    membership_type?: string
+    active?: boolean
+  }[]
+  management_level?: string | null
+  professional_level?: string | null
   work_status?: string
   account_status?: string
   daily_standard_hours?: number | string

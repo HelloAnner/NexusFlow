@@ -5,12 +5,27 @@ async fn list_tasks(
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
     let rows = sqlx::query(
-        "SELECT to_jsonb(t.*) AS item,
+        "SELECT (
+          to_jsonb(t.*)
+          || jsonb_build_object(
+            'payload',
+            t.payload || jsonb_build_object(
+              'owner_name', owner.name,
+              'project_name', p.name,
+              'owner_org_name', org.name
+            )
+          )
+        ) AS item,
           count(*) OVER() AS total
          FROM tasks t
          LEFT JOIN projects p ON p.id = t.project_id
+         LEFT JOIN persons owner ON owner.id = t.owner_id
+         LEFT JOIN organizations org ON org.id = t.owner_org_id
          WHERE t.deleted_at IS NULL
-           AND ($1::text IS NULL OR t.name ILIKE '%' || $1 || '%' OR t.task_no ILIKE '%' || $1 || '%')
+           AND (
+             $1::text IS NULL
+             OR concat_ws(' ', t.name, t.task_no, t.summary, t.deliverable_requirement, t.status, t.sub_type, owner.name, p.name, org.name) ILIKE '%' || $1 || '%'
+           )
            AND ($2::text IS NULL OR t.status = $2)
            AND ($8::text IS NULL OR t.sub_type = $8)
            AND ($9::text IS NULL OR t.priority = $9)

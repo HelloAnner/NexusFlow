@@ -14,12 +14,27 @@ async fn gantt(
         .map(|v| v.with_timezone(&Utc));
     let rows = sqlx::query(
         "SELECT jsonb_build_object(
-          'id', t.id, 'type', 'task', 'title', CASE WHEN p.visibility = 'hidden' AND NOT $3::bool THEN '[隐藏任务]' ELSE t.name END,
-          'start', t.start_at, 'end', t.due_at, 'progress', t.progress::float8, 'status', t.status,
+          'id', t.id,
+          'type', 'task',
+          'title', CASE WHEN pr.visibility = 'hidden' AND NOT $3::bool THEN '[隐藏任务]' ELSE t.name END,
+          'start', t.start_at,
+          'end', t.due_at,
+          'progress', t.progress::float8,
+          'status', t.status,
           'risk_level', COALESCE((SELECT max(risk_level) FROM conflict_records c WHERE c.task_id = t.id AND c.status = 'open'), 'none'),
-          'target_url', '/tasks/' || t.id::text, 'readonly', t.status = 'archived'
+          'target_url', '/tasks/' || t.id::text,
+          'readonly', t.status = 'archived',
+          'owner_id', t.owner_id,
+          'owner_name', owner.name,
+          'owner_org_id', t.owner_org_id,
+          'owner_org_name', org.name,
+          'project_id', t.project_id,
+          'project_name', pr.name
         ) AS item
-         FROM tasks t LEFT JOIN projects p ON p.id = t.project_id
+         FROM tasks t
+         LEFT JOIN projects pr ON pr.id = t.project_id
+         LEFT JOIN persons owner ON owner.id = t.owner_id
+         LEFT JOIN organizations org ON org.id = t.owner_org_id
          WHERE t.deleted_at IS NULL
            AND ($1::timestamptz IS NULL OR t.due_at >= $1)
            AND ($2::timestamptz IS NULL OR t.start_at <= $2)

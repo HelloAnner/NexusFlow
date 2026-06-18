@@ -14,13 +14,16 @@ import {
   Plus,
   Bell,
   ListTodo,
+  Camera,
+  LogOut,
+  X,
 } from 'lucide-react'
 import { NavItem, SearchInput, Button, Avatar } from '@/components/ui'
 import { apiGet } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { useBranding } from '@/lib/branding'
 import { useApiData } from '@/lib/useApiData'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
@@ -116,12 +119,50 @@ export interface TopHeaderProps {
 export function TopHeader({ title, subtitle, className }: TopHeaderProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [q, setQ] = useState('')
-  const canCreateTask = user?.role_codes.includes('sa') || user?.actions.includes('task.create')
+  const profileKey = `nexusflow.profile.${user?.account_id ?? 'anonymous'}`
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [displayName, setDisplayName] = useState(() => localStorage.getItem(`${profileKey}.name`) || user?.login_name || '用户')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => localStorage.getItem(`${profileKey}.avatar`))
+  const [profileMessage, setProfileMessage] = useState<string | null>(null)
+  const avatarInputRef = useRef<HTMLInputElement | null>(null)
+  const isSa = user?.role_codes.includes('sa')
+  const headerAction =
+    location.pathname.startsWith('/tasks') && location.pathname !== '/tasks/new' && (isSa || user?.actions.includes('task.create'))
+      ? { to: '/tasks/new', label: '新建任务' }
+      : location.pathname.startsWith('/projects') && (isSa || user?.actions.includes('project.create'))
+        ? { to: '/projects?create=1', label: '新建项目' }
+        : null
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (q.trim()) navigate(`/search?q=${encodeURIComponent(q.trim())}`)
+  }
+
+  function saveProfile() {
+    const nextName = displayName.trim() || user?.login_name || '用户'
+    localStorage.setItem(`${profileKey}.name`, nextName)
+    setDisplayName(nextName)
+    setProfileMessage('个人信息已保存')
+  }
+
+  function handleAvatarFile(file: File) {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const nextUrl = typeof reader.result === 'string' ? reader.result : null
+      if (!nextUrl) return
+      localStorage.setItem(`${profileKey}.avatar`, nextUrl)
+      setAvatarUrl(nextUrl)
+      setProfileMessage('头像已更新')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function clearAvatar() {
+    localStorage.removeItem(`${profileKey}.avatar`)
+    setAvatarUrl(null)
+    setProfileMessage('头像已移除')
   }
 
   return (
@@ -139,23 +180,105 @@ export function TopHeader({ title, subtitle, className }: TopHeaderProps) {
             onChange={(event) => setQ(event.target.value)}
           />
         </form>
-        {canCreateTask && (
-          <Link to="/tasks/new">
+        {headerAction && (
+          <Link to={headerAction.to}>
             <Button className="h-10 px-4">
               <Plus className="h-4 w-4" />
-              新建任务
+              {headerAction.label}
             </Button>
           </Link>
         )}
         <button
           className="rounded-md px-2 py-1 transition-fast hover:bg-hover-bg"
-          onClick={() => void logout()}
-          title="退出登录"
+          onClick={() => setProfileOpen(true)}
+          title="个人信息"
         >
-          <Avatar name={user?.login_name ?? '用户'} className="h-9 w-9" />
+          <Avatar name={displayName} src={avatarUrl} className="h-9 w-9" />
         </button>
       </div>
+
+      {profileOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 px-6 py-5">
+          <div className="w-[420px] rounded-lg border border-border-subtle bg-bg-primary p-5 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-text-primary">个人信息</h2>
+                <p className="mt-1 text-sm text-text-muted">{user?.account_status ?? 'enabled'}</p>
+              </div>
+              <button
+                type="button"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary"
+                aria-label="关闭个人信息"
+                onClick={() => setProfileOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4 border-b border-border-subtle pb-5">
+              <Avatar name={displayName} src={avatarUrl} className="h-16 w-16 text-xl" />
+              <div className="flex flex-wrap gap-2">
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    if (file) handleAvatarFile(file)
+                  }}
+                />
+                <Button variant="secondary" className="h-9 px-3 py-0 text-sm" onClick={() => avatarInputRef.current?.click()}>
+                  <Camera className="h-4 w-4" />
+                  更换头像
+                </Button>
+                {avatarUrl && (
+                  <Button variant="ghost" className="h-9 px-3 py-0 text-sm" onClick={clearAvatar}>
+                    移除
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-4">
+              <label className="flex flex-col gap-2 text-sm font-medium text-text-muted">
+                显示名称
+                <input
+                  className="w-full rounded-md border border-border-subtle bg-bg-secondary px-4 py-2.5 text-base text-text-primary focus:border-text-muted focus:outline-none"
+                  value={displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <ProfileField label="账号" value={user?.login_name ?? '未设置'} />
+                <ProfileField label="人员 ID" value={user?.person_id ?? '未绑定'} />
+                <ProfileField label="账号 ID" value={user?.account_id ?? '未知'} />
+                <ProfileField label="角色" value={user?.role_codes.join('、') || '未分配'} />
+              </div>
+              {profileMessage && <div className="rounded-md bg-color-success-bg px-3 py-2 text-sm text-color-success">{profileMessage}</div>}
+              <div className="flex items-center justify-between border-t border-border-subtle pt-4">
+                <Button variant="secondary" className="h-10 px-4" onClick={saveProfile}>
+                  保存
+                </Button>
+                <Button variant="danger" className="h-10 px-4" onClick={() => void logout()}>
+                  <LogOut className="h-4 w-4" />
+                  退出登录
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
+  )
+}
+
+function ProfileField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-md bg-bg-tertiary p-3">
+      <div className="text-xs text-text-muted">{label}</div>
+      <div className="mt-1 truncate text-sm font-medium text-text-primary">{value}</div>
+    </div>
   )
 }
 

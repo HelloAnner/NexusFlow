@@ -28,6 +28,8 @@ include!("app/routes.rs");
 include!("shared/runtime.rs");
 include!("domains/auth.rs");
 include!("domains/organization_personnel.rs");
+include!("domains/organization_moves.rs");
+include!("domains/person_memberships.rs");
 include!("domains/permission.rs");
 include!("domains/project.rs");
 include!("domains/task_core.rs");

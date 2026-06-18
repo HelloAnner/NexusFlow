@@ -5,6 +5,7 @@ import { type ApiConflict, type ApiList, conflictTypeLabel, formatDate, riskLabe
 import { useApiData } from '@/lib/useApiData'
 import { ChevronDown } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 const filterTabs = [
   { value: 'all', label: '全部' },
@@ -32,12 +33,15 @@ function statusVariant(status?: string) {
 
 export function ConflictCenterPage() {
   const [activeTab, setActiveTab] = useState('all')
+  const [params, setParams] = useSearchParams()
   const [acting, setActing] = useState<string | null>(null)
   const { data, loading, error, reload } = useApiData(
     () => apiGet<ApiList<ApiConflict>>('/conflicts', { status: activeTab === 'all' ? undefined : activeTab, page_size: 100 }),
     [activeTab]
   )
   const conflicts = useMemo(() => data?.items ?? [], [data?.items])
+  const selectedConflictId = params.get('conflict')
+  const activeConflict = conflicts.find((conflict) => conflict.id === selectedConflictId) ?? conflicts[0]
   const stats = useMemo(() => {
     return {
       total: conflicts.length,
@@ -67,6 +71,12 @@ export function ConflictCenterPage() {
     }
   }
 
+  function selectConflict(id: string) {
+    const next = new URLSearchParams(params)
+    next.set('conflict', id)
+    setParams(next)
+  }
+
   return (
     <MainLayout title="冲突中心" subtitle="负载、时间与资源冲突处理">
       <div className="flex flex-col gap-6">
@@ -89,7 +99,18 @@ export function ConflictCenterPage() {
         <div className="grid grid-cols-[1fr_340px] gap-6">
           <div className="flex flex-col gap-4">
             {conflicts.map((conflict) => (
-              <div key={conflict.id} className="flex flex-col gap-4 rounded-lg border border-border-subtle bg-bg-secondary p-5">
+              <div
+                key={conflict.id}
+                role="button"
+                tabIndex={0}
+                className={`flex flex-col gap-4 rounded-lg border border-border-subtle bg-bg-secondary p-5 text-left transition-fast ${
+                  activeConflict?.id === conflict.id ? 'ring-2 ring-primary-fill' : 'hover:bg-hover-bg'
+                }`}
+                onClick={() => selectConflict(conflict.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') selectConflict(conflict.id)
+                }}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Badge>{conflictTypeLabel(conflict.conflict_type)}</Badge>
@@ -112,10 +133,26 @@ export function ConflictCenterPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button variant="primary" className="h-8 px-4 text-sm" disabled={acting === conflict.id} onClick={() => void resolve(conflict.id)}>
+                  <Button
+                    variant="primary"
+                    className="h-8 px-4 text-sm"
+                    disabled={acting === conflict.id}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      void resolve(conflict.id)
+                    }}
+                  >
                     处理
                   </Button>
-                  <Button variant="danger" className="h-8 px-4 text-sm" disabled={acting === conflict.id} onClick={() => void force(conflict.id)}>
+                  <Button
+                    variant="danger"
+                    className="h-8 px-4 text-sm"
+                    disabled={acting === conflict.id}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      void force(conflict.id)
+                    }}
+                  >
                     强制排期
                   </Button>
                 </div>
@@ -124,12 +161,38 @@ export function ConflictCenterPage() {
             {!loading && conflicts.length === 0 && <EmptyState title="暂无冲突" desc="当前筛选下没有冲突记录。" />}
           </div>
 
-          <Panel className="gap-5">
+          <Panel className="gap-5" title="风险详情" right={activeConflict && <Tag variant={statusVariant(activeConflict.status)}>{statusLabel(activeConflict.status)}</Tag>}>
             <div className="grid grid-cols-3 gap-2 rounded-lg bg-bg-tertiary p-4">
               <Mini label="全部" value={stats.total} />
               <Mini label="高风险" value={stats.high} />
               <Mini label="待处理" value={stats.open} />
             </div>
+            {activeConflict && (
+              <div className="flex flex-col gap-3 rounded-md border border-border-subtle p-4">
+                <div className="flex items-center gap-2">
+                  <Badge>{conflictTypeLabel(activeConflict.conflict_type)}</Badge>
+                  <Tag variant={riskVariant(activeConflict.risk_level)}>{riskLabel(activeConflict.risk_level)}</Tag>
+                </div>
+                <div>
+                  <div className="text-base font-semibold text-text-primary">{activeConflict.task_id ?? '冲突记录'}</div>
+                  <div className="mt-1 text-sm text-text-muted">
+                    {formatDate(activeConflict.conflict_date_start)} - {formatDate(activeConflict.conflict_date_end)}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <MiniInfo label="人员" value={activeConflict.person_id ?? '未关联'} />
+                  <MiniInfo label="超载" value={activeConflict.overload_hours ? `${activeConflict.overload_hours}h` : '无'} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="primary" className="h-9 px-4 text-sm" disabled={acting === activeConflict.id} onClick={() => void resolve(activeConflict.id)}>
+                    处理
+                  </Button>
+                  <Button variant="danger" className="h-9 px-4 text-sm" disabled={acting === activeConflict.id} onClick={() => void force(activeConflict.id)}>
+                    强制排期
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="flex flex-col gap-3">
               <h4 className="text-sm font-semibold text-text-primary">处理说明</h4>
               <p className="text-sm leading-relaxed text-text-secondary">
@@ -148,6 +211,15 @@ function Mini({ label, value }: { label: string; value: number }) {
     <div className="flex flex-col items-center gap-1">
       <span className="text-xs text-text-muted">{label}</span>
       <span className="text-stat font-bold text-text-primary">{value}</span>
+    </div>
+  )
+}
+
+function MiniInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-bg-tertiary p-3">
+      <div className="text-xs text-text-muted">{label}</div>
+      <div className="mt-1 truncate text-sm font-medium text-text-primary">{value}</div>
     </div>
   )
 }

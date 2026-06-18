@@ -15,7 +15,7 @@ import {
   textFromPayload,
 } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
-import { ChevronRight, Download, Link as LinkIcon, Pencil, Upload } from 'lucide-react'
+import { ChevronRight, Download, Link as LinkIcon, Pencil, Upload, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
@@ -146,8 +146,15 @@ function formatSize(value: unknown) {
   return `${Math.ceil(bytes / 1024)} KB`
 }
 
-export function TaskDetailPage() {
-  const { id = '' } = useParams()
+export function TaskDetailContent({
+  id,
+  compact = false,
+  onClose,
+}: {
+  id: string
+  compact?: boolean
+  onClose?: () => void
+}) {
   const [activeTab, setActiveTab] = useState('overview')
   const [acting, setActing] = useState<string | null>(null)
   const [resourceMessage, setResourceMessage] = useState<string | null>(null)
@@ -235,8 +242,7 @@ export function TaskDetailPage() {
   }
 
   return (
-    <MainLayout title="任务详情" subtitle={task?.name ?? '加载中'}>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 pb-6">
         {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
 
         <div className="flex items-center justify-between">
@@ -246,6 +252,11 @@ export function TaskDetailPage() {
             <span className="text-text-primary">{task?.name ?? '任务详情'}</span>
           </div>
           <div className="flex items-center gap-3">
+            {compact && onClose && (
+              <Button variant="ghost" className="h-9 w-9 px-0" aria-label="关闭任务详情" onClick={onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
             <Button variant="secondary" className="h-9 px-4">
               <Pencil className="h-4 w-4" />
               编辑
@@ -270,7 +281,7 @@ export function TaskDetailPage() {
         {!task && !loading ? (
           <EmptyState title="未找到任务" desc="当前任务不存在或没有访问权限。" />
         ) : (
-          <div className="grid grid-cols-[1fr_360px] gap-6">
+          <div className={compact ? 'grid grid-cols-[minmax(0,1fr)_320px] gap-5' : 'grid grid-cols-[1fr_360px] gap-6'}>
             <div className="flex flex-col gap-6">
               <div className="flex flex-col gap-4 rounded-lg border border-border-subtle bg-bg-secondary p-5">
                 <div className="flex items-start justify-between gap-4">
@@ -482,6 +493,15 @@ export function TaskDetailPage() {
           </div>
         )}
       </div>
+  )
+}
+
+export function TaskDetailPage() {
+  const { id = '' } = useParams()
+
+  return (
+    <MainLayout title="任务详情" subtitle="任务细节、分工、资料与审批">
+      <TaskDetailContent id={id} />
     </MainLayout>
   )
 }

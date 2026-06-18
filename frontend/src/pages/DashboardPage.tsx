@@ -82,7 +82,7 @@ export function DashboardPage() {
                 {taskItems.map((task) => (
                   <Link
                     key={task.id}
-                    to={`/tasks/${task.id}`}
+                    to={`/tasks?task=${encodeURIComponent(task.id)}`}
                     className="-mx-5 flex items-center justify-between border-b border-border-subtle px-5 py-4 transition-fast last:border-b-0 hover:bg-hover-bg"
                   >
                     <div className="flex flex-col gap-1">
@@ -112,7 +112,7 @@ export function DashboardPage() {
                   {todoItems.map((todo) => (
                     <Link
                       key={todo.id}
-                      to={todo.action_url || '/tasks'}
+                      to={`/todos?todo=${encodeURIComponent(todo.id)}`}
                       className="flex items-center justify-between border-b border-border-subtle py-3 transition-fast last:border-b-0 hover:bg-hover-bg"
                     >
                       <span className="text-base text-text-primary">{todo.title}</span>
@@ -131,7 +131,7 @@ export function DashboardPage() {
                   {conflictItems.map((conflict) => (
                     <Link
                       key={conflict.id}
-                      to="/conflicts"
+                      to={`/conflicts?conflict=${encodeURIComponent(conflict.id)}`}
                       className="flex items-center justify-between border-b border-border-subtle py-4 transition-fast last:border-b-0 hover:bg-hover-bg"
                     >
                       <div className="flex flex-col gap-1">

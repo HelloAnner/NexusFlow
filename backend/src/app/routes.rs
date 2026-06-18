@@ -8,6 +8,7 @@ fn api_routes() -> Router<Arc<AppState>> {
         .route("/orgs", get(list_orgs).post(create_org))
         .route("/orgs/{id}", patch(update_org))
         .route("/orgs/{id}/disable", post(disable_org))
+        .route("/orgs/{id}/move", post(move_org))
         .route("/users", get(list_users).post(create_user))
         .route("/users/{id}", get(get_user).patch(update_user))
         .route("/users/{id}/disable", post(disable_user))
