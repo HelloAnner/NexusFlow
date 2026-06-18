@@ -18,6 +18,7 @@ import {
 import { NavItem, SearchInput, Button, Avatar } from '@/components/ui'
 import { apiGet } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
+import { useBranding } from '@/lib/branding'
 import { useApiData } from '@/lib/useApiData'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
@@ -64,6 +65,7 @@ function canAccess(
 export function Sidebar({ className }: { className?: string }) {
   const location = useLocation()
   const { user } = useAuth()
+  const { branding } = useBranding()
   const { data } = useApiData<PermissionResponse>(() => apiGet('/permissions/me'), [])
   const permissions = data ?? {
     roles: user?.role_codes ?? [],
@@ -80,11 +82,11 @@ export function Sidebar({ className }: { className?: string }) {
         className
       )}
     >
-      <Link to="/" className="mb-6 flex items-center gap-3 px-3">
+      <Link to="/" className="mb-6 flex min-w-0 items-center gap-3 px-3">
         <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-fill text-primary-text">
-          <span className="text-sm font-bold">N</span>
+          <span className="text-sm font-bold">{branding.product_name.charAt(0)}</span>
         </span>
-        <span className="text-lg font-bold text-text-primary">NexusFlow</span>
+        <span className="min-w-0 truncate text-lg font-bold text-text-primary">{branding.product_name}</span>
       </Link>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">

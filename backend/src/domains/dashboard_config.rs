@@ -84,6 +84,51 @@ async fn dashboard_role_view(
     Ok(Json(json!({ "role": role })))
 }
 
+fn default_branding() -> Value {
+    json!({
+        "product_name": "NexusFlow",
+        "system_name": "NexusFlow"
+    })
+}
+
+fn normalize_branding_payload(payload: &Value) -> Result<Value, ApiError> {
+    let product_name = value_str(payload, "product_name", "NexusFlow")
+        .trim()
+        .to_string();
+    let system_name = value_str(payload, "system_name", product_name.as_str())
+        .trim()
+        .to_string();
+
+    if product_name.is_empty() || system_name.is_empty() {
+        return Err(ApiError::bad_request(
+            "product_name and system_name are required",
+        ));
+    }
+    if product_name.chars().count() > 40 || system_name.chars().count() > 60 {
+        return Err(ApiError::bad_request(
+            "product_name must be <= 40 chars and system_name must be <= 60 chars",
+        ));
+    }
+
+    Ok(json!({
+        "product_name": product_name,
+        "system_name": system_name,
+    }))
+}
+
+async fn system_branding(State(state): State<Arc<AppState>>) -> Result<Json<Value>, ApiError> {
+    let payload = sqlx::query_scalar::<_, Value>(
+        "SELECT payload FROM config_versions
+         WHERE namespace = 'branding' AND status = 'published'
+         ORDER BY version_no DESC LIMIT 1",
+    )
+    .fetch_optional(&state.db)
+    .await?
+    .unwrap_or_else(default_branding);
+
+    Ok(Json(json!({ "branding": normalize_branding_payload(&payload)? })))
+}
+
 async fn recent_activities(
     State(state): State<Arc<AppState>>,
     user: CurrentUser,
@@ -130,6 +175,11 @@ async fn save_config_draft(
     Json(payload): Json<Value>,
 ) -> Result<Json<Value>, ApiError> {
     user.require_action("config.publish")?;
+    let payload = if namespace == "branding" {
+        normalize_branding_payload(&payload)?
+    } else {
+        payload
+    };
     let next_no: i32 = sqlx::query_scalar(
         "SELECT COALESCE(MAX(version_no), 0) + 1 FROM config_versions WHERE namespace = $1",
     )
@@ -156,6 +206,20 @@ async fn publish_config(
 ) -> Result<Json<Value>, ApiError> {
     user.require_action("config.publish")?;
     let id = value_uuid(&payload, "id").ok_or_else(|| ApiError::bad_request("id is required"))?;
+    if namespace == "branding" {
+        let config_payload: Value =
+            sqlx::query_scalar("SELECT payload FROM config_versions WHERE id = $1 AND namespace = $2")
+                .bind(id)
+                .bind(&namespace)
+                .fetch_one(&state.db)
+                .await?;
+        let normalized = normalize_branding_payload(&config_payload)?;
+        sqlx::query("UPDATE config_versions SET payload = $2 WHERE id = $1")
+            .bind(id)
+            .bind(normalized)
+            .execute(&state.db)
+            .await?;
+    }
     sqlx::query("UPDATE config_versions SET status = 'disabled' WHERE namespace = $1 AND status = 'published'")
         .bind(&namespace)
         .execute(&state.db)

@@ -1,6 +1,7 @@
 import { AuthLayout } from '@/components/layout'
 import { Button, EmptyState, Input, Tag } from '@/components/ui'
 import { apiGet, apiPost } from '@/lib/api'
+import { useBranding } from '@/lib/branding'
 import { formatDateTime } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
 import { CheckCircle2, ShieldAlert } from 'lucide-react'
@@ -48,6 +49,7 @@ function templateText(template: InvitationTemplate | undefined, key: string, fal
 export function RegisterInvitationPage() {
   const { token = '' } = useParams()
   const navigate = useNavigate()
+  const { branding } = useBranding()
   const [manualToken, setManualToken] = useState('')
   const { data, loading, error } = useApiData(() => token ? loadInvitation(token) : Promise.resolve(null), [token])
   const [name, setName] = useState('')
@@ -92,8 +94,8 @@ export function RegisterInvitationPage() {
         <div className="flex min-h-screen w-full items-center justify-center p-8">
           <form onSubmit={handleTokenSubmit} className="flex w-full max-w-[520px] flex-col gap-6 rounded-lg border border-border-subtle bg-bg-secondary p-8">
             <div className="flex items-center gap-3">
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-fill text-sm font-bold text-primary-text">N</span>
-              <span className="text-xl font-bold text-text-primary">NexusFlow 邀请注册</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-fill text-sm font-bold text-primary-text">{branding.system_name.charAt(0)}</span>
+              <span className="min-w-0 truncate text-xl font-bold text-text-primary">{branding.system_name} 邀请注册</span>
             </div>
             <Input label="邀请链接或 token" value={manualToken} onChange={(event) => setManualToken(event.target.value)} placeholder="粘贴完整邀请链接或 token" required />
             <div className="flex items-center gap-3">
@@ -141,8 +143,8 @@ export function RegisterInvitationPage() {
           <div className="flex flex-col justify-between bg-bg-tertiary p-8">
             <div className="flex flex-col gap-6">
               <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-fill text-sm font-bold text-primary-text">N</span>
-                <span className="text-xl font-bold text-text-primary">NexusFlow</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-fill text-sm font-bold text-primary-text">{branding.system_name.charAt(0)}</span>
+                <span className="min-w-0 truncate text-xl font-bold text-text-primary">{branding.system_name}</span>
               </div>
               <div className="flex flex-col gap-3">
                 <h1 className="text-2xl font-semibold text-text-primary">邀请注册</h1>

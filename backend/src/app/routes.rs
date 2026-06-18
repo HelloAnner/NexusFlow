@@ -3,6 +3,7 @@ fn api_routes() -> Router<Arc<AppState>> {
         .route("/auth/login", post(login))
         .route("/auth/logout", post(logout))
         .route("/auth/me", get(auth_me))
+        .route("/system/branding", get(system_branding))
         .route("/orgs/tree", get(org_tree))
         .route("/orgs", get(list_orgs).post(create_org))
         .route("/orgs/{id}", patch(update_org))

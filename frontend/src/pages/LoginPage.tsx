@@ -2,6 +2,7 @@ import { AuthLayout } from '@/components/layout'
 import { Button, Input } from '@/components/ui'
 import { apiGet } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
+import { useBranding } from '@/lib/branding'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
@@ -28,6 +29,7 @@ async function loadDefaultHome() {
 
 export function LoginPage() {
   const { user, login } = useAuth()
+  const { branding } = useBranding()
   const navigate = useNavigate()
   const [loginName, setLoginName] = useState('Anner')
   const [password, setPassword] = useState('1')
@@ -55,9 +57,9 @@ export function LoginPage() {
       <div className="flex w-[560px] flex-col justify-center gap-10 bg-bg-secondary p-10">
         <div className="flex items-center gap-3">
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-fill text-primary-text">
-            <span className="text-sm font-bold">N</span>
+            <span className="text-sm font-bold">{branding.system_name.charAt(0)}</span>
           </span>
-          <span className="text-2xl font-bold text-text-primary">NexusFlow</span>
+          <span className="min-w-0 truncate text-2xl font-bold text-text-primary">{branding.system_name}</span>
         </div>
         <div className="flex flex-col gap-5">
           <h1 className="text-[32px] font-bold leading-tight text-text-primary">统一工作协同平台</h1>

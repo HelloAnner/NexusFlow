@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/lib/auth'
+import { BrandingProvider } from '@/lib/branding'
 import { LoginPage } from '@/pages/LoginPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { TaskListPage } from '@/pages/TaskListPage'
@@ -46,37 +47,39 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register/invitation" element={<RegisterInvitationPage />} />
-          <Route path="/register/invitation/:token" element={<RegisterInvitationPage />} />
-          <Route path="/pending-review" element={<ProtectedRoute><PendingReviewPage /></ProtectedRoute>} />
-          <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-          <Route path="/tasks" element={<ProtectedRoute><TaskListPage /></ProtectedRoute>} />
-          <Route path="/tasks/new" element={<ProtectedRoute><NewTaskPage /></ProtectedRoute>} />
-          <Route path="/tasks/:id" element={<ProtectedRoute><TaskDetailPage /></ProtectedRoute>} />
-          <Route path="/projects" element={<ProtectedRoute><ProjectListPage /></ProtectedRoute>} />
-          <Route path="/orgs" element={<ProtectedRoute><OrganizationManagementPage /></ProtectedRoute>} />
-          <Route path="/people" element={<ProtectedRoute><PeopleListPage /></ProtectedRoute>} />
-          <Route path="/gantt" element={<ProtectedRoute><GanttChartPage /></ProtectedRoute>} />
-          <Route path="/conflicts" element={<ProtectedRoute><ConflictCenterPage /></ProtectedRoute>} />
-          <Route path="/approvals" element={<ProtectedRoute><ApprovalListPage /></ProtectedRoute>} />
-          <Route path="/approvals/:id" element={<ProtectedRoute><ApprovalDetailPage /></ProtectedRoute>} />
-          <Route path="/todos" element={<ProtectedRoute><TodoCenterPage /></ProtectedRoute>} />
-          <Route path="/notifications" element={<ProtectedRoute><NotificationCenterPage /></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute><ReportCenterPage /></ProtectedRoute>} />
-          <Route path="/search" element={<ProtectedRoute><SearchResultsPage /></ProtectedRoute>} />
-          <Route path="/config" element={<ProtectedRoute><ConfigCenterPage /></ProtectedRoute>} />
-          <Route path="/tools" element={<ProtectedRoute><ToolCenterPage /></ProtectedRoute>} />
-          <Route path="/tools/:id" element={<ProtectedRoute><ToolDetailPage /></ProtectedRoute>} />
-          <Route path="/resources" element={<ProtectedRoute><ResourceLibraryPage /></ProtectedRoute>} />
-          <Route path="/admin" element={<ProtectedRoute><SAAdminPage /></ProtectedRoute>} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <BrandingProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register/invitation" element={<RegisterInvitationPage />} />
+            <Route path="/register/invitation/:token" element={<RegisterInvitationPage />} />
+            <Route path="/pending-review" element={<ProtectedRoute><PendingReviewPage /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/tasks" element={<ProtectedRoute><TaskListPage /></ProtectedRoute>} />
+            <Route path="/tasks/new" element={<ProtectedRoute><NewTaskPage /></ProtectedRoute>} />
+            <Route path="/tasks/:id" element={<ProtectedRoute><TaskDetailPage /></ProtectedRoute>} />
+            <Route path="/projects" element={<ProtectedRoute><ProjectListPage /></ProtectedRoute>} />
+            <Route path="/orgs" element={<ProtectedRoute><OrganizationManagementPage /></ProtectedRoute>} />
+            <Route path="/people" element={<ProtectedRoute><PeopleListPage /></ProtectedRoute>} />
+            <Route path="/gantt" element={<ProtectedRoute><GanttChartPage /></ProtectedRoute>} />
+            <Route path="/conflicts" element={<ProtectedRoute><ConflictCenterPage /></ProtectedRoute>} />
+            <Route path="/approvals" element={<ProtectedRoute><ApprovalListPage /></ProtectedRoute>} />
+            <Route path="/approvals/:id" element={<ProtectedRoute><ApprovalDetailPage /></ProtectedRoute>} />
+            <Route path="/todos" element={<ProtectedRoute><TodoCenterPage /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationCenterPage /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute><ReportCenterPage /></ProtectedRoute>} />
+            <Route path="/search" element={<ProtectedRoute><SearchResultsPage /></ProtectedRoute>} />
+            <Route path="/config" element={<ProtectedRoute><ConfigCenterPage /></ProtectedRoute>} />
+            <Route path="/tools" element={<ProtectedRoute><ToolCenterPage /></ProtectedRoute>} />
+            <Route path="/tools/:id" element={<ProtectedRoute><ToolDetailPage /></ProtectedRoute>} />
+            <Route path="/resources" element={<ProtectedRoute><ResourceLibraryPage /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><SAAdminPage /></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </BrandingProvider>
   )
 }
 

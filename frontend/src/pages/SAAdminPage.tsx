@@ -2,9 +2,10 @@ import { MainLayout } from '@/components/layout'
 import { Avatar, Badge, Button, EmptyState, Input, NavItem, Panel, Select, StatCard, Table, Tag, Tbody, Td, Th, Thead, Tr } from '@/components/ui'
 import type { TagProps } from '@/components/ui'
 import { apiGet, apiPatch, apiPost } from '@/lib/api'
+import { useBranding } from '@/lib/branding'
 import { type ApiList, type ApiPerson, accountStatusLabel, formatDateTime, workStatusLabel } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
-import { Activity, Building2, FileText, LayoutDashboard, Link as LinkIcon, Mail, Save, ShieldCheck, UserCheck, UserCog, UserPlus, Users } from 'lucide-react'
+import { Activity, Building2, FileText, LayoutDashboard, Link as LinkIcon, Mail, Save, Settings, ShieldCheck, UserCheck, UserCog, UserPlus, Users } from 'lucide-react'
 import { useState } from 'react'
 
 interface AdminDashboard {
@@ -41,6 +42,11 @@ interface RuntimeStatus {
   s3_configured?: boolean
   search_backend?: string
   uptime_seconds?: number
+}
+
+interface BrandingConfig {
+  product_name: string
+  system_name: string
 }
 
 interface AuditLog {
@@ -108,10 +114,12 @@ interface AdminData {
   audits: ApiList<AuditLog>
   roles: ApiList<Role>
   orgs: ApiList<Org>
+  branding: BrandingConfig
 }
 
 const secondaryNav = [
   { id: 'overview', label: '总览' },
+  { id: 'appearance', label: '系统外观' },
   { id: 'pending', label: '待审核注册' },
   { id: 'personnel', label: '人员管理' },
   { id: 'templates', label: '邀请模板' },
@@ -124,6 +132,7 @@ const secondaryNav = [
 
 const navIcons: Record<string, typeof LayoutDashboard> = {
   overview: LayoutDashboard,
+  appearance: Settings,
   pending: UserCheck,
   personnel: Users,
   templates: Mail,
@@ -140,7 +149,7 @@ const accountVariant = (status?: string): TagVariant => status === 'enabled' ? '
 const enabledVariant = (enabled?: boolean): TagVariant => enabled === false ? 'warning' : 'success'
 
 async function loadAdminData() {
-  const [dashboard, registrations, people, accounts, templates, links, runtime, audits, roles, orgs] = await Promise.all([
+  const [dashboard, registrations, people, accounts, templates, links, runtime, audits, roles, orgs, branding] = await Promise.all([
     apiGet<AdminDashboard>('/admin/dashboard'),
     apiGet<ApiList<Registration>>('/admin/registrations'),
     apiGet<ApiList<ApiPerson>>('/users', { page_size: 200 }),
@@ -151,11 +160,13 @@ async function loadAdminData() {
     apiGet<ApiList<AuditLog>>('/audit/permission', { page_size: 100 }),
     apiGet<ApiList<Role>>('/roles', { page_size: 200 }),
     apiGet<ApiList<Org>>('/orgs', { page_size: 200 }),
+    apiGet<{ branding: BrandingConfig }>('/system/branding'),
   ])
-  return { dashboard, registrations, people, accounts, templates, links, runtime, audits, roles, orgs }
+  return { dashboard, registrations, people, accounts, templates, links, runtime, audits, roles, orgs, branding: branding.branding }
 }
 
 export default function SAAdminPage() {
+  const { reloadBranding } = useBranding()
   const [activeNav, setActiveNav] = useState('overview')
   const [acting, setActing] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -192,7 +203,7 @@ export default function SAAdminPage() {
     )
   }
 
-  const context = { data: data ?? undefined, registrations, people, accounts, templates, links, audits, roles, orgs, loading, acting, perform, reviewRegistration, setActiveNav }
+  const context = { data: data ?? undefined, registrations, people, accounts, templates, links, audits, roles, orgs, loading, acting, perform, reviewRegistration, setActiveNav, reloadBranding }
 
   return (
     <MainLayout title="系统管理" subtitle="SA 后台、账号与邀请注册">
@@ -224,6 +235,12 @@ export default function SAAdminPage() {
             </div>
           )}
           {activeNav === 'overview' && <OverviewView {...context} />}
+          {activeNav === 'appearance' && (
+            <SystemAppearanceView
+              key={`${data?.branding.product_name ?? ''}-${data?.branding.system_name ?? ''}`}
+              {...context}
+            />
+          )}
           {activeNav === 'pending' && <PendingView {...context} />}
           {activeNav === 'personnel' && <PersonnelView {...context} />}
           {activeNav === 'templates' && <TemplateView {...context} />}
@@ -253,6 +270,7 @@ type AdminContext = {
   perform: (label: string, action: () => Promise<unknown>) => Promise<void>
   reviewRegistration: (id: string, action: 'approve' | 'reject') => Promise<void>
   setActiveNav: (value: string) => void
+  reloadBranding: () => Promise<void>
 }
 
 function OverviewView({ data, registrations, people, accounts, templates, links, audits, roles, setActiveNav }: AdminContext) {
@@ -325,6 +343,77 @@ function OverviewView({ data, registrations, people, accounts, templates, links,
           </Panel>
         </div>
       </div>
+    </div>
+  )
+}
+
+function SystemAppearanceView({ data, perform, acting, reloadBranding }: AdminContext) {
+  const branding = data?.branding ?? { product_name: 'NexusFlow', system_name: 'NexusFlow' }
+  const [productName, setProductName] = useState(branding.product_name)
+  const [systemName, setSystemName] = useState(branding.system_name)
+
+  return (
+    <div className="grid grid-cols-[420px_1fr] gap-6">
+      <Panel title="系统外观配置">
+        <form className="flex flex-col gap-5" onSubmit={(event) => {
+          event.preventDefault()
+          void perform('发布系统外观配置', async () => {
+            const payload = {
+              product_name: productName.trim(),
+              system_name: systemName.trim(),
+              updated_from: 'sa-admin',
+            }
+            const draft = await apiPost<{ id: string }>('/config/branding/draft', payload)
+            await apiPost('/config/branding/publish', { id: draft.id, reason: 'SA 发布系统外观配置' })
+            await reloadBranding()
+          })
+        }}>
+          <Input
+            label="左侧栏产品名称"
+            maxLength={40}
+            value={productName}
+            onChange={(event) => setProductName(event.target.value)}
+            placeholder="例如 NexusFlow"
+            required
+          />
+          <Input
+            label="系统全局名称"
+            maxLength={60}
+            value={systemName}
+            onChange={(event) => setSystemName(event.target.value)}
+            placeholder="用于浏览器 tab、登录页和邀请注册页"
+            required
+          />
+          <Button disabled={!productName.trim() || !systemName.trim() || acting === '发布系统外观配置'}>
+            <Save className="h-4 w-4" />保存并发布
+          </Button>
+        </form>
+      </Panel>
+      <Panel title="展示预览">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-3 rounded-md border border-border-subtle bg-bg-tertiary p-4">
+            <span className="text-xs font-medium uppercase text-text-muted">左侧栏顶部</span>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-fill text-sm font-bold text-primary-text">
+                {(productName.trim() || 'NexusFlow').charAt(0)}
+              </span>
+              <span className="min-w-0 truncate text-lg font-bold text-text-primary">{productName.trim() || 'NexusFlow'}</span>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 rounded-md border border-border-subtle bg-bg-tertiary p-4">
+            <span className="text-xs font-medium uppercase text-text-muted">浏览器 tab / 登录页</span>
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-fill text-sm font-bold text-primary-text">
+                {(systemName.trim() || productName.trim() || 'NexusFlow').charAt(0)}
+              </span>
+              <span className="min-w-0 truncate text-lg font-bold text-text-primary">
+                {systemName.trim() || productName.trim() || 'NexusFlow'}
+              </span>
+            </div>
+          </div>
+        </div>
+        <p className="text-sm text-text-muted">发布后新打开页面会读取最新配置；当前页面会在保存完成后同步刷新显示。</p>
+      </Panel>
     </div>
   )
 }
