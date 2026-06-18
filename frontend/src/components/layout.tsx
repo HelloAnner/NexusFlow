@@ -17,6 +17,7 @@ import {
   Camera,
   LogOut,
   X,
+  Menu,
 } from 'lucide-react'
 import { NavItem, SearchInput, Button, Avatar } from '@/components/ui'
 import { apiGet } from '@/lib/api'
@@ -115,8 +116,9 @@ export interface TopHeaderProps {
   title: string
   subtitle?: string
   className?: string
+  onMenuClick?: () => void
 }
-export function TopHeader({ title, subtitle, className }: TopHeaderProps) {
+export function TopHeader({ title, subtitle, className, onMenuClick }: TopHeaderProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -166,16 +168,28 @@ export function TopHeader({ title, subtitle, className }: TopHeaderProps) {
   }
 
   return (
-    <header className={cn('flex h-[70px] items-center justify-between px-8 py-4', className)}>
-      <div className="flex flex-col">
+    <header className={cn('flex min-h-[70px] items-center justify-between gap-3 px-4 py-4 lg:px-8', className)}>
+      <div className="flex min-w-0 items-center gap-3">
+        {onMenuClick && (
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary lg:hidden"
+            aria-label="打开导航"
+            onClick={onMenuClick}
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        )}
+        <div className="flex min-w-0 flex-col">
         <h1 className="text-xl font-semibold text-text-primary">{title}</h1>
         {subtitle && <span className="text-sm text-text-muted">{subtitle}</span>}
+        </div>
       </div>
-      <div className="flex items-center gap-4">
-        <form onSubmit={handleSearch}>
+      <div className="flex min-w-0 items-center gap-2 lg:gap-4">
+        <form onSubmit={handleSearch} className="hidden sm:block">
           <SearchInput
             placeholder="搜索任务、项目、人员..."
-            className="w-64"
+            className="w-[min(16rem,34vw)]"
             value={q}
             onChange={(event) => setQ(event.target.value)}
           />
@@ -293,13 +307,21 @@ export function MainLayout({
   children: React.ReactNode
   className?: string
 }) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   return (
     <div className="flex h-screen w-full overflow-hidden bg-bg-primary">
-      <Sidebar />
+      <Sidebar className="hidden lg:flex" />
       <main className="flex flex-1 flex-col overflow-hidden">
-        <TopHeader title={title} subtitle={subtitle} />
-        <div className={cn('flex-1 overflow-auto px-8 pb-8', className)}>{children}</div>
+        <TopHeader title={title} subtitle={subtitle} onMenuClick={() => setMobileNavOpen(true)} />
+        <div className={cn('flex-1 overflow-auto px-4 pb-6 lg:px-8 lg:pb-8', className)}>{children}</div>
       </main>
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-50 bg-black/30 lg:hidden" onClick={() => setMobileNavOpen(false)}>
+          <div className="h-full w-fit" onClick={(event) => event.stopPropagation()}>
+            <Sidebar className="h-full w-[min(280px,86vw)] shadow-2xl" />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

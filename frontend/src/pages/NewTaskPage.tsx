@@ -50,7 +50,39 @@ interface MemberDraft {
 interface DispatchPreview {
   task_id?: string
   requires_approval?: boolean
-  conflicts?: Array<Record<string, unknown>>
+  conflicts?: DispatchConflict[]
+}
+
+interface DispatchConflict {
+  type?: string
+  person_id?: string
+  target_org_id?: string
+  work_status?: string
+  preview?: WorkloadPreview
+}
+
+interface WorkloadPreview {
+  person_id?: string
+  start?: string
+  end?: string
+  days?: WorkloadDay[]
+  conflicts?: WorkloadConflict[]
+}
+
+interface WorkloadDay {
+  date?: string
+  existing_hours?: number
+  new_hours?: number
+  total_hours?: number
+  standard_hours?: number
+  load_rate?: number
+}
+
+interface WorkloadConflict {
+  type?: string
+  date?: string
+  overload_hours?: number
+  risk_level?: string
 }
 
 async function loadOptions() {
@@ -94,6 +126,8 @@ export function NewTaskPage() {
   const [activeStep, setActiveStep] = useState(0)
   const [draftTaskId, setDraftTaskId] = useState<string | null>(null)
   const [preview, setPreview] = useState<DispatchPreview | null>(null)
+  const [workloadPreviews, setWorkloadPreviews] = useState<WorkloadPreview[]>([])
+  const [createdAssignments, setCreatedAssignments] = useState<Record<string, string>>({})
   const [acting, setActing] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [newMemberId, setNewMemberId] = useState('')
@@ -118,6 +152,8 @@ export function NewTaskPage() {
 
   function updateField(field: keyof FormState, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }))
+    setPreview(null)
+    setWorkloadPreviews([])
     if (field === 'start' || field === 'end') {
       setMembers((prev) => prev.map((member) => ({
         ...member,
@@ -129,6 +165,8 @@ export function NewTaskPage() {
 
   function selectOwner(ownerId: string) {
     setForm((prev) => ({ ...prev, ownerId }))
+    setPreview(null)
+    setWorkloadPreviews([])
     if (!ownerId) return
     setMembers((prev) => {
       const withoutPreviousOwner = prev.map((member) => ({
@@ -145,17 +183,33 @@ export function NewTaskPage() {
 
   function addMember() {
     if (!newMemberId) return
+    setPreview(null)
+    setWorkloadPreviews([])
     setMembers((prev) => prev.concat(makeMemberDraft(newMemberId, 'member', form)))
     setNewMemberId('')
   }
 
   function removeMember(personId: string) {
+    setPreview(null)
+    setWorkloadPreviews([])
     setMembers((prev) => prev.filter((member) => member.person_id !== personId))
     if (form.ownerId === personId) setForm((prev) => ({ ...prev, ownerId: '' }))
   }
 
   function updateMember(personId: string, patch: Partial<MemberDraft>) {
+    setPreview(null)
+    setWorkloadPreviews([])
     setMembers((prev) => prev.map((member) => member.person_id === personId ? { ...member, ...patch } : member))
+  }
+
+  function ownerOrgId() {
+    return projects.find((project) => project.id === form.projectId)?.owner_org_id
+      ?? people.find((person) => person.id === form.ownerId)?.primary_org_id
+      ?? undefined
+  }
+
+  function memberEstimatedTotalHours() {
+    return members.reduce((sum, member) => sum + numberOrZero(member.estimated_total_hours), 0)
   }
 
   function taskPayload() {
@@ -163,10 +217,12 @@ export function NewTaskPage() {
       name: form.title,
       sub_type: form.type,
       priority: form.priority,
+      owner_org_id: ownerOrgId(),
       owner_id: form.ownerId || undefined,
       project_id: form.projectId || undefined,
       start_at: toRfc3339(form.start),
       due_at: toRfc3339(form.end),
+      estimated_total_hours: memberEstimatedTotalHours(),
       summary: form.description,
       deliverable_requirement: form.deliverable,
       status: 'draft',
@@ -184,7 +240,43 @@ export function NewTaskPage() {
       payload: {
         owner_name: personName(people, form.ownerId),
         project_name: projects.find((project) => project.id === form.projectId)?.name,
+        owner_org_name: projects.find((project) => project.id === form.projectId)?.payload?.owner_org_name
+          ?? people.find((person) => person.id === form.ownerId)?.primary_org_name,
       },
+    }
+  }
+
+  async function saveAssignments(taskId: string) {
+    const remainingAssignmentKeys = new Set(members.map((member) => member.person_id))
+    setCreatedAssignments((prev) => Object.fromEntries(Object.entries(prev).filter(([key]) => remainingAssignmentKeys.has(key))))
+
+    for (const member of members) {
+      const title = member.work_content.trim() || `${personName(people, member.person_id)}分工`
+      const assignmentPayload = {
+        title,
+        owner_id: member.person_id,
+        collaborator_ids: member.member_role === 'owner'
+          ? members.filter((item) => item.person_id !== member.person_id).map((item) => item.person_id)
+          : [form.ownerId].filter(Boolean),
+        start_date: member.start_date,
+        due_date: member.due_date,
+        estimated_total_hours: numberOrZero(member.estimated_total_hours),
+        daily_commitment_type: 'hours',
+        daily_commitment_hours: numberOrZero(member.daily_commitment_hours),
+        payload: {
+          draft_key: member.person_id,
+          source: 'new_task_wizard',
+          work_content: member.work_content,
+          member_role: member.member_role,
+        },
+      }
+      const assignmentId = createdAssignments[member.person_id]
+      if (assignmentId) {
+        await apiPatch(`/assignments/${assignmentId}`, assignmentPayload)
+      } else {
+        const res = await apiPost<{ id: string }>(`/tasks/${taskId}/assignments`, assignmentPayload)
+        setCreatedAssignments((prev) => ({ ...prev, [member.person_id]: res.id }))
+      }
     }
   }
 
@@ -212,8 +304,18 @@ export function NewTaskPage() {
     setSubmitError(null)
     try {
       const taskId = await saveDraft()
-      const res = await apiPost<DispatchPreview>('/dispatch/preview', { task_id: taskId })
+      const [res, loads] = await Promise.all([
+        apiPost<DispatchPreview>('/dispatch/preview', { task_id: taskId }),
+        Promise.all(members.map((member) => apiPost<WorkloadPreview>('/workload/preview', {
+          person_id: member.person_id,
+          start_date: member.start_date,
+          due_date: member.due_date,
+          daily_commitment_type: 'hours',
+          daily_commitment_hours: numberOrZero(member.daily_commitment_hours),
+        }))),
+      ])
       setPreview(res)
+      setWorkloadPreviews(loads)
       setActiveStep(3)
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : '冲突检查失败')
@@ -227,6 +329,7 @@ export function NewTaskPage() {
     setSubmitError(null)
     try {
       const taskId = await saveDraft()
+      await saveAssignments(taskId)
       await apiPost('/dispatch/submit', { task_id: taskId, reason: preview?.requires_approval ? '向导提交协调' : '向导直接发布' })
       navigate(`/tasks/${taskId}`)
     } catch (err) {
@@ -288,8 +391,8 @@ export function NewTaskPage() {
                   />
                 )}
                 {activeStep === 2 && <DivisionStep people={people} members={members} updateMember={updateMember} removeMember={removeMember} footer={footer} />}
-                {activeStep === 3 && <PreviewStep preview={preview} draftTaskId={draftTaskId} runPreview={runPreview} acting={acting} footer={footer} />}
-                {activeStep === 4 && <ConfirmStep form={form} people={people} projects={projects} members={members} preview={preview} footer={footer} />}
+                {activeStep === 3 && <PreviewStep preview={preview} workloadPreviews={workloadPreviews} people={people} draftTaskId={draftTaskId} runPreview={runPreview} acting={acting} footer={footer} />}
+                {activeStep === 4 && <ConfirmStep form={form} people={people} projects={projects} members={members} preview={preview} workloadPreviews={workloadPreviews} footer={footer} />}
               </>
             )
           })()}
@@ -351,7 +454,7 @@ function StepActions({
         </Button>
       )}
       {activeStep >= 3 && activeStep !== 4 && (
-        <Button type="button" variant="secondary" className="h-9 px-4 text-sm" disabled={acting !== null || !draftTaskId} onClick={() => setActiveStep(4)}>
+        <Button type="button" variant="secondary" className="h-9 px-4 text-sm" disabled={acting !== null || !draftTaskId || !preview} onClick={() => setActiveStep(4)}>
           进入确认发布
         </Button>
       )}
@@ -359,7 +462,7 @@ function StepActions({
         <Save className="h-4 w-4" />保存草稿
       </Button>
       {activeStep === 4 && (
-        <Button type="button" className="h-9 px-4 text-sm" disabled={acting !== null || !draftTaskId} onClick={() => void submitDispatch()}>
+        <Button type="button" className="h-9 px-4 text-sm" disabled={acting !== null || !draftTaskId || !preview} onClick={() => void submitDispatch()}>
           <Send className="h-4 w-4" />{preview?.requires_approval ? '提交协调' : '直接发布'}
         </Button>
       )}
@@ -469,14 +572,31 @@ function DivisionStep({ people, members, updateMember, removeMember, footer }: {
   )
 }
 
-function PreviewStep({ preview, draftTaskId, runPreview, acting, footer }: { preview: DispatchPreview | null; draftTaskId: string | null; runPreview: () => Promise<void>; acting: string | null; footer?: ReactNode }) {
+function PreviewStep({
+  preview,
+  workloadPreviews,
+  people,
+  draftTaskId,
+  runPreview,
+  acting,
+  footer,
+}: {
+  preview: DispatchPreview | null
+  workloadPreviews: WorkloadPreview[]
+  people: ApiPerson[]
+  draftTaskId: string | null
+  runPreview: () => Promise<void>
+  acting: string | null
+  footer?: ReactNode
+}) {
   const conflicts = preview?.conflicts ?? []
+  const workloadConflicts = workloadPreviews.flatMap((item) => item.conflicts ?? [])
   return (
     <Panel title="冲突检查" footer={footer}>
       <div className="grid grid-cols-3 gap-4">
         <Metric label="草稿任务" value={draftTaskId ? '已保存' : '未保存'} ok={Boolean(draftTaskId)} />
         <Metric label="协调审批" value={preview?.requires_approval ? '需要' : '不需要'} ok={!preview?.requires_approval} />
-        <Metric label="风险项" value={`${conflicts.length} 项`} ok={conflicts.length === 0} />
+        <Metric label="风险项" value={`${conflicts.length + workloadConflicts.length} 项`} ok={conflicts.length === 0 && workloadConflicts.length === 0} />
       </div>
       <div className="flex items-center gap-2 rounded-md bg-bg-tertiary px-4 py-3 text-sm text-text-muted">
         {preview?.requires_approval ? <AlertTriangle className="h-4 w-4 text-color-warning" /> : <CheckCircle2 className="h-4 w-4 text-color-success" />}
@@ -485,13 +605,41 @@ function PreviewStep({ preview, draftTaskId, runPreview, acting, footer }: { pre
       {conflicts.length > 0 ? (
         <div className="flex flex-col gap-3">
           {conflicts.map((conflict, index) => (
-            <pre key={index} className="max-h-44 overflow-auto rounded-md border border-border-subtle bg-bg-primary p-3 text-xs leading-relaxed text-text-secondary">
-              {JSON.stringify(conflict, null, 2)}
-            </pre>
+            <ConflictRow key={index} conflict={conflict} people={people} />
           ))}
         </div>
       ) : (
         <EmptyState title="未发现阻断项" desc="仍可返回前序步骤调整人员、时间或投入。" />
+      )}
+      {workloadPreviews.length > 0 && (
+        <Table>
+          <Thead><Tr><Th>成员</Th><Th>周期</Th><Th>峰值负载</Th><Th>负载风险</Th></Tr></Thead>
+          <Tbody>
+            {workloadPreviews.map((item) => {
+              const peak = Math.max(...(item.days ?? []).map((day) => day.load_rate ?? 0), 0)
+              return (
+                <Tr key={item.person_id}>
+                  <Td>{personName(people, item.person_id)}</Td>
+                  <Td>{formatDate(item.start)} - {formatDate(item.end)}</Td>
+                  <Td>{Math.round(peak * 100)}%</Td>
+                  <Td>
+                    {(item.conflicts ?? []).length > 0 ? (
+                      <div className="flex flex-col gap-1">
+                        {(item.conflicts ?? []).slice(0, 3).map((conflict, index) => (
+                          <span key={index} className="text-sm text-color-warning">
+                            {workloadConflictLabel(conflict)}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <Tag variant="success">正常</Tag>
+                    )}
+                  </Td>
+                </Tr>
+              )
+            })}
+          </Tbody>
+        </Table>
       )}
       <Button type="button" variant="secondary" className="h-9 px-3 text-sm" disabled={acting !== null} onClick={() => void runPreview()}>
         重新检查
@@ -500,7 +648,42 @@ function PreviewStep({ preview, draftTaskId, runPreview, acting, footer }: { pre
   )
 }
 
-function ConfirmStep({ form, people, projects, members, preview, footer }: { form: FormState; people: ApiPerson[]; projects: ApiProject[]; members: MemberDraft[]; preview: DispatchPreview | null; footer?: ReactNode }) {
+function ConflictRow({ conflict, people }: { conflict: DispatchConflict; people: ApiPerson[] }) {
+  const name = personName(people, conflict.person_id)
+  if (conflict.type === 'cross_department') {
+    return <RiskBox title="跨部门派发" desc={`${name} 所属组织与任务归属组织不同，发布后会进入协调审批。`} />
+  }
+  if (conflict.type === 'person_unavailable') {
+    return <RiskBox title="人员不可派发" desc={`${name} 当前状态为 ${workStatusLabel(conflict.work_status)}，需要协调后派发。`} />
+  }
+  if (conflict.type === 'workload_conflict') {
+    const count = conflict.preview?.conflicts?.length ?? 0
+    return <RiskBox title="负载冲突" desc={`${name} 在任务周期内有 ${count} 个负载风险日期。`} />
+  }
+  return <RiskBox title="派发风险" desc={`${name} 存在需要协调确认的派发风险。`} />
+}
+
+function RiskBox({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div className="rounded-md border border-color-warning bg-color-warning-bg px-4 py-3">
+      <div className="text-sm font-semibold text-color-warning">{title}</div>
+      <div className="mt-1 text-sm text-text-secondary">{desc}</div>
+    </div>
+  )
+}
+
+function workloadConflictLabel(conflict: WorkloadConflict) {
+  if (conflict.type === 'overload') {
+    return `${formatDate(conflict.date)} 超载 ${Number(conflict.overload_hours ?? 0).toFixed(1)} 小时`
+  }
+  if (conflict.type === 'full_day_overlap') {
+    return `${formatDate(conflict.date)} 全天任务重叠`
+  }
+  return `${formatDate(conflict.date)} 存在负载风险`
+}
+
+function ConfirmStep({ form, people, projects, members, preview, workloadPreviews, footer }: { form: FormState; people: ApiPerson[]; projects: ApiProject[]; members: MemberDraft[]; preview: DispatchPreview | null; workloadPreviews: WorkloadPreview[]; footer?: ReactNode }) {
+  const workloadConflictCount = workloadPreviews.reduce((sum, item) => sum + (item.conflicts?.length ?? 0), 0)
   return (
     <Panel title="确认发布" footer={footer}>
       <div className="grid grid-cols-2 gap-4">
@@ -509,6 +692,8 @@ function ConfirmStep({ form, people, projects, members, preview, footer }: { for
         <InfoBox label="负责人" value={personName(people, form.ownerId)} />
         <InfoBox label="关联项目" value={projects.find((project) => project.id === form.projectId)?.name ?? '未关联'} />
         <InfoBox label="成员数量" value={`${members.length} 人`} />
+        <InfoBox label="预计总工时" value={`${members.reduce((sum, member) => sum + numberOrZero(member.estimated_total_hours), 0)} 小时`} />
+        <InfoBox label="负载风险" value={`${workloadConflictCount} 项`} />
         <InfoBox label="发布动作" value={preview?.requires_approval ? '提交协调' : '直接发布'} />
       </div>
       <div className="rounded-md bg-bg-tertiary px-4 py-3 text-sm text-text-muted">
@@ -552,4 +737,3 @@ function InfoBox({ label, value }: { label: string; value: string }) {
     </div>
   )
 }
-

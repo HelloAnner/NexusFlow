@@ -1,24 +1,26 @@
 import { MainLayout } from '@/components/layout'
-import { Avatar, EmptyState, ProgressBar, SearchInput, Table, Tag, Tbody, Td, Th, Thead, Tr } from '@/components/ui'
+import { Avatar, EmptyState, ProgressBar, SearchInput, Select, Table, Tag, Tbody, Td, Th, Thead, Tr } from '@/components/ui'
 import { apiGet } from '@/lib/api'
 import {
+  type ApiOrg,
   type ApiList,
+  type ApiPerson,
+  type ApiProject,
   type ApiTask,
   formatDate,
   numberValue,
   priorityLabel,
   taskStatusLabel,
   taskStatusVariant,
+  taskTypeLabel,
   textFromPayload,
 } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
-import { ChevronDown, ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { TaskDetailContent } from '@/pages/TaskDetailPage'
-
-const filters = ['状态', '类型', '优先级', '负责人', '所属组织', '时间范围']
 
 const columns = [
   { label: '任务名称', width: 'w-[280px]' },
@@ -33,41 +35,110 @@ const columns = [
 
 const pageSize = 20
 
+const statusOptions = [
+  { value: '', label: '全部状态' },
+  { value: 'draft', label: '草稿' },
+  { value: 'in_progress', label: '进行中' },
+  { value: 'pending_confirm', label: '待确认' },
+  { value: 'confirmation_pending', label: '待确认' },
+  { value: 'pending_acceptance', label: '待验收' },
+  { value: 'acceptance_pending', label: '待验收' },
+  { value: 'paused', label: '已暂停' },
+  { value: 'completed', label: '已完成' },
+]
+
+const typeOptions = [
+  { value: '', label: '全部类型' },
+  { value: 'research', label: '科研任务' },
+  { value: 'report', label: '报告材料' },
+  { value: 'support', label: '协同支持' },
+  { value: 'travel', label: '出差安排' },
+  { value: 'leave', label: '休假占用' },
+  { value: 'backfill', label: '后补填报' },
+  { value: 'other', label: '其他' },
+]
+
+const priorityOptions = [
+  { value: '', label: '全部优先级' },
+  { value: 'urgent', label: '紧急' },
+  { value: 'high', label: '高' },
+  { value: 'normal', label: '中' },
+  { value: 'low', label: '低' },
+]
+
 function pageFromParams(value: string | null) {
   const page = Number(value)
   return Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
 }
 
-function loadTasks(q: string | null, status: string | null, page: number) {
-  return apiGet<ApiList<ApiTask>>('/tasks', { q, status, page, page_size: pageSize })
+function valueFromParams(params: URLSearchParams, key: string) {
+  const value = params.get(key)
+  return value && value.trim() ? value : null
+}
+
+function loadTasks(params: URLSearchParams, page: number) {
+  return apiGet<ApiList<ApiTask>>('/tasks', {
+    q: valueFromParams(params, 'q'),
+    status: valueFromParams(params, 'status'),
+    sub_type: valueFromParams(params, 'sub_type'),
+    priority: valueFromParams(params, 'priority'),
+    owner_id: valueFromParams(params, 'owner_id'),
+    org_id: valueFromParams(params, 'org_id'),
+    project_id: valueFromParams(params, 'project_id'),
+    start_date: valueFromParams(params, 'start_date'),
+    end_date: valueFromParams(params, 'end_date'),
+    page,
+    page_size: pageSize,
+  })
+}
+
+async function loadFilterOptions() {
+  const [people, projects, orgs] = await Promise.all([
+    apiGet<ApiList<ApiPerson>>('/users', { page_size: 200 }),
+    apiGet<ApiList<ApiProject>>('/projects', { page_size: 200 }),
+    apiGet<ApiList<ApiOrg>>('/orgs/tree'),
+  ])
+  return { people: people.items, projects: projects.items, orgs: orgs.items }
 }
 
 export function TaskListPage() {
   const [params, setParams] = useSearchParams()
   const q = params.get('q')
-  const status = params.get('status')
   const page = pageFromParams(params.get('page'))
   const selectedTaskId = params.get('task')
   const [searchValue, setSearchValue] = useState(q ?? '')
-  const { data, loading, error } = useApiData(() => loadTasks(q, status, page), [q, status, page])
+  const filterKey = params.toString()
+  const { data, loading, error } = useApiData(() => loadTasks(params, page), [filterKey, page])
+  const optionsState = useApiData(loadFilterOptions, [])
   const tasks = data?.items ?? []
+  const people = optionsState.data?.people ?? []
+  const projects = optionsState.data?.projects ?? []
+  const orgs = optionsState.data?.orgs ?? []
   const total = data?.total ?? 0
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1
   const rangeEnd = Math.min(total, page * pageSize)
 
-  function updateParams(update: (next: URLSearchParams) => void) {
+  function updateParams(update: (next: URLSearchParams) => void, resetPage = true) {
     const next = new URLSearchParams(params)
     update(next)
+    if (resetPage && next.toString() !== params.toString()) next.set('page', '1')
     setParams(next)
   }
 
+  function setFilter(key: string, value: string) {
+    updateParams((next) => {
+      if (value) next.set(key, value)
+      else next.delete(key)
+    })
+  }
+
   function openTask(taskId: string) {
-    updateParams((next) => next.set('task', taskId))
+    updateParams((next) => next.set('task', taskId), false)
   }
 
   function closeTask() {
-    updateParams((next) => next.delete('task'))
+    updateParams((next) => next.delete('task'), false)
   }
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
@@ -76,7 +147,6 @@ export function TaskListPage() {
       const value = searchValue.trim()
       if (value) next.set('q', value)
       else next.delete('q')
-      next.set('page', '1')
     })
   }
 
@@ -84,14 +154,39 @@ export function TaskListPage() {
     setSearchValue('')
     updateParams((next) => {
       next.delete('q')
-      next.set('page', '1')
     })
   }
 
   function goToPage(nextPage: number) {
-    updateParams((next) => {
+    const next = new URLSearchParams(params)
       next.set('page', String(Math.min(Math.max(nextPage, 1), totalPages)))
-    })
+    setParams(next)
+  }
+
+  function clearFilters() {
+    setSearchValue('')
+    setParams(new URLSearchParams())
+  }
+
+  const hasFilters = ['q', 'status', 'sub_type', 'priority', 'owner_id', 'org_id', 'project_id', 'start_date', 'end_date'].some((key) => params.has(key))
+
+  function taskOwner(task: ApiTask) {
+    return textFromPayload(task.payload, 'owner_name', task.owner_id ?? '未设置')
+  }
+
+  function openButton(task: ApiTask) {
+    return (
+      <button
+        type="button"
+        className="text-sm text-text-muted hover:text-text-primary"
+        onClick={(event) => {
+          event.stopPropagation()
+          openTask(task.id)
+        }}
+      >
+        详情
+      </button>
+    )
   }
 
   return (
@@ -99,12 +194,12 @@ export function TaskListPage() {
       <div className="flex h-full flex-col gap-5">
         {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border-subtle bg-bg-secondary p-4">
           <form className="flex items-center gap-2" onSubmit={submitSearch}>
             <div className="relative">
               <SearchInput
                 placeholder="搜索任务名称、编号、负责人、项目..."
-                className="w-[360px] bg-bg-secondary"
+                className="w-full bg-bg-tertiary sm:w-[360px]"
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
               />
@@ -127,27 +222,72 @@ export function TaskListPage() {
               搜索
             </button>
           </form>
-          <div className="flex items-center gap-2">
-            {filters.map((label) => (
-              <button
-                key={label}
-                className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm text-text-secondary transition-fast hover:bg-hover-bg"
-              >
-                {label}
-                <ChevronDown className="h-3.5 w-3.5 text-text-muted" />
-              </button>
-            ))}
-          </div>
-          <button
-            aria-label="更多筛选"
-            className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-md text-text-secondary transition-fast hover:bg-hover-bg"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </button>
+          <Select aria-label="状态筛选" className="w-[150px]" value={params.get('status') ?? ''} onChange={(event) => setFilter('status', event.target.value)} options={statusOptions} />
+          <Select aria-label="类型筛选" className="w-[150px]" value={params.get('sub_type') ?? ''} onChange={(event) => setFilter('sub_type', event.target.value)} options={typeOptions} />
+          <Select aria-label="优先级筛选" className="w-[140px]" value={params.get('priority') ?? ''} onChange={(event) => setFilter('priority', event.target.value)} options={priorityOptions} />
+          <Select
+            aria-label="负责人筛选"
+            className="w-[170px]"
+            value={params.get('owner_id') ?? ''}
+            onChange={(event) => setFilter('owner_id', event.target.value)}
+            options={[{ value: '', label: '全部负责人' }, ...people.map((person) => ({ value: person.id, label: person.name }))]}
+          />
+          <Select
+            aria-label="组织筛选"
+            className="w-[180px]"
+            value={params.get('org_id') ?? ''}
+            onChange={(event) => setFilter('org_id', event.target.value)}
+            options={[{ value: '', label: '全部组织' }, ...orgs.map((org) => ({ value: org.id, label: org.name }))]}
+          />
+          <Select
+            aria-label="项目筛选"
+            className="w-[190px]"
+            value={params.get('project_id') ?? ''}
+            onChange={(event) => setFilter('project_id', event.target.value)}
+            options={[{ value: '', label: '全部项目' }, ...projects.map((project) => ({ value: project.id, label: project.name }))]}
+          />
+          <label className="flex flex-col gap-2 text-sm font-medium text-text-muted">
+            开始不早于
+            <input className="h-10 rounded-md border border-border-subtle bg-bg-secondary px-3 text-base text-text-primary" type="date" value={params.get('start_date') ?? ''} onChange={(event) => setFilter('start_date', event.target.value)} />
+          </label>
+          <label className="flex flex-col gap-2 text-sm font-medium text-text-muted">
+            截止不晚于
+            <input className="h-10 rounded-md border border-border-subtle bg-bg-secondary px-3 text-base text-text-primary" type="date" value={params.get('end_date') ?? ''} onChange={(event) => setFilter('end_date', event.target.value)} />
+          </label>
+          {hasFilters && (
+            <button type="button" className="h-10 rounded-md px-3 text-sm text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary" onClick={clearFilters}>
+              清空筛选
+            </button>
+          )}
         </div>
 
         <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border-subtle bg-bg-secondary">
           <div className="flex-1 overflow-auto">
+            <div className="flex flex-col divide-y divide-border-subtle md:hidden">
+              {tasks.map((task) => {
+                const progress = numberValue(task.progress)
+                const owner = taskOwner(task)
+                return (
+                  <button key={task.id} type="button" className="flex flex-col gap-3 px-4 py-4 text-left transition-fast hover:bg-hover-bg" onClick={() => openTask(task.id)}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-base font-semibold text-text-primary">{task.name}</div>
+                        <div className="mt-1 truncate text-xs text-text-muted">{task.summary || task.task_no || '无描述'}</div>
+                      </div>
+                      <Tag variant={taskStatusVariant(task.status)}>{taskStatusLabel(task.status)}</Tag>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm text-text-secondary">
+                      <span>{taskTypeLabel(task.sub_type)}</span>
+                      <span>{priorityLabel(task.priority)}</span>
+                      <span className="truncate">负责人：{owner}</span>
+                      <span>{formatDate(task.due_at)}</span>
+                    </div>
+                    <ProgressBar value={progress} className="h-1.5" />
+                  </button>
+                )
+              })}
+            </div>
+            <div className="hidden min-w-[980px] md:block">
             <Table>
               <Thead>
                 <Tr>
@@ -161,7 +301,7 @@ export function TaskListPage() {
               <Tbody>
                 {tasks.map((task) => {
                   const progress = numberValue(task.progress)
-                  const owner = textFromPayload(task.payload, 'owner_name', task.owner_id ?? '未设置')
+                  const owner = taskOwner(task)
                   return (
                     <Tr
                       key={task.id}
@@ -190,7 +330,7 @@ export function TaskListPage() {
                         <Tag variant={taskStatusVariant(task.status)}>{taskStatusLabel(task.status)}</Tag>
                       </Td>
                       <Td className="w-[90px]">
-                        <span className="text-sm text-text-secondary">{task.sub_type || '常规'}</span>
+                        <span className="text-sm text-text-secondary">{taskTypeLabel(task.sub_type)}</span>
                       </Td>
                       <Td className="w-[120px]">
                         <div className="flex items-center gap-2">
@@ -211,22 +351,14 @@ export function TaskListPage() {
                       </Td>
                       <Td className="w-[80px]">{priorityLabel(task.priority)}</Td>
                       <Td className="w-[60px]">
-                        <button
-                          type="button"
-                          className="text-sm text-text-muted hover:text-text-primary"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            openTask(task.id)
-                          }}
-                        >
-                          详情
-                        </button>
+                        {openButton(task)}
                       </Td>
                     </Tr>
                   )
                 })}
               </Tbody>
             </Table>
+            </div>
             {!loading && tasks.length === 0 && <EmptyState title="暂无任务" desc="当前条件下没有可见任务。" />}
           </div>
 

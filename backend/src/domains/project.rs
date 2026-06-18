@@ -5,17 +5,31 @@ async fn list_projects(
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
     let rows = sqlx::query(
-        "SELECT to_jsonb(p.*) AS item,
+        "SELECT (
+          to_jsonb(p.*)
+          || jsonb_build_object(
+            'payload',
+            p.payload || jsonb_build_object(
+              'leader_name', leader.name,
+              'managed_by_name', manager.name,
+              'owner_org_name', org.name
+            )
+          )
+        ) AS item,
           count(*) OVER() AS total
          FROM projects p
+         LEFT JOIN persons leader ON leader.id = p.leader_id
+         LEFT JOIN persons manager ON manager.id = p.managed_by_id
+         LEFT JOIN organizations org ON org.id = p.owner_org_id
          WHERE p.deleted_at IS NULL
-           AND ($1::text IS NULL OR p.name ILIKE '%' || $1 || '%' OR p.project_no ILIKE '%' || $1 || '%')
+           AND ($1::text IS NULL OR concat_ws(' ', p.name, p.project_no, p.summary, leader.name, manager.name, org.name) ILIKE '%' || $1 || '%')
            AND ($2::text IS NULL OR p.status = $2)
            AND ($8::uuid IS NULL OR p.owner_org_id = $8)
            AND ($9::uuid IS NULL OR p.leader_id = $9 OR p.managed_by_id = $9 OR EXISTS (
              SELECT 1 FROM project_members pm2 WHERE pm2.project_id = p.id AND pm2.person_id = $9 AND pm2.active
            ))
            AND ($10::text IS NULL OR p.visibility = $10)
+           AND ($11::text IS NULL OR p.project_type = $11)
            AND (
              $3::bool OR p.visibility IN ('normal', 'public') OR p.leader_id = $4 OR EXISTS (
                SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.person_id = $4 AND pm.active
@@ -37,6 +51,7 @@ async fn list_projects(
     .bind(query.org_id)
     .bind(query.member_id.or(query.owner_id))
     .bind(query.visibility.clone())
+    .bind(query.project_type.clone())
     .fetch_all(&state.db)
     .await?;
     let total = rows.first().map(|r| r.get::<i64, _>("total")).unwrap_or(0);

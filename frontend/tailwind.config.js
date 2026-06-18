@@ -16,8 +16,8 @@ export default {
         'text-primary': '#1A1A1A',
         'text-secondary': '#3A3A3A',
         'text-tertiary': '#5A5A5A',
-        'text-muted': '#7A7A7A',
-        'text-placeholder': '#9A9A9A',
+        'text-muted': '#666666',
+        'text-placeholder': '#777777',
         // Borders
         'border-subtle': 'rgba(0,0,0,0.05)',
         'border-muted': 'rgba(0,0,0,0.03)',

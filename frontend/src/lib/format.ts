@@ -44,6 +44,8 @@ export interface ApiProject {
   level?: string
   status?: string
   visibility?: string
+  owner_org_id?: string | null
+  leader_id?: string | null
   start_date?: string | null
   end_date?: string | null
   summary?: string
@@ -73,13 +75,28 @@ export interface ApiPerson {
   payload?: Record<string, unknown>
 }
 
+export interface ApiOrg {
+  id: string
+  name: string
+  code?: string
+  org_type?: string
+  parent_id?: string | null
+  enabled?: boolean
+  path?: string | null
+}
+
 export interface ApiConflict {
   id: string
   conflict_type?: string
   risk_level?: string
   status?: string
   task_id?: string | null
+  task_name?: string | null
+  task_no?: string | null
   person_id?: string | null
+  person_name?: string | null
+  person_employee_no?: string | null
+  owner_org_name?: string | null
   conflict_date_start?: string | null
   conflict_date_end?: string | null
   overload_hours?: number | null
@@ -194,10 +211,12 @@ export function taskStatusLabel(status?: string) {
   const map: Record<string, string> = {
     draft: '草稿',
     coordination_pending: '待审批',
+    pending_confirm: '待确认',
     confirmation_pending: '待确认',
     in_progress: '进行中',
     paused: '已暂停',
     risk: '有风险',
+    pending_acceptance: '待验收',
     acceptance_pending: '待验收',
     acceptance_rejected: '验收驳回',
     completed: '已完成',
@@ -205,6 +224,19 @@ export function taskStatusLabel(status?: string) {
     cancelled: '已取消',
   }
   return map[status ?? ''] ?? status ?? '未知'
+}
+
+export function taskTypeLabel(type?: string | null) {
+  const map: Record<string, string> = {
+    research: '科研任务',
+    report: '报告材料',
+    support: '协同支持',
+    travel: '出差安排',
+    leave: '休假占用',
+    backfill: '后补填报',
+    other: '其他',
+  }
+  return map[type ?? ''] ?? type ?? '常规'
 }
 
 export function taskStatusVariant(status?: string): TagVariant {
@@ -235,6 +267,26 @@ export function projectStatusLabel(status?: string) {
   return map[status ?? ''] ?? status ?? '未知'
 }
 
+export function projectTypeLabel(type?: string | null) {
+  const map: Record<string, string> = {
+    research: '科研',
+    delivery: '交付',
+    operation: '运营',
+    other: '其他',
+  }
+  return map[type ?? ''] ?? type ?? '其他'
+}
+
+export function visibilityLabel(visibility?: string | null) {
+  const map: Record<string, string> = {
+    normal: '普通',
+    public: '公开',
+    hidden: '隐藏',
+    restricted: '指定范围',
+  }
+  return map[visibility ?? ''] ?? visibility ?? '普通'
+}
+
 export function workStatusLabel(status?: string) {
   const map: Record<string, string> = {
     active: '在岗',
@@ -258,6 +310,9 @@ export function accountStatusLabel(status?: string) {
 export function conflictTypeLabel(type?: string) {
   const map: Record<string, string> = {
     overload: '人员超载',
+    full_day_overlap: '全天占用重叠',
+    unavailable: '人员不可用',
+    all_day_overlap: '全天任务重叠',
     time_overlap: '时间冲突',
     status: '状态冲突',
     permission: '权限冲突',

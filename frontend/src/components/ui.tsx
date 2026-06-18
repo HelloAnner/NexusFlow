@@ -4,6 +4,7 @@ import {
   type LucideIcon,
   Circle,
 } from 'lucide-react'
+import { useId } from 'react'
 
 // ---------- Button ----------
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
@@ -37,12 +38,16 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   label?: string
 }
 export function Input({ label, className, ...props }: InputProps) {
+  const generatedId = useId()
+  const inputId = props.id ?? props.name ?? generatedId
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      {label && <label className="text-sm font-medium text-text-muted">{label}</label>}
+      {label && <label htmlFor={inputId} className="text-sm font-medium text-text-muted">{label}</label>}
       <input
-        className="w-full rounded-md border border-border-subtle bg-bg-secondary px-4 py-2.5 text-base text-text-primary placeholder:text-text-placeholder focus:border-text-muted focus:outline-none transition-fast"
         {...props}
+        id={inputId}
+        name={props.name ?? inputId}
+        className="w-full rounded-md border border-border-subtle bg-bg-secondary px-4 py-2.5 text-base text-text-primary placeholder:text-text-placeholder focus:border-text-muted focus:outline-none transition-fast"
       />
     </div>
   )
@@ -54,13 +59,17 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
   options?: { value: string; label: string }[]
 }
 export function Select({ label, options, className, children, ...props }: SelectProps) {
+  const generatedId = useId()
+  const selectId = props.id ?? props.name ?? generatedId
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      {label && <label className="text-sm font-medium text-text-muted">{label}</label>}
+      {label && <label htmlFor={selectId} className="text-sm font-medium text-text-muted">{label}</label>}
       <div className="relative">
         <select
-          className="w-full appearance-none rounded-md border border-border-subtle bg-bg-secondary px-4 py-2.5 text-base text-text-primary focus:border-text-muted focus:outline-none transition-fast"
           {...props}
+          id={selectId}
+          name={props.name ?? selectId}
+          className="w-full appearance-none rounded-md border border-border-subtle bg-bg-secondary px-4 py-2.5 text-base text-text-primary focus:border-text-muted focus:outline-none transition-fast"
         >
           {options?.map((o) => (
             <option key={o.value} value={o.value}>
@@ -89,8 +98,9 @@ export function SearchInput({ className, ...props }: SearchInputProps) {
     >
       <Search className="h-4 w-4 text-text-placeholder" />
       <input
-        className="min-w-0 flex-1 bg-transparent text-text-primary placeholder:text-text-placeholder focus:outline-none"
         {...props}
+        name={props.name ?? 'search'}
+        className="min-w-0 flex-1 bg-transparent text-text-primary placeholder:text-text-placeholder focus:outline-none"
       />
     </div>
   )

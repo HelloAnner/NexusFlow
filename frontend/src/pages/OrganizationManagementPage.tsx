@@ -16,7 +16,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 interface ApiOrg {
   id: string
@@ -124,7 +124,18 @@ function personTagVariant(status?: string) {
 export function OrganizationManagementPage() {
   const { data, loading, error, reload } = useApiData(() => apiGet<ApiList<ApiOrg>>('/orgs/tree'), [])
   const orgs = useMemo(() => data?.items ?? [], [data?.items])
+  const childrenByParent = useMemo(() => {
+    const map = new Map<string, ApiOrg[]>()
+    orgs.forEach((org) => {
+      const key = org.parent_id ?? ''
+      map.set(key, [...(map.get(key) ?? []), org])
+    })
+    return map
+  }, [orgs])
+  const parentIds = useMemo(() => new Set(orgs.filter((org) => (childrenByParent.get(org.id)?.length ?? 0) > 0).map((org) => org.id)), [childrenByParent, orgs])
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const expandedInitialized = useRef(false)
   const selected = useMemo(
     () => orgs.find((org) => org.id === (selectedId ?? orgs[0]?.id)) ?? null,
     [orgs, selectedId]
@@ -148,6 +159,13 @@ export function OrganizationManagementPage() {
     setForm(orgToForm(selected))
   }, [selected])
 
+  useEffect(() => {
+    if (!expandedInitialized.current && orgs.length) {
+      setExpandedIds(new Set(parentIds))
+      expandedInitialized.current = true
+    }
+  }, [orgs, parentIds])
+
   function updateField(key: keyof OrgForm, value: string) {
     setForm((current) => ({ ...current, [key]: value }))
   }
@@ -160,6 +178,33 @@ export function OrganizationManagementPage() {
     setCreateForm({ ...emptyCreateForm, parent_id: parent?.id ?? '', org_type: orgType })
     setCreating(true)
     setMenuId(null)
+  }
+
+  function toggleExpanded(orgId: string) {
+    setExpandedIds((current) => {
+      const next = new Set(current)
+      if (next.has(orgId)) next.delete(orgId)
+      else next.add(orgId)
+      return next
+    })
+  }
+
+  function expandAncestors(org: ApiOrg | null) {
+    if (!org) return
+    const ancestors = new Set<string>()
+    let parentId = org.parent_id
+    while (parentId) {
+      ancestors.add(parentId)
+      parentId = orgs.find((item) => item.id === parentId)?.parent_id ?? null
+    }
+    if (ancestors.size) {
+      setExpandedIds((current) => new Set([...current, ...ancestors]))
+    }
+  }
+
+  function selectOrg(org: ApiOrg) {
+    setSelectedId(org.id)
+    expandAncestors(org)
   }
 
   async function saveOrg() {
@@ -226,6 +271,9 @@ export function OrganizationManagementPage() {
         reason: createForm.reason,
       })
       setCreating(false)
+      if (createForm.parent_id) {
+        setExpandedIds((current) => new Set(current).add(createForm.parent_id))
+      }
       setSelectedId(result.id)
       await reload()
       setMessage('新组织已创建')
@@ -284,45 +332,21 @@ export function OrganizationManagementPage() {
               </Button>
             </div>
             <div className="min-h-0 flex-1 overflow-auto p-3">
-              {orgs.map((org) => {
-                const active = selected?.id === org.id
-                const depth = depthOf(org.path)
-                return (
-                  <div key={org.id} className="relative">
-                    <button
-                      className={[
-                        'group flex w-full items-center gap-2 rounded-md py-2 pr-2 text-left transition-fast',
-                        active ? 'bg-hover-bg text-text-primary shadow-sm' : 'text-text-secondary hover:bg-hover-bg',
-                      ].join(' ')}
-                      style={{ paddingLeft: `${10 + depth * 22}px` }}
-                      onClick={() => setSelectedId(org.id)}
-                    >
-                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-text-placeholder" />
-                      <Building2 className="h-4 w-4 shrink-0 text-text-muted" />
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{org.name}</span>
-                      <span className="shrink-0 rounded-sm bg-bg-tertiary px-2 py-0.5 text-xs text-text-muted">{orgTypeLabel(org.org_type)}</span>
-                      <span className="shrink-0 text-xs text-text-muted">{org.code}</span>
-                    </button>
-                    <button
-                      className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-text-muted transition-fast hover:bg-bg-primary hover:text-text-primary"
-                      aria-label={`${org.name} 操作`}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        setMenuId(menuId === org.id ? null : org.id)
-                      }}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </button>
-                    {menuId === org.id && (
-                      <div className="absolute right-2 top-9 z-20 w-40 rounded-md border border-border-subtle bg-bg-primary p-1 shadow-lg">
-                        <MenuButton onClick={() => openCreate(org, 'department')}>新建下级部门</MenuButton>
-                        <MenuButton onClick={() => openCreate(org, 'studio')}>新建下级小组</MenuButton>
-                        <MenuButton onClick={() => { setSelectedId(org.id); setMenuId(null) }}>编辑详情</MenuButton>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+              {(childrenByParent.get('') ?? []).map((org) => (
+                <OrgTreeNode
+                  key={org.id}
+                  org={org}
+                  selectedId={selected?.id}
+                  expandedIds={expandedIds}
+                  childrenByParent={childrenByParent}
+                  menuId={menuId}
+                  onSelect={selectOrg}
+                  onToggle={toggleExpanded}
+                  onMenuToggle={(orgId) => setMenuId(menuId === orgId ? null : orgId)}
+                  onCreate={openCreate}
+                  onEdit={(target) => { selectOrg(target); setMenuId(null) }}
+                />
+              ))}
               {!loading && orgs.length === 0 && <EmptyState title="暂无组织" desc="从右上角新建根组织开始。" />}
             </div>
           </section>
@@ -477,6 +501,112 @@ function Metric({ label, value }: { label: string; value: number }) {
     <div className="rounded-lg border border-border-subtle bg-bg-secondary px-5 py-4">
       <div className="text-sm text-text-muted">{label}</div>
       <div className="mt-2 text-2xl font-semibold text-text-primary">{value}</div>
+    </div>
+  )
+}
+
+interface OrgTreeNodeProps {
+  org: ApiOrg
+  selectedId?: string
+  expandedIds: Set<string>
+  childrenByParent: Map<string, ApiOrg[]>
+  menuId: string | null
+  onSelect: (org: ApiOrg) => void
+  onToggle: (orgId: string) => void
+  onMenuToggle: (orgId: string) => void
+  onCreate: (parent: ApiOrg, orgType?: string) => void
+  onEdit: (org: ApiOrg) => void
+}
+
+function OrgTreeNode({
+  org,
+  selectedId,
+  expandedIds,
+  childrenByParent,
+  menuId,
+  onSelect,
+  onToggle,
+  onMenuToggle,
+  onCreate,
+  onEdit,
+}: OrgTreeNodeProps) {
+  const children = childrenByParent.get(org.id) ?? []
+  const hasChildren = children.length > 0
+  const expanded = expandedIds.has(org.id)
+  const active = selectedId === org.id
+  const depth = depthOf(org.path)
+
+  return (
+    <div>
+      <div className="relative">
+        <div
+          className={[
+            'group flex w-full items-center gap-2 rounded-md py-2 pr-9 text-left transition-fast',
+            active ? 'bg-hover-bg text-text-primary shadow-sm' : 'text-text-secondary hover:bg-hover-bg',
+          ].join(' ')}
+          style={{ paddingLeft: `${10 + depth * 22}px` }}
+        >
+          {hasChildren ? (
+            <button
+              type="button"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-muted transition-fast hover:bg-bg-primary hover:text-text-primary"
+              aria-label={expanded ? `收起 ${org.name}` : `展开 ${org.name}`}
+              aria-expanded={expanded}
+              onClick={(event) => {
+                event.stopPropagation()
+                onToggle(org.id)
+              }}
+            >
+              <ChevronRight className={['h-3.5 w-3.5 transition-transform', expanded ? 'rotate-90' : ''].join(' ')} />
+            </button>
+          ) : (
+            <span className="h-6 w-6 shrink-0" />
+          )}
+          <button
+            type="button"
+            className="flex min-w-0 flex-1 items-center gap-2 text-left"
+            onClick={() => onSelect(org)}
+          >
+            <Building2 className="h-4 w-4 shrink-0 text-text-muted" />
+            <span className="min-w-0 flex-1 truncate text-sm font-medium">{org.name}</span>
+            <span className="shrink-0 rounded-sm bg-bg-tertiary px-2 py-0.5 text-xs text-text-muted">{orgTypeLabel(org.org_type)}</span>
+            <span className="shrink-0 text-xs text-text-muted">{org.code}</span>
+          </button>
+        </div>
+        <button
+          type="button"
+          className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-text-muted transition-fast hover:bg-bg-primary hover:text-text-primary"
+          aria-label={`${org.name} 操作`}
+          onClick={(event) => {
+            event.stopPropagation()
+            onMenuToggle(org.id)
+          }}
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
+        {menuId === org.id && (
+          <div className="absolute right-2 top-9 z-20 w-40 rounded-md border border-border-subtle bg-bg-primary p-1 shadow-lg">
+            <MenuButton onClick={() => onCreate(org, 'department')}>新建下级部门</MenuButton>
+            <MenuButton onClick={() => onCreate(org, 'studio')}>新建下级小组</MenuButton>
+            <MenuButton onClick={() => onEdit(org)}>编辑详情</MenuButton>
+          </div>
+        )}
+      </div>
+      {hasChildren && expanded && children.map((child) => (
+        <OrgTreeNode
+          key={child.id}
+          org={child}
+          selectedId={selectedId}
+          expandedIds={expandedIds}
+          childrenByParent={childrenByParent}
+          menuId={menuId}
+          onSelect={onSelect}
+          onToggle={onToggle}
+          onMenuToggle={onMenuToggle}
+          onCreate={onCreate}
+          onEdit={onEdit}
+        />
+      ))}
     </div>
   )
 }

@@ -31,8 +31,8 @@ export function LoginPage() {
   const { user, login } = useAuth()
   const { branding } = useBranding()
   const navigate = useNavigate()
-  const [loginName, setLoginName] = useState('Anner')
-  const [password, setPassword] = useState('1')
+  const [loginName, setLoginName] = useState(import.meta.env.DEV ? 'Anner' : '')
+  const [password, setPassword] = useState(import.meta.env.DEV ? '1' : '')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

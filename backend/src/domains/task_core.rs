@@ -280,6 +280,10 @@ async fn update_task(
     .execute(&state.db)
     .await?;
     if let Some(members) = payload.get("members").and_then(Value::as_array) {
+        sqlx::query("DELETE FROM task_members WHERE task_id = $1")
+            .bind(id)
+            .execute(&state.db)
+            .await?;
         for member in members {
             insert_task_member(&state.db, id, member).await?;
         }

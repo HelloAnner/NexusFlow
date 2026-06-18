@@ -1,9 +1,8 @@
 import { MainLayout } from '@/components/layout'
-import { Badge, Button, EmptyState, Panel, StatCard, Tabs, Tag } from '@/components/ui'
+import { Badge, Button, EmptyState, Panel, Select, StatCard, Tabs, Tag } from '@/components/ui'
 import { apiGet, apiPost } from '@/lib/api'
 import { type ApiConflict, type ApiList, conflictTypeLabel, formatDate, riskLabel, riskVariant } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
-import { ChevronDown } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
@@ -12,6 +11,31 @@ const filterTabs = [
   { value: 'open', label: '待处理' },
   { value: 'resolved', label: '已解决' },
   { value: 'forced', label: '强制排期' },
+]
+
+const conflictTypeOptions = [
+  { value: '', label: '全部类型' },
+  { value: 'overload', label: '人员超载' },
+  { value: 'full_day_overlap', label: '全天占用重叠' },
+  { value: 'all_day_overlap', label: '全天任务重叠' },
+  { value: 'unavailable', label: '人员不可用' },
+  { value: 'time_overlap', label: '时间冲突' },
+]
+
+const riskOptions = [
+  { value: '', label: '全部风险' },
+  { value: 'critical', label: '严重' },
+  { value: 'high', label: '高' },
+  { value: 'medium', label: '中' },
+  { value: 'low', label: '低' },
+]
+
+const resolutionOptions = [
+  { value: 'adjust_time', label: '调整任务时间' },
+  { value: 'adjust_hours', label: '调整每日投入' },
+  { value: 'replace_person', label: '更换执行人员' },
+  { value: 'coordinate', label: '发起跨部门协调' },
+  { value: 'resolved', label: '已线下处理' },
 ]
 
 function statusLabel(status?: string) {
@@ -32,12 +56,23 @@ function statusVariant(status?: string) {
 }
 
 export function ConflictCenterPage() {
-  const [activeTab, setActiveTab] = useState('all')
   const [params, setParams] = useSearchParams()
   const [acting, setActing] = useState<string | null>(null)
+  const [actionTarget, setActionTarget] = useState<{ type: 'resolve' | 'force'; conflict: ApiConflict } | null>(null)
+  const [resolutionAction, setResolutionAction] = useState('adjust_time')
+  const [comment, setComment] = useState('')
+  const [message, setMessage] = useState<string | null>(null)
+  const activeTab = params.get('status') ?? 'all'
+  const conflictType = params.get('conflict_type') ?? ''
+  const riskLevel = params.get('risk_level') ?? ''
   const { data, loading, error, reload } = useApiData(
-    () => apiGet<ApiList<ApiConflict>>('/conflicts', { status: activeTab === 'all' ? undefined : activeTab, page_size: 100 }),
-    [activeTab]
+    () => apiGet<ApiList<ApiConflict>>('/conflicts', {
+      status: activeTab === 'all' ? undefined : activeTab,
+      conflict_type: conflictType || undefined,
+      risk_level: riskLevel || undefined,
+      page_size: 100,
+    }),
+    [activeTab, conflictType, riskLevel]
   )
   const conflicts = useMemo(() => data?.items ?? [], [data?.items])
   const selectedConflictId = params.get('conflict')
@@ -51,24 +86,63 @@ export function ConflictCenterPage() {
     }
   }, [conflicts])
 
+  function updateFilter(key: string, value: string) {
+    const next = new URLSearchParams(params)
+    if (value && value !== 'all') next.set(key, value)
+    else next.delete(key)
+    setParams(next)
+  }
+
+  function openAction(type: 'resolve' | 'force', conflict: ApiConflict) {
+    setActionTarget({ type, conflict })
+    setResolutionAction(type === 'force' ? 'force' : 'adjust_time')
+    setComment('')
+    setMessage(null)
+  }
+
+  function closeAction() {
+    setActionTarget(null)
+    setComment('')
+    setMessage(null)
+  }
+
   async function resolve(id: string) {
+    if (!comment.trim()) {
+      setMessage('请填写处理说明')
+      return
+    }
     setActing(id)
     try {
-      await apiPost(`/conflicts/${id}/resolve`, { resolution_action: 'resolved', resolution_comment: '前端处理完成' })
+      await apiPost(`/conflicts/${id}/resolve`, { resolution_action: resolutionAction, resolution_comment: comment.trim() })
       await reload()
+      closeAction()
     } finally {
       setActing(null)
     }
   }
 
   async function force(id: string) {
+    if (!comment.trim()) {
+      setMessage('强制排期必须填写业务原因')
+      return
+    }
     setActing(id)
     try {
-      await apiPost(`/conflicts/${id}/force`, { reason: '业务确认强制排期' })
+      await apiPost(`/conflicts/${id}/force`, { reason: comment.trim() })
       await reload()
+      closeAction()
     } finally {
       setActing(null)
     }
+  }
+
+  function conflictTitle(conflict: ApiConflict) {
+    return conflict.task_name || conflict.task_no || conflict.task_id || '冲突记录'
+  }
+
+  function personLabel(conflict: ApiConflict) {
+    if (conflict.person_name) return `${conflict.person_name}${conflict.owner_org_name ? ` · ${conflict.owner_org_name}` : ''}`
+    return conflict.person_id ?? '未关联人员'
   }
 
   function selectConflict(id: string) {
@@ -82,21 +156,21 @@ export function ConflictCenterPage() {
       <div className="flex flex-col gap-6">
         {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
         <div className="grid grid-cols-4 gap-5">
-          <StatCard label="冲突总数" value={stats.total} sub={loading ? '加载中' : '真实冲突数据'} />
+          <StatCard label="冲突总数" value={stats.total} sub={loading ? '加载中' : '当前筛选结果'} />
           <StatCard label="高风险" value={stats.high} />
           <StatCard label="待处理" value={stats.open} />
           <StatCard label="人员超载" value={stats.overload} />
         </div>
 
         <div className="flex items-center justify-between">
-          <Tabs tabs={filterTabs} value={activeTab} onChange={setActiveTab} />
-          <button className="flex items-center gap-1 text-sm text-text-muted transition-fast hover:text-text-primary">
-            按风险等级
-            <ChevronDown className="h-4 w-4" />
-          </button>
+          <Tabs tabs={filterTabs} value={activeTab} onChange={(value) => updateFilter('status', value)} />
+          <div className="flex flex-wrap items-center gap-3">
+            <Select aria-label="冲突类型筛选" className="w-[170px]" value={conflictType} onChange={(event) => updateFilter('conflict_type', event.target.value)} options={conflictTypeOptions} />
+            <Select aria-label="风险等级筛选" className="w-[140px]" value={riskLevel} onChange={(event) => updateFilter('risk_level', event.target.value)} options={riskOptions} />
+          </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_340px] gap-6">
+        <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
           <div className="flex flex-col gap-4">
             {conflicts.map((conflict) => (
               <div
@@ -120,7 +194,7 @@ export function ConflictCenterPage() {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <h3 className="text-base font-semibold text-text-primary">{conflict.task_id ?? '冲突记录'}</h3>
+                  <h3 className="text-base font-semibold text-text-primary">{conflictTitle(conflict)}</h3>
                   <p className="text-sm text-text-muted">
                     {formatDate(conflict.conflict_date_start)} - {formatDate(conflict.conflict_date_end)}
                     {conflict.overload_hours ? ` · 超载 ${conflict.overload_hours}h` : ''}
@@ -128,7 +202,7 @@ export function ConflictCenterPage() {
                 </div>
 
                 <div className="flex items-center gap-4 text-sm text-text-muted">
-                  <span>人员：{conflict.person_id ?? '未关联'}</span>
+                  <span>人员：{personLabel(conflict)}</span>
                   <span>{formatDate(conflict.created_at)}</span>
                 </div>
 
@@ -139,7 +213,7 @@ export function ConflictCenterPage() {
                     disabled={acting === conflict.id}
                     onClick={(event) => {
                       event.stopPropagation()
-                      void resolve(conflict.id)
+                      openAction('resolve', conflict)
                     }}
                   >
                     处理
@@ -150,7 +224,7 @@ export function ConflictCenterPage() {
                     disabled={acting === conflict.id}
                     onClick={(event) => {
                       event.stopPropagation()
-                      void force(conflict.id)
+                      openAction('force', conflict)
                     }}
                   >
                     强制排期
@@ -174,20 +248,20 @@ export function ConflictCenterPage() {
                   <Tag variant={riskVariant(activeConflict.risk_level)}>{riskLabel(activeConflict.risk_level)}</Tag>
                 </div>
                 <div>
-                  <div className="text-base font-semibold text-text-primary">{activeConflict.task_id ?? '冲突记录'}</div>
+                  <div className="text-base font-semibold text-text-primary">{conflictTitle(activeConflict)}</div>
                   <div className="mt-1 text-sm text-text-muted">
                     {formatDate(activeConflict.conflict_date_start)} - {formatDate(activeConflict.conflict_date_end)}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <MiniInfo label="人员" value={activeConflict.person_id ?? '未关联'} />
+                  <MiniInfo label="人员" value={personLabel(activeConflict)} />
                   <MiniInfo label="超载" value={activeConflict.overload_hours ? `${activeConflict.overload_hours}h` : '无'} />
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="primary" className="h-9 px-4 text-sm" disabled={acting === activeConflict.id} onClick={() => void resolve(activeConflict.id)}>
+                  <Button variant="primary" className="h-9 px-4 text-sm" disabled={acting === activeConflict.id} onClick={() => openAction('resolve', activeConflict)}>
                     处理
                   </Button>
-                  <Button variant="danger" className="h-9 px-4 text-sm" disabled={acting === activeConflict.id} onClick={() => void force(activeConflict.id)}>
+                  <Button variant="danger" className="h-9 px-4 text-sm" disabled={acting === activeConflict.id} onClick={() => openAction('force', activeConflict)}>
                     强制排期
                   </Button>
                 </div>
@@ -201,6 +275,52 @@ export function ConflictCenterPage() {
             </div>
           </Panel>
         </div>
+
+        {actionTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+            <div className="w-full max-w-[560px] rounded-lg border border-border-subtle bg-bg-primary p-5 shadow-2xl">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-text-primary">
+                  {actionTarget.type === 'force' ? '确认强制排期' : '填写处理方案'}
+                </h3>
+                <p className="mt-1 text-sm text-text-muted">
+                  {conflictTitle(actionTarget.conflict)} · {personLabel(actionTarget.conflict)}
+                </p>
+              </div>
+              {actionTarget.type === 'resolve' ? (
+                <Select label="处理动作" value={resolutionAction} onChange={(event) => setResolutionAction(event.target.value)} options={resolutionOptions} />
+              ) : (
+                <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm leading-relaxed text-color-error">
+                  强制排期会保留冲突记录并写入审计，请确认业务上允许人员超载或时间重叠。
+                </div>
+              )}
+              <label className="mt-4 flex flex-col gap-2 text-sm font-medium text-text-muted">
+                {actionTarget.type === 'force' ? '强制排期原因' : '处理说明'}
+                <textarea
+                  className="min-h-28 rounded-md border border-border-subtle bg-bg-secondary px-4 py-3 text-base text-text-primary focus:border-text-muted focus:outline-none"
+                  value={comment}
+                  onChange={(event) => setComment(event.target.value)}
+                  placeholder={actionTarget.type === 'force' ? '说明为什么必须强制排期，以及已知风险的承担人' : '说明调整方案、沟通结论或后续跟进人'}
+                />
+              </label>
+              {message && <div className="mt-4 rounded-md bg-color-error-bg px-3 py-2 text-sm text-color-error">{message}</div>}
+              <div className="mt-5 flex justify-end gap-3 border-t border-border-subtle pt-4">
+                <Button type="button" variant="secondary" className="h-10 px-4" onClick={closeAction}>
+                  取消
+                </Button>
+                <Button
+                  type="button"
+                  variant={actionTarget.type === 'force' ? 'danger' : 'primary'}
+                  className="h-10 px-4"
+                  disabled={acting === actionTarget.conflict.id}
+                  onClick={() => actionTarget.type === 'force' ? void force(actionTarget.conflict.id) : void resolve(actionTarget.conflict.id)}
+                >
+                  {actionTarget.type === 'force' ? '确认强制排期' : '提交处理'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   )

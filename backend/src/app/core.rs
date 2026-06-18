@@ -217,9 +217,12 @@ impl FromRequestParts<Arc<AppState>> for CurrentUser {
 struct PageQuery {
     q: Option<String>,
     status: Option<String>,
+    conflict_type: Option<String>,
+    risk_level: Option<String>,
     sub_type: Option<String>,
     priority: Option<String>,
     visibility: Option<String>,
+    project_type: Option<String>,
     org_id: Option<Uuid>,
     project_id: Option<Uuid>,
     owner_id: Option<Uuid>,

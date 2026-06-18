@@ -273,22 +273,35 @@ async fn list_conflicts(
     let rows = sqlx::query(
         "SELECT jsonb_build_object(
           'id', c.id, 'conflict_type', c.conflict_type, 'risk_level', c.risk_level, 'person_id', c.person_id,
-          'task_id', c.task_id, 'assignment_id', c.assignment_id, 'conflict_date_start', c.conflict_date_start,
+          'person_name', person.name, 'person_employee_no', person.employee_no, 'owner_org_name', org.name,
+          'task_id', c.task_id, 'task_name', task.name, 'task_no', task.task_no, 'assignment_id', c.assignment_id, 'conflict_date_start', c.conflict_date_start,
           'conflict_date_end', c.conflict_date_end, 'overload_hours', c.overload_hours::float8, 'status', c.status,
           'handler_id', c.handler_id, 'resolution_action', c.resolution_action, 'resolution_comment', c.resolution_comment,
           'payload', c.payload, 'created_at', c.created_at
-        ) AS item
+        ) AS item,
+          count(*) OVER() AS total
          FROM conflict_records c
+         LEFT JOIN tasks task ON task.id = c.task_id
+         LEFT JOIN persons person ON person.id = c.person_id
+         LEFT JOIN organizations org ON org.id = person.primary_org_id
          WHERE ($1::text IS NULL OR c.status = $1)
-         ORDER BY c.created_at DESC LIMIT $2 OFFSET $3",
+           AND ($4::text IS NULL OR c.conflict_type = $4)
+           AND ($5::text IS NULL OR c.risk_level = $5)
+         ORDER BY
+           CASE c.risk_level WHEN 'critical' THEN 4 WHEN 'high' THEN 3 WHEN 'medium' THEN 2 WHEN 'low' THEN 1 ELSE 0 END DESC,
+           c.created_at DESC
+         LIMIT $2 OFFSET $3",
     )
     .bind(query.status.clone())
     .bind(query.limit())
     .bind(query.offset())
+    .bind(query.conflict_type.clone())
+    .bind(query.risk_level.clone())
     .fetch_all(&state.db)
     .await?;
+    let total = rows.first().map(|r| r.get::<i64, _>("total")).unwrap_or(0);
     Ok(Json(
-        json!({ "items": rows.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()? }),
+        json!({ "items": rows.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()?, "total": total }),
     ))
 }
 

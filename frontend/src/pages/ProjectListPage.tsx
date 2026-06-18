@@ -1,13 +1,11 @@
 import { MainLayout } from '@/components/layout'
-import { Avatar, Badge, Button, EmptyState, Input, ProgressBar, Select, StatCard, Table, Tbody, Td, Th, Thead, Tr } from '@/components/ui'
+import { Avatar, Badge, Button, EmptyState, Input, ProgressBar, SearchInput, Select, StatCard, Table, Tbody, Td, Th, Thead, Tr } from '@/components/ui'
 import { apiGet, apiPost } from '@/lib/api'
-import { type ApiList, type ApiProject, formatDate, numberValue, projectStatusLabel, textFromPayload } from '@/lib/format'
+import { type ApiList, type ApiOrg, type ApiPerson, type ApiProject, formatDate, numberValue, projectStatusLabel, projectTypeLabel, textFromPayload, visibilityLabel } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
-import { Check, ChevronDown, X } from 'lucide-react'
+import { Check, Search, X } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-
-const projectFilters = ['项目状态', '项目类型', '负责人', '所属组织', '时间范围']
 
 const initialForm = {
   project_no: '',
@@ -21,14 +19,69 @@ const initialForm = {
   summary: '',
 }
 
+const statusOptions = [
+  { value: '', label: '全部状态' },
+  { value: 'preparing', label: '筹备' },
+  { value: 'active', label: '进行中' },
+  { value: 'paused', label: '暂停' },
+  { value: 'completed', label: '已完成' },
+  { value: 'archived', label: '已归档' },
+]
+
+const projectTypeOptions = [
+  { value: '', label: '全部类型' },
+  { value: 'research', label: '科研' },
+  { value: 'delivery', label: '交付' },
+  { value: 'operation', label: '运营' },
+  { value: 'other', label: '其他' },
+]
+
+const visibilityOptions = [
+  { value: '', label: '全部可见性' },
+  { value: 'normal', label: '普通' },
+  { value: 'public', label: '公开' },
+  { value: 'hidden', label: '隐藏' },
+  { value: 'restricted', label: '指定范围' },
+]
+
+async function loadOptions() {
+  const [people, orgs] = await Promise.all([
+    apiGet<ApiList<ApiPerson>>('/users', { page_size: 200 }),
+    apiGet<ApiList<ApiOrg>>('/orgs/tree'),
+  ])
+  return { people: people.items, orgs: orgs.items }
+}
+
+function valueFromParams(params: URLSearchParams, key: string) {
+  const value = params.get(key)
+  return value && value.trim() ? value : null
+}
+
+function loadProjects(params: URLSearchParams) {
+  return apiGet<ApiList<ApiProject>>('/projects', {
+    q: valueFromParams(params, 'q'),
+    status: valueFromParams(params, 'status'),
+    project_type: valueFromParams(params, 'project_type'),
+    owner_id: valueFromParams(params, 'owner_id'),
+    org_id: valueFromParams(params, 'org_id'),
+    visibility: valueFromParams(params, 'visibility'),
+    page_size: 100,
+  })
+}
+
 export function ProjectListPage() {
   const [params, setParams] = useSearchParams()
   const [form, setForm] = useState(initialForm)
+  const [searchValue, setSearchValue] = useState(params.get('q') ?? '')
   const [creating, setCreating] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const showCreate = params.get('create') === '1'
-  const { data, loading, error, reload } = useApiData(() => apiGet<ApiList<ApiProject>>('/projects', { page_size: 100 }))
+  const filterKey = params.toString()
+  const { data, loading, error, reload } = useApiData(() => loadProjects(params), [filterKey])
+  const optionsState = useApiData(loadOptions, [])
   const projects = data?.items ?? []
+  const people = optionsState.data?.people ?? []
+  const orgs = optionsState.data?.orgs ?? []
   const active = projects.filter((project) => project.status === 'active').length
   const hidden = projects.filter((project) => project.visibility === 'hidden').length
   const archived = projects.filter((project) => project.status === 'archived').length
@@ -43,6 +96,27 @@ export function ProjectListPage() {
   function updateField(field: keyof typeof form, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
+
+  function setFilter(key: string, value: string) {
+    const next = new URLSearchParams(params)
+    if (value) next.set(key, value)
+    else next.delete(key)
+    setParams(next)
+  }
+
+  function submitSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setFilter('q', searchValue.trim())
+  }
+
+  function clearFilters() {
+    setSearchValue('')
+    const next = new URLSearchParams(params)
+    ;['q', 'status', 'project_type', 'owner_id', 'org_id', 'visibility'].forEach((key) => next.delete(key))
+    setParams(next)
+  }
+
+  const hasFilters = ['q', 'status', 'project_type', 'owner_id', 'org_id', 'visibility'].some((key) => params.has(key))
 
   async function createProject(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -82,16 +156,70 @@ export function ProjectListPage() {
         </div>
 
         <div className="flex flex-col gap-4 rounded-lg border border-border-subtle bg-bg-secondary p-5">
-          <div className="flex items-center gap-6">
-            {projectFilters.map((filter) => (
-              <button key={filter} className="flex items-center gap-1 text-sm text-text-muted hover:text-text-primary">
-                <span>{filter}</span>
-                <ChevronDown className="h-4 w-4" />
+          <div className="flex flex-wrap items-end gap-3">
+            <form className="flex items-center gap-2" onSubmit={submitSearch}>
+              <SearchInput
+                className="w-full bg-bg-tertiary sm:w-[320px]"
+                placeholder="搜索项目名称、编号、负责人..."
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+              />
+              <Button className="h-10 px-4 py-0 text-sm">
+                <Search className="h-4 w-4" />
+                搜索
+              </Button>
+            </form>
+            <Select aria-label="项目状态筛选" className="w-[150px]" value={params.get('status') ?? ''} onChange={(event) => setFilter('status', event.target.value)} options={statusOptions} />
+            <Select aria-label="项目类型筛选" className="w-[150px]" value={params.get('project_type') ?? ''} onChange={(event) => setFilter('project_type', event.target.value)} options={projectTypeOptions} />
+            <Select
+              aria-label="项目负责人筛选"
+              className="w-[170px]"
+              value={params.get('owner_id') ?? ''}
+              onChange={(event) => setFilter('owner_id', event.target.value)}
+              options={[{ value: '', label: '全部负责人' }, ...people.map((person) => ({ value: person.id, label: person.name }))]}
+            />
+            <Select
+              aria-label="项目组织筛选"
+              className="w-[180px]"
+              value={params.get('org_id') ?? ''}
+              onChange={(event) => setFilter('org_id', event.target.value)}
+              options={[{ value: '', label: '全部组织' }, ...orgs.map((org) => ({ value: org.id, label: org.name }))]}
+            />
+            <Select aria-label="项目可见性筛选" className="w-[150px]" value={params.get('visibility') ?? ''} onChange={(event) => setFilter('visibility', event.target.value)} options={visibilityOptions} />
+            {hasFilters && (
+              <button type="button" className="h-10 rounded-md px-3 text-sm text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary" onClick={clearFilters}>
+                清空筛选
               </button>
-            ))}
+            )}
           </div>
 
-          <Table>
+          <div className="flex flex-col divide-y divide-border-subtle md:hidden">
+            {projects.map((project) => {
+              const progress = numberValue(project.payload?.progress, project.status === 'completed' ? 100 : 0)
+              const owner = textFromPayload(project.payload, 'leader_name', project.payload?.owner_name as string | undefined)
+              return (
+                <div key={project.id} className="flex flex-col gap-3 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-base font-semibold text-text-primary">{project.name}</div>
+                      <div className="mt-1 truncate text-xs text-text-muted">{project.summary || project.project_no}</div>
+                    </div>
+                    <Badge>{projectStatusLabel(project.status)}</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm text-text-secondary">
+                    <span>{projectTypeLabel(project.project_type)}</span>
+                    <span>{visibilityLabel(project.visibility)}</span>
+                    <span className="truncate">负责人：{owner}</span>
+                    <span>{formatDate(project.end_date)}</span>
+                  </div>
+                  <ProgressBar value={progress} className="h-1.5" />
+                </div>
+              )
+            })}
+          </div>
+
+          <div className="hidden overflow-auto md:block">
+          <Table className="min-w-[980px]">
             <Thead>
               <Tr><Th>项目名称</Th><Th>编号</Th><Th>状态</Th><Th>类型</Th><Th>负责人</Th><Th>起止时间</Th><Th>进度</Th><Th>可见性</Th></Tr>
             </Thead>
@@ -109,7 +237,7 @@ export function ProjectListPage() {
                     </Td>
                     <Td>{project.project_no}</Td>
                     <Td><Badge>{projectStatusLabel(project.status)}</Badge></Td>
-                    <Td>{project.project_type || 'other'}</Td>
+                    <Td>{projectTypeLabel(project.project_type)}</Td>
                     <Td>
                       <div className="flex items-center gap-2">
                         <Avatar name={owner} className="h-6 w-6 text-xs" />
@@ -118,12 +246,13 @@ export function ProjectListPage() {
                     </Td>
                     <Td>{formatDate(project.start_date)} - {formatDate(project.end_date)}</Td>
                     <Td><ProgressBar value={progress} className="h-1.5" /></Td>
-                    <Td>{project.visibility === 'hidden' ? '隐藏' : '普通'}</Td>
+                    <Td>{visibilityLabel(project.visibility)}</Td>
                   </Tr>
                 )
               })}
             </Tbody>
           </Table>
+          </div>
           {!loading && projects.length === 0 && <EmptyState title="暂无项目" desc="当前可见范围内没有项目。" />}
         </div>
 
