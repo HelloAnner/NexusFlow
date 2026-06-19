@@ -16,6 +16,7 @@ import {
   ListTodo,
   Camera,
   LogOut,
+  LockKeyhole,
   X,
   Menu,
 } from 'lucide-react'
@@ -41,6 +42,7 @@ const mainNav = [
   { path: '/reports', label: '报表中心', icon: BarChart3, actions: ['report.export'] },
   { path: '/resources', label: '资料库', icon: FileText, actions: ['resource.upload', 'resource.download'] },
   { path: '/tools', label: '工具台', icon: Wrench, businessOnly: true },
+  { path: '/permissions', label: '权限管理', icon: LockKeyhole, actions: ['admin.manage'] },
   { path: '/config', label: '配置中心', icon: Settings, actions: ['config.publish', 'admin.manage'] },
 ]
 

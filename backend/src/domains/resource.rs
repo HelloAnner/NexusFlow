@@ -1,19 +1,10 @@
 async fn ensure_required_resources(db: &PgPool, task_id: Uuid) -> Result<(), ApiError> {
-    let missing = sqlx::query_scalar::<_, i64>(
-        "SELECT count(*)
-         FROM resource_requirements rr
-         WHERE rr.object_type = 'task' AND rr.object_id = $1 AND rr.required
-           AND NOT EXISTS (
-             SELECT 1 FROM resource_links rl
-             JOIN resource_files rf ON rf.id = rl.resource_id
-             WHERE rl.object_type = 'task' AND rl.object_id = $1
-               AND rf.resource_type = rr.resource_type
-               AND rf.status IN ('submitted', 'confirmed', 'archived')
-           )",
-    )
-    .bind(task_id)
-    .fetch_one(db)
-    .await?;
+    let result = evaluate_resource_requirements(db, "task", task_id).await?;
+    let missing = result
+        .get("summary")
+        .and_then(|v| v.get("missing_count"))
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
     if missing > 0 {
         Err(ApiError::conflict(format!(
             "missing {missing} required resource(s)"
@@ -29,6 +20,7 @@ async fn list_resources(
     Query(query): Query<PageQuery>,
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
+    let scope = data_scope_context(&state.db, &user).await?;
     let rows = sqlx::query(
         "SELECT jsonb_build_object(
            'id', rf.id,
@@ -58,6 +50,37 @@ async fn list_resources(
                WHERE rl.resource_id = rf.id AND rl.object_type = COALESCE($4::text, rl.object_type) AND rl.object_id = $3
              )
            )
+           AND (
+             $7::bool OR rf.uploader_id = $8 OR rf.visibility IN ('public')
+             OR EXISTS (
+               SELECT 1 FROM visibility_grants vg
+               WHERE vg.object_type = 'resource' AND vg.object_id = rf.id
+                 AND ((vg.subject_type = 'person' AND vg.subject_id = $8) OR (vg.subject_type = 'role' AND vg.subject_id = ANY($9)))
+                 AND (vg.expires_at IS NULL OR vg.expires_at > now())
+             )
+             OR EXISTS (
+               SELECT 1 FROM resource_links rl
+               JOIN projects p ON p.id = rl.object_id
+               WHERE rl.resource_id = rf.id AND rl.object_type = 'project' AND p.deleted_at IS NULL
+                 AND (
+                   p.leader_id = $8 OR p.managed_by_id = $8
+                   OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.person_id = $8 AND pm.active)
+                   OR (($10::bool OR p.owner_org_id = ANY($12)) AND ($11::bool OR p.id = ANY($13)))
+                 )
+             )
+             OR EXISTS (
+               SELECT 1 FROM resource_links rl
+               JOIN tasks t ON t.id = rl.object_id
+               LEFT JOIN projects p ON p.id = t.project_id
+               WHERE rl.resource_id = rf.id AND rl.object_type = 'task' AND t.deleted_at IS NULL
+                 AND (
+                   t.initiator_id = $8 OR t.owner_id = $8 OR t.acceptor_id = $8
+                   OR EXISTS (SELECT 1 FROM task_members tm WHERE tm.task_id = t.id AND tm.person_id = $8)
+                   OR EXISTS (SELECT 1 FROM task_assignments ta WHERE ta.task_id = t.id AND (ta.owner_id = $8 OR $8 = ANY(ta.collaborator_ids)))
+                   OR (($10::bool OR t.owner_org_id = ANY($12)) AND ($11::bool OR t.project_id IS NULL OR t.project_id = ANY($13)))
+                 )
+             )
+           )
          ORDER BY rf.created_at DESC LIMIT $5 OFFSET $6",
     )
     .bind(query.q.clone())
@@ -66,6 +89,13 @@ async fn list_resources(
     .bind(query.object_type.clone())
     .bind(query.limit())
     .bind(query.offset())
+    .bind(scope.unrestricted)
+    .bind(user.person_id)
+    .bind(&user.role_ids)
+    .bind(scope.all_orgs)
+    .bind(scope.all_projects)
+    .bind(&scope.org_ids)
+    .bind(&scope.project_ids)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(
@@ -79,22 +109,7 @@ async fn get_resource(
     user: CurrentUser,
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
-    let resource = get_json_by_id(&state.db, "resource_files", id).await?;
-    let versions = sqlx::query("SELECT to_jsonb(resource_versions.*) AS item FROM resource_versions WHERE resource_id = $1 ORDER BY version_no DESC")
-        .bind(id)
-        .fetch_all(&state.db)
-        .await?;
-    let links = sqlx::query(
-        "SELECT to_jsonb(resource_links.*) AS item FROM resource_links WHERE resource_id = $1",
-    )
-    .bind(id)
-    .fetch_all(&state.db)
-    .await?;
-    Ok(Json(json!({
-        "resource": resource,
-        "versions": versions.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()?,
-        "links": links.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()?
-    })))
+    Ok(Json(resource_detail_workbench(&state.db, &user, id).await?))
 }
 
 async fn resource_upload_url(
@@ -345,23 +360,11 @@ async fn resource_check_requirements(
         .get("object_id")
         .and_then(|v| Uuid::parse_str(v).ok())
         .ok_or_else(|| ApiError::bad_request("object_id is required"))?;
-    let rows = sqlx::query(
-        "SELECT jsonb_build_object(
-          'resource_type', rr.resource_type,
-          'required', rr.required,
-          'satisfied', EXISTS (
-            SELECT 1 FROM resource_links rl JOIN resource_files rf ON rf.id = rl.resource_id
-            WHERE rl.object_type = rr.object_type AND rl.object_id = rr.object_id AND rf.resource_type = rr.resource_type
-          )
-        ) AS item
-         FROM resource_requirements rr
-         WHERE rr.object_type = $1 AND rr.object_id = $2",
-    )
-    .bind(&object_type)
-    .bind(object_id)
-    .fetch_all(&state.db)
-    .await?;
-    Ok(Json(
-        json!({ "object_type": object_type, "object_id": object_id, "items": rows.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()? }),
-    ))
+    let result = evaluate_resource_requirements(&state.db, &object_type, object_id).await?;
+    Ok(Json(json!({
+        "object_type": object_type,
+        "object_id": object_id,
+        "items": result.get("items").cloned().unwrap_or_else(|| json!([])),
+        "summary": result.get("summary").cloned().unwrap_or_else(|| json!({}))
+    })))
 }

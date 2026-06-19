@@ -4,6 +4,7 @@ async fn gantt(
     Query(query): Query<HashMap<String, String>>,
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
+    let scope = data_scope_context(&state.db, &user).await?;
     let start = query
         .get("start")
         .and_then(|v| DateTime::parse_from_rfc3339(v).ok())
@@ -39,12 +40,24 @@ async fn gantt(
            AND ($1::timestamptz IS NULL OR t.due_at >= $1)
            AND ($2::timestamptz IS NULL OR t.start_at <= $2)
            AND ($3::bool OR t.visibility = 'normal' OR t.owner_id = $4 OR t.initiator_id = $4 OR EXISTS (SELECT 1 FROM task_members tm WHERE tm.task_id = t.id AND tm.person_id = $4))
+           AND (
+             $5::bool
+             OR t.initiator_id = $4 OR t.owner_id = $4 OR t.acceptor_id = $4
+             OR EXISTS (SELECT 1 FROM task_members tm WHERE tm.task_id = t.id AND tm.person_id = $4)
+             OR EXISTS (SELECT 1 FROM task_assignments ta WHERE ta.task_id = t.id AND (ta.owner_id = $4 OR $4 = ANY(ta.collaborator_ids)))
+             OR (($6::bool OR t.owner_org_id = ANY($8)) AND ($7::bool OR t.project_id IS NULL OR t.project_id = ANY($9)))
+           )
          ORDER BY t.start_at NULLS LAST LIMIT 500",
     )
     .bind(start)
     .bind(end)
     .bind(user.is_sa())
     .bind(user.person_id)
+    .bind(scope.unrestricted)
+    .bind(scope.all_orgs)
+    .bind(scope.all_projects)
+    .bind(&scope.org_ids)
+    .bind(&scope.project_ids)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(
@@ -79,6 +92,7 @@ async fn search(
     Query(query): Query<HashMap<String, String>>,
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
+    let scope = data_scope_context(&state.db, &user).await?;
     let q = query.get("q").cloned().unwrap_or_default();
     let can_search_people = user.is_sa() || user.actions.contains("person.manage");
     let rows = sqlx::query(
@@ -110,6 +124,13 @@ async fn search(
                   AND (vg.expires_at IS NULL OR vg.expires_at > now())
               )
             )
+            AND (
+              $6::bool
+              OR t.initiator_id = $3 OR t.owner_id = $3 OR t.acceptor_id = $3
+              OR EXISTS (SELECT 1 FROM task_members tm WHERE tm.task_id = t.id AND tm.person_id = $3)
+              OR EXISTS (SELECT 1 FROM task_assignments ta WHERE ta.task_id = t.id AND (ta.owner_id = $3 OR $3 = ANY(ta.collaborator_ids)))
+              OR (($7::bool OR t.owner_org_id = ANY($9)) AND ($8::bool OR t.project_id IS NULL OR t.project_id = ANY($10)))
+            )
 
           UNION ALL
 
@@ -120,7 +141,7 @@ async fn search(
             concat_ws(' ', p.project_no, p.name, p.summary, p.status, p.project_type),
             p.status,
             p.updated_at,
-            '/projects'
+            '/projects/' || p.id::text
           FROM projects p
           WHERE p.deleted_at IS NULL
             AND ($1 = '' OR concat_ws(' ', p.project_no, p.name, p.summary, p.status, p.project_type) ILIKE '%' || $1 || '%')
@@ -138,6 +159,12 @@ async fn search(
                   AND (vg.expires_at IS NULL OR vg.expires_at > now())
               )
             )
+            AND (
+              $6::bool
+              OR p.leader_id = $3 OR p.managed_by_id = $3
+              OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.person_id = $3 AND pm.active)
+              OR (($7::bool OR p.owner_org_id = ANY($9)) AND ($8::bool OR p.id = ANY($10)))
+            )
 
           UNION ALL
 
@@ -148,11 +175,15 @@ async fn search(
             concat_ws(' ', p.employee_no, p.name, p.work_status, a.login_name),
             p.work_status,
             p.updated_at,
-            '/people'
+            '/people/' || p.id::text
           FROM persons p
           LEFT JOIN accounts a ON a.person_id = p.id
           WHERE p.deleted_at IS NULL
             AND ($5::bool OR p.id = $3)
+            AND (
+              $6::bool OR p.id = $3 OR $7::bool OR p.primary_org_id = ANY($9)
+              OR EXISTS (SELECT 1 FROM person_org_memberships pom WHERE pom.person_id = p.id AND pom.active AND pom.org_id = ANY($9))
+            )
             AND ($1 = '' OR concat_ws(' ', p.employee_no, p.name, p.work_status, a.login_name) ILIKE '%' || $1 || '%')
 
           UNION ALL
@@ -164,9 +195,33 @@ async fn search(
             concat_ws(' ', r.name, r.resource_type, r.status),
             r.status,
             r.updated_at,
-            '/resources'
+            '/resources/' || r.id::text
           FROM resource_files r
           WHERE ($2::bool OR r.visibility = 'normal' OR r.uploader_id = $3)
+            AND (
+              $6::bool OR r.uploader_id = $3
+              OR EXISTS (
+                SELECT 1 FROM resource_links rl
+                JOIN projects p ON p.id = rl.object_id
+                WHERE rl.resource_id = r.id AND rl.object_type = 'project' AND p.deleted_at IS NULL
+                  AND (
+                    p.leader_id = $3 OR p.managed_by_id = $3
+                    OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id = p.id AND pm.person_id = $3 AND pm.active)
+                    OR (($7::bool OR p.owner_org_id = ANY($9)) AND ($8::bool OR p.id = ANY($10)))
+                  )
+              )
+              OR EXISTS (
+                SELECT 1 FROM resource_links rl
+                JOIN tasks t ON t.id = rl.object_id
+                WHERE rl.resource_id = r.id AND rl.object_type = 'task' AND t.deleted_at IS NULL
+                  AND (
+                    t.initiator_id = $3 OR t.owner_id = $3 OR t.acceptor_id = $3
+                    OR EXISTS (SELECT 1 FROM task_members tm WHERE tm.task_id = t.id AND tm.person_id = $3)
+                    OR EXISTS (SELECT 1 FROM task_assignments ta WHERE ta.task_id = t.id AND (ta.owner_id = $3 OR $3 = ANY(ta.collaborator_ids)))
+                    OR (($7::bool OR t.owner_org_id = ANY($9)) AND ($8::bool OR t.project_id IS NULL OR t.project_id = ANY($10)))
+                  )
+              )
+            )
             AND ($1 = '' OR concat_ws(' ', r.name, r.resource_type, r.status) ILIKE '%' || $1 || '%')
         )
         SELECT jsonb_build_object(
@@ -189,6 +244,11 @@ async fn search(
     .bind(user.person_id)
     .bind(&user.role_ids)
     .bind(can_search_people)
+    .bind(scope.unrestricted)
+    .bind(scope.all_orgs)
+    .bind(scope.all_projects)
+    .bind(&scope.org_ids)
+    .bind(&scope.project_ids)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(

@@ -204,6 +204,7 @@ async fn list_users(
     Query(query): Query<PageQuery>,
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
+    let scope = data_scope_context(&state.db, &user).await?;
     let rows = sqlx::query(
         "SELECT jsonb_build_object(
           'id', p.id, 'name', p.name, 'employee_no', p.employee_no, 'account_id', p.account_id,
@@ -230,12 +231,23 @@ async fn list_users(
              SELECT 1 FROM person_org_memberships pom WHERE pom.person_id = p.id AND pom.org_id = $3 AND pom.active
            ))
            AND ($4::uuid IS NULL OR $4 = ANY(p.system_role_ids))
-         ORDER BY p.created_at DESC LIMIT $5 OFFSET $6",
+           AND (
+             $5::bool OR p.id = $6 OR $7::bool OR p.primary_org_id = ANY($8)
+             OR EXISTS (
+               SELECT 1 FROM person_org_memberships pom
+               WHERE pom.person_id = p.id AND pom.active AND pom.org_id = ANY($8)
+             )
+           )
+         ORDER BY p.created_at DESC LIMIT $9 OFFSET $10",
     )
     .bind(query.q.clone())
     .bind(query.status.clone())
     .bind(query.org_id)
     .bind(query.role_id)
+    .bind(scope.unrestricted)
+    .bind(user.person_id)
+    .bind(scope.all_orgs)
+    .bind(&scope.org_ids)
     .bind(query.limit())
     .bind(query.offset())
     .fetch_all(&state.db)
@@ -253,7 +265,7 @@ async fn get_user(
     user: CurrentUser,
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
-    Ok(Json(get_json_by_id(&state.db, "persons", id).await?))
+    Ok(Json(person_detail_workbench(&state.db, &user, id).await?))
 }
 
 async fn create_user(
@@ -450,40 +462,4 @@ async fn user_workload_summary(
         .map(|r| json_row(r, "item"))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(Json(json!({ "person_id": id, "items": items })))
-}
-
-async fn get_json_by_id(db: &PgPool, table: &str, id: Uuid) -> Result<Value, ApiError> {
-    let allowed = [
-        "accounts",
-        "organizations",
-        "persons",
-        "skill_tags",
-        "roles",
-        "projects",
-        "tasks",
-        "task_assignments",
-        "approval_tickets",
-        "conflict_records",
-        "resource_files",
-        "tool_entries",
-        "invitation_templates",
-        "invitation_links",
-        "registration_requests",
-        "config_versions",
-        "todo_items",
-        "notifications",
-    ];
-    if !allowed.contains(&table) {
-        return Err(ApiError::bad_request(
-            "table is not readable through generic helper",
-        ));
-    }
-    let sql = format!("SELECT to_jsonb(t) AS item FROM {table} t WHERE id = $1");
-    sqlx::query(&sql)
-        .bind(id)
-        .fetch_optional(db)
-        .await?
-        .map(|r| json_row(&r, "item"))
-        .transpose()?
-        .ok_or_else(|| ApiError::not_found(format!("{table} not found")))
 }

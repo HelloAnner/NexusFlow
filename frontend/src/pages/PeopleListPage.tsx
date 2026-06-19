@@ -6,7 +6,7 @@ import { type ApiList, type ApiPerson, accountStatusLabel, numberValue, workStat
 import { useApiData } from '@/lib/useApiData'
 import { Edit3, Save, Search, Users, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 interface ApiOrg {
   id: string
@@ -259,7 +259,7 @@ export function PeopleListPage() {
                       <div className="flex items-center gap-3">
                         <Avatar name={person.name} className="h-8 w-8" />
                         <div>
-                          <div className="text-base font-medium text-text-primary">{person.name}</div>
+                          <Link className="text-base font-medium text-text-primary hover:underline" to={`/people/${person.id}`}>{person.name}</Link>
                           <div className="text-xs text-text-muted">{person.employee_no ?? '未设置工号'}</div>
                         </div>
                       </div>

@@ -4,7 +4,7 @@ use axum::{
     extract::{FromRequestParts, Path, Query, State},
     http::{HeaderMap, HeaderValue, StatusCode, Uri, header, request::Parts},
     response::{IntoResponse, Response},
-    routing::{delete, get, patch, post},
+    routing::{delete, get, patch, post, put},
 };
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use include_dir::{Dir, include_dir};
@@ -26,14 +26,21 @@ use uuid::Uuid;
 include!("app/core.rs");
 include!("app/routes.rs");
 include!("shared/runtime.rs");
+include!("shared/generic_read.rs");
 include!("domains/auth.rs");
 include!("domains/organization_personnel.rs");
 include!("domains/organization_moves.rs");
 include!("domains/person_memberships.rs");
 include!("domains/permission.rs");
+include!("domains/data_scope.rs");
+include!("domains/access_helpers.rs");
+include!("domains/detail_workbench.rs");
+include!("domains/task_workbench.rs");
 include!("domains/project.rs");
 include!("domains/task_core.rs");
 include!("domains/task_flow.rs");
+include!("domains/task_assignment_review.rs");
+include!("domains/resource_requirement.rs");
 include!("domains/dispatch_approval.rs");
 include!("domains/workload_conflict.rs");
 include!("domains/resource.rs");

@@ -215,6 +215,147 @@ async fn set_role_actions(
     Ok(Json(json!({ "role_id": id, "actions": actions })))
 }
 
+async fn list_data_scope_rules(
+    State(state): State<Arc<AppState>>,
+    user: CurrentUser,
+    Query(query): Query<PageQuery>,
+) -> Result<Json<Value>, ApiError> {
+    user.require_action("admin.manage")?;
+    let rows = sqlx::query(
+        "SELECT (
+           to_jsonb(dsr.*)
+           || jsonb_build_object('role_code', r.code, 'role_name', r.name)
+         ) AS item,
+         count(*) OVER() AS total
+         FROM data_scope_rules dsr
+         JOIN roles r ON r.id = dsr.role_id
+         WHERE ($1::uuid IS NULL OR dsr.role_id = $1)
+         ORDER BY r.priority, r.code
+         LIMIT $2 OFFSET $3",
+    )
+    .bind(query.role_id)
+    .bind(query.limit())
+    .bind(query.offset())
+    .fetch_all(&state.db)
+    .await?;
+    let total = rows.first().map(|r| r.get::<i64, _>("total")).unwrap_or(0);
+    Ok(Json(json!({
+        "items": rows.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()?,
+        "total": total
+    })))
+}
+
+async fn create_data_scope_rule(
+    State(state): State<Arc<AppState>>,
+    user: CurrentUser,
+    Json(payload): Json<Value>,
+) -> Result<Json<Value>, ApiError> {
+    user.require_action("admin.manage")?;
+    let role_id =
+        value_uuid(&payload, "role_id").ok_or_else(|| ApiError::bad_request("role_id is required"))?;
+    let id = sqlx::query_scalar::<_, Uuid>(
+        "INSERT INTO data_scope_rules(role_id, scope_type, org_ids, project_scope_type, project_ids, payload)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id",
+    )
+    .bind(role_id)
+    .bind(value_str(&payload, "scope_type", "self"))
+    .bind(value_uuid_vec(&payload, "org_ids"))
+    .bind(value_str(&payload, "project_scope_type", "member"))
+    .bind(value_uuid_vec(&payload, "project_ids"))
+    .bind(payload.clone())
+    .fetch_one(&state.db)
+    .await?;
+    audit(
+        &state.db,
+        user.person_id,
+        "data_scope_rule",
+        Some(id),
+        "data_scope_rule.created",
+        json!({}),
+        payload.clone(),
+        value_str(&payload, "reason", "").as_str(),
+        None,
+    )
+    .await?;
+    Ok(Json(json!({ "id": id })))
+}
+
+async fn update_data_scope_rule(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    user: CurrentUser,
+    Json(payload): Json<Value>,
+) -> Result<Json<Value>, ApiError> {
+    user.require_action("admin.manage")?;
+    let before = get_json_by_id(&state.db, "data_scope_rules", id).await?;
+    sqlx::query(
+        "UPDATE data_scope_rules SET
+          scope_type = COALESCE($2, scope_type),
+          org_ids = COALESCE($3, org_ids),
+          project_scope_type = COALESCE($4, project_scope_type),
+          project_ids = COALESCE($5, project_ids),
+          payload = payload || $6
+         WHERE id = $1",
+    )
+    .bind(id)
+    .bind(payload.get("scope_type").and_then(Value::as_str))
+    .bind(if payload.get("org_ids").is_some() {
+        Some(value_uuid_vec(&payload, "org_ids"))
+    } else {
+        None
+    })
+    .bind(payload.get("project_scope_type").and_then(Value::as_str))
+    .bind(if payload.get("project_ids").is_some() {
+        Some(value_uuid_vec(&payload, "project_ids"))
+    } else {
+        None
+    })
+    .bind(payload.clone())
+    .execute(&state.db)
+    .await?;
+    audit(
+        &state.db,
+        user.person_id,
+        "data_scope_rule",
+        Some(id),
+        "data_scope_rule.updated",
+        before,
+        payload.clone(),
+        value_str(&payload, "reason", "").as_str(),
+        None,
+    )
+    .await?;
+    Ok(Json(json!({ "id": id })))
+}
+
+async fn delete_data_scope_rule(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    user: CurrentUser,
+) -> Result<Json<Value>, ApiError> {
+    user.require_action("admin.manage")?;
+    let before = get_json_by_id(&state.db, "data_scope_rules", id)
+        .await
+        .unwrap_or_else(|_| json!({}));
+    sqlx::query("DELETE FROM data_scope_rules WHERE id = $1")
+        .bind(id)
+        .execute(&state.db)
+        .await?;
+    audit(
+        &state.db,
+        user.person_id,
+        "data_scope_rule",
+        Some(id),
+        "data_scope_rule.deleted",
+        before,
+        json!({}),
+        "",
+        None,
+    )
+    .await?;
+    Ok(Json(json!({ "id": id, "deleted": true })))
+}
+
 async fn list_visibility_grants(
     State(state): State<Arc<AppState>>,
     user: CurrentUser,

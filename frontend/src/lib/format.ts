@@ -109,6 +109,9 @@ export interface ApiResource {
   id: string
   name: string
   resource_type?: string
+  uploader_id?: string | null
+  uploader_name?: string | null
+  visibility?: string
   status?: string
   object_key?: string
   file_size?: number | string

@@ -4,6 +4,7 @@ async fn list_tasks(
     Query(query): Query<PageQuery>,
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
+    let scope = data_scope_context(&state.db, &user).await?;
     let rows = sqlx::query(
         "SELECT (
           to_jsonb(t.*)
@@ -49,8 +50,15 @@ async fn list_tasks(
              OR EXISTS (
                SELECT 1 FROM visibility_grants vg WHERE vg.object_type IN ('task','project') AND vg.object_id IN (t.id, t.project_id)
                  AND ((vg.subject_type = 'person' AND vg.subject_id = $4) OR (vg.subject_type = 'role' AND vg.subject_id = ANY($5)))
-                 AND (vg.expires_at IS NULL OR vg.expires_at > now())
+               AND (vg.expires_at IS NULL OR vg.expires_at > now())
              )
+           )
+           AND (
+             $17::bool
+             OR t.initiator_id = $4 OR t.owner_id = $4 OR t.acceptor_id = $4
+             OR EXISTS (SELECT 1 FROM task_members tm WHERE tm.task_id = t.id AND tm.person_id = $4)
+             OR EXISTS (SELECT 1 FROM task_assignments ta WHERE ta.task_id = t.id AND (ta.owner_id = $4 OR $4 = ANY(ta.collaborator_ids)))
+             OR (($18::bool OR t.owner_org_id = ANY($20)) AND ($19::bool OR t.project_id IS NULL OR t.project_id = ANY($21)))
            )
          ORDER BY t.created_at DESC LIMIT $6 OFFSET $7",
     )
@@ -70,6 +78,11 @@ async fn list_tasks(
     .bind(query.visibility.clone())
     .bind(query.start_date)
     .bind(query.end_date)
+    .bind(scope.unrestricted)
+    .bind(scope.all_orgs)
+    .bind(scope.all_projects)
+    .bind(&scope.org_ids)
+    .bind(&scope.project_ids)
     .fetch_all(&state.db)
     .await?;
     let total = rows.first().map(|r| r.get::<i64, _>("total")).unwrap_or(0);
@@ -84,23 +97,7 @@ async fn get_task(
     Path(id): Path<Uuid>,
     user: CurrentUser,
 ) -> Result<Json<Value>, ApiError> {
-    ensure_task_visible(&state.db, &user, id).await?;
-    let task = get_json_by_id(&state.db, "tasks", id).await?;
-    let members =
-        sqlx::query("SELECT to_jsonb(task_members.*) AS item FROM task_members WHERE task_id = $1")
-            .bind(id)
-            .fetch_all(&state.db)
-            .await?;
-    let assignments = sqlx::query("SELECT to_jsonb(task_assignments.*) AS item FROM task_assignments WHERE task_id = $1 ORDER BY created_at")
-        .bind(id)
-        .fetch_all(&state.db)
-        .await?;
-    Ok(Json(json!({
-        "task": task,
-        "members": members.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()?,
-        "assignments": assignments.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()?,
-        "available_actions": task_available_actions(&task, &user)
-    })))
+    Ok(Json(task_detail_workbench(&state.db, &user, id).await?))
 }
 
 fn task_available_actions(task: &Value, user: &CurrentUser) -> Vec<&'static str> {

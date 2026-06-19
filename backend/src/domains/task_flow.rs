@@ -245,11 +245,20 @@ async fn create_assignment(
     .await?;
     emit_event(
         &state.db,
-        "task.changed",
+        "assignment.created",
         "assignment",
         Some(id),
         user.person_id,
-        payload,
+        payload.clone(),
+    )
+    .await?;
+    log_assignment_change(
+        &state.db,
+        task_id,
+        user.person_id,
+        "assignment.created",
+        value_str(&payload, "reason", ""),
+        json!({ "assignment_id": id, "payload": payload }),
     )
     .await?;
     Ok(Json(json!({ "id": id })))
@@ -266,6 +275,7 @@ async fn update_assignment(
         .fetch_one(&state.db)
         .await?;
     ensure_task_editable(&state.db, &user, task_id).await?;
+    let before = get_json_by_id(&state.db, "task_assignments", id).await?;
     sqlx::query(
         "UPDATE task_assignments SET
           title = COALESCE($2, title), owner_id = COALESCE($3, owner_id),
@@ -291,11 +301,20 @@ async fn update_assignment(
     .await?;
     emit_event(
         &state.db,
-        "task.changed",
+        "assignment.updated",
         "assignment",
         Some(id),
         user.person_id,
-        payload,
+        payload.clone(),
+    )
+    .await?;
+    log_assignment_change(
+        &state.db,
+        task_id,
+        user.person_id,
+        "assignment.updated",
+        value_str(&payload, "reason", ""),
+        json!({ "assignment_id": id, "before": before, "after": payload }),
     )
     .await?;
     Ok(Json(json!({ "id": id })))
@@ -314,6 +333,7 @@ async fn assignment_progress(
     .fetch_one(&state.db)
     .await?;
     let owner_id: Uuid = row.get("owner_id");
+    let task_id: Uuid = row.get("task_id");
     let collaborators: Vec<Uuid> = row.get("collaborator_ids");
     if !user.is_sa()
         && Some(owner_id) != user.person_id
@@ -350,7 +370,16 @@ async fn assignment_progress(
         "assignment",
         Some(id),
         user.person_id,
-        payload,
+        payload.clone(),
+    )
+    .await?;
+    log_assignment_change(
+        &state.db,
+        task_id,
+        user.person_id,
+        "assignment.progress_reported",
+        value_str(&payload, "reason", ""),
+        json!({ "assignment_id": id, "payload": payload }),
     )
     .await?;
     Ok(Json(json!({ "id": id })))
@@ -366,6 +395,7 @@ async fn assignment_submit_result(
         "spent_hours": value_f64(&payload, "spent_hours", 0.0),
         "progress": 100.0,
         "content": value_str(&payload, "content", ""),
+        "reason": value_str(&payload, "reason", ""),
         "result_resource_ids": payload.get("result_resource_ids").cloned().unwrap_or_else(|| json!([]))
     }))).await
 }

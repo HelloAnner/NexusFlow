@@ -25,6 +25,14 @@ fn api_routes() -> Router<Arc<AppState>> {
         .route("/permissions/me", get(permissions_me))
         .route("/permissions/check", post(permission_check))
         .route(
+            "/data-scope-rules",
+            get(list_data_scope_rules).post(create_data_scope_rule),
+        )
+        .route(
+            "/data-scope-rules/{id}",
+            patch(update_data_scope_rule).delete(delete_data_scope_rule),
+        )
+        .route(
             "/visibility-grants",
             get(list_visibility_grants).post(create_visibility_grant),
         )
@@ -54,6 +62,10 @@ fn api_routes() -> Router<Arc<AppState>> {
         .route("/tasks/{id}/accept", post(accept_task))
         .route("/tasks/{id}/reject", post(reject_task))
         .route("/tasks/{id}/archive", post(archive_task))
+        .route(
+            "/tasks/{id}/resource-requirements",
+            put(set_task_resource_requirements),
+        )
         .route("/tasks/{id}/assignments", post(create_assignment))
         .route("/assignments/{id}", patch(update_assignment))
         .route("/assignments/{id}/progress", post(assignment_progress))
@@ -61,6 +73,8 @@ fn api_routes() -> Router<Arc<AppState>> {
             "/assignments/{id}/submit-result",
             post(assignment_submit_result),
         )
+        .route("/assignments/{id}/confirm", post(assignment_confirm))
+        .route("/assignments/{id}/return", post(assignment_return))
         .route("/dispatch/preview", post(dispatch_preview))
         .route("/dispatch/submit", post(dispatch_submit))
         .route("/approvals", get(list_approvals))

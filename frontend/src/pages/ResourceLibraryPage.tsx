@@ -5,6 +5,7 @@ import { type ApiList, type ApiResource, formatDateTime, numberValue, resourceSt
 import { useApiData } from '@/lib/useApiData'
 import { Download, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 function statusVariant(status?: string) {
   if (status === 'confirmed' || status === 'archived') return 'success'
@@ -96,7 +97,7 @@ export function ResourceLibraryPage() {
                 <Tr key={resource.id}>
                   <Td>
                     <div className="flex flex-col gap-1">
-                      <span className="text-base font-medium text-text-primary">{resource.name}</span>
+                      <Link className="text-base font-medium text-text-primary hover:underline" to={`/resources/${resource.id}`}>{resource.name}</Link>
                       <span className="text-xs text-text-muted">{resource.object_key ?? resource.id}</span>
                     </div>
                   </Td>

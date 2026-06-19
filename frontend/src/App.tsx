@@ -7,14 +7,18 @@ import { TaskListPage } from '@/pages/TaskListPage'
 import { TaskDetailPage } from '@/pages/TaskDetailPage'
 import { NewTaskPage } from '@/pages/NewTaskPage'
 import { ProjectListPage } from '@/pages/ProjectListPage'
+import { ProjectDetailPage } from '@/pages/ProjectDetailPage'
 import { PeopleListPage } from '@/pages/PeopleListPage'
+import { PersonDetailPage } from '@/pages/PersonDetailPage'
 import { OrganizationManagementPage } from '@/pages/OrganizationManagementPage'
 import { GanttChartPage } from '@/pages/GanttChartPage'
 import { ConflictCenterPage } from '@/pages/ConflictCenterPage'
 import { ConfigCenterPage } from '@/pages/ConfigCenterPage'
+import { PermissionManagementPage } from '@/pages/PermissionManagementPage'
 import { ToolCenterPage } from '@/pages/ToolCenterPage'
 import { ToolDetailPage } from '@/pages/ToolDetailPage'
 import { ResourceLibraryPage } from '@/pages/ResourceLibraryPage'
+import { ResourceDetailPage } from '@/pages/ResourceDetailPage'
 import { ApprovalDetailPage, ApprovalListPage } from '@/pages/ApprovalPages'
 import { TodoCenterPage } from '@/pages/TodoCenterPage'
 import { NotificationCenterPage } from '@/pages/NotificationCenterPage'
@@ -60,8 +64,10 @@ function App() {
             <Route path="/tasks/new" element={<ProtectedRoute><NewTaskPage /></ProtectedRoute>} />
             <Route path="/tasks/:id" element={<ProtectedRoute><TaskDetailPage /></ProtectedRoute>} />
             <Route path="/projects" element={<ProtectedRoute><ProjectListPage /></ProtectedRoute>} />
+            <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetailPage /></ProtectedRoute>} />
             <Route path="/orgs" element={<ProtectedRoute><OrganizationManagementPage /></ProtectedRoute>} />
             <Route path="/people" element={<ProtectedRoute><PeopleListPage /></ProtectedRoute>} />
+            <Route path="/people/:id" element={<ProtectedRoute><PersonDetailPage /></ProtectedRoute>} />
             <Route path="/gantt" element={<ProtectedRoute><GanttChartPage /></ProtectedRoute>} />
             <Route path="/conflicts" element={<ProtectedRoute><ConflictCenterPage /></ProtectedRoute>} />
             <Route path="/approvals" element={<ProtectedRoute><ApprovalListPage /></ProtectedRoute>} />
@@ -70,10 +76,12 @@ function App() {
             <Route path="/notifications" element={<ProtectedRoute><NotificationCenterPage /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><ReportCenterPage /></ProtectedRoute>} />
             <Route path="/search" element={<ProtectedRoute><SearchResultsPage /></ProtectedRoute>} />
+            <Route path="/permissions" element={<ProtectedRoute><PermissionManagementPage /></ProtectedRoute>} />
             <Route path="/config" element={<ProtectedRoute><ConfigCenterPage /></ProtectedRoute>} />
             <Route path="/tools" element={<ProtectedRoute><ToolCenterPage /></ProtectedRoute>} />
             <Route path="/tools/:id" element={<ProtectedRoute><ToolDetailPage /></ProtectedRoute>} />
             <Route path="/resources" element={<ProtectedRoute><ResourceLibraryPage /></ProtectedRoute>} />
+            <Route path="/resources/:id" element={<ProtectedRoute><ResourceDetailPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><SAAdminPage /></ProtectedRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

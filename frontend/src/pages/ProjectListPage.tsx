@@ -5,6 +5,7 @@ import { type ApiList, type ApiOrg, type ApiPerson, type ApiProject, formatDate,
 import { useApiData } from '@/lib/useApiData'
 import { Check, Search, X } from 'lucide-react'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useSearchParams } from 'react-router-dom'
 
 const initialForm = {
@@ -201,7 +202,7 @@ export function ProjectListPage() {
                 <div key={project.id} className="flex flex-col gap-3 py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="truncate text-base font-semibold text-text-primary">{project.name}</div>
+                      <Link className="truncate text-base font-semibold text-text-primary hover:underline" to={`/projects/${project.id}`}>{project.name}</Link>
                       <div className="mt-1 truncate text-xs text-text-muted">{project.summary || project.project_no}</div>
                     </div>
                     <Badge>{projectStatusLabel(project.status)}</Badge>
@@ -231,7 +232,7 @@ export function ProjectListPage() {
                   <Tr key={project.id}>
                     <Td>
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-base font-medium text-text-primary">{project.name}</span>
+                        <Link className="text-base font-medium text-text-primary hover:underline" to={`/projects/${project.id}`}>{project.name}</Link>
                         <span className="text-xs text-text-muted">{project.summary || project.project_no}</span>
                       </div>
                     </Td>
