@@ -288,24 +288,27 @@ export interface NavItemProps {
   icon?: LucideIcon
   label: string
   active?: boolean
+  compact?: boolean
   className?: string
   onClick?: () => void
 }
-export function NavItem({ icon: Icon = Circle, label, active, className, onClick }: NavItemProps) {
+export function NavItem({ icon: Icon = Circle, label, active, compact, className, onClick }: NavItemProps) {
   return (
     <button
       onClick={onClick}
+      title={compact ? label : undefined}
       className={cn(
-        'flex h-10 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-fast',
+        'flex h-10 w-full items-center rounded-md text-sm font-medium transition-fast',
+        compact ? 'justify-center px-0' : 'gap-2.5 px-2.5',
         active
           ? 'bg-selected-bg text-text-primary'
           : 'bg-transparent text-text-secondary hover:bg-hover-bg hover:text-text-primary',
         className
       )}
     >
-      {active && <span className="-ml-2 h-5 w-0.5 rounded-full bg-primary-fill" />}
+      {active && !compact && <span className="-ml-2 h-5 w-0.5 rounded-full bg-primary-fill" />}
       <Icon className="h-[18px] w-[18px] shrink-0 text-current" />
-      <span>{label}</span>
+      {!compact && <span>{label}</span>}
     </button>
   )
 }

@@ -74,16 +74,16 @@
 ### 角色管理
 
 - 文档要求：角色列表、创建、停用、角色详情。
-- 当前前端：已有 `/permissions` 独立权限管理页；SA 后台仍保留“角色入口”和总览入口。
+- 当前前端：已有 `/permissions` 独立权限管理页；角色动作矩阵正在补齐角色详情摘要、影响预览、高风险动作提示和审计详情。
 - 当前后端：有 `GET/POST /api/roles`、`PATCH /api/roles/{id}`。
-- 明显差距：角色详情页、授权人员页签和变更记录仍不完整。
+- 明显差距：授权人员页签仍不完整，角色详情仍以工作台摘要为主，缺独立角色详情路由。
 
 ### 操作权限矩阵
 
 - 文档要求：模块-动作矩阵、保存校验、权限继承/冲突提示。
-- 当前前端：`/permissions` 已有基础权限矩阵编辑。
+- 当前前端：`/permissions` 已有权限矩阵编辑，支持按角色加载动作并在保存前展示新增/移除/高风险动作影响。
 - 当前后端：有 `GET/PUT /api/roles/{id}/actions`。
-- 明显差距：后端保存动作时基本是全量替换，没有矩阵校验、高风险变更影响提示和权限继承/冲突解释。
+- 明显差距：后端保存动作仍是全量替换，权限继承/冲突解释仍未形成后端校验模型。
 
 ### 数据范围配置
 
@@ -104,9 +104,9 @@
 ### 权限审计
 
 - 文档要求：筛选、列表、详情弹窗。
-- 当前前端：SA 后台和权限管理页可读取 `/audit/permission`，仍以轻量列表为主。
+- 当前前端：SA 后台和权限管理页可读取 `/audit/permission`；权限管理页补本地筛选和详情面板，用于查看 before/after、原因和 payload。
 - 当前后端：`GET /api/audit/permission` 支持 `q`、分页。
-- 明显差距：缺对象详情、前后端筛选参数对齐、差异对比展示。
+- 明显差距：对象名称补全和前后端筛选参数完全对齐仍不足，审计回滚尚未接入。
 
 ## 03 任务管理
 
@@ -278,22 +278,22 @@
 
 - 当前前端：首页和配置中心读取部分待办；已新增 `/todos` 待办中心。
 - 当前后端：`GET /todos`、`POST /todos/{id}/complete`。
-- 明显差距：待办高级筛选、批量完成、完成原因等交互仍未接入。
-- 进展：已新增 `/todos` 待办中心，支持待处理/已完成/全部筛选、打开 action_url、完成待办，并从首页“我的待办”进入。
+- 明显差距：待办稍后提醒、批量拒绝/忽略、键盘快捷处理和跨对象详情摘要仍未完整接入。
+- 进展：已新增 `/todos` 待办中心，支持待处理/已完成/全部/今日到期/逾期筛选、打开 action_url、详情预览、多选批量完成和完成原因；完成原因会写入 `todo_items.payload`，并写入 `todo.complete` 审计和 `todo.completed` 事件。
 
 ### 通知中心
 
 - 当前前端：已新增 `/notifications` 通知中心。
 - 当前后端：`GET /notifications`、`POST /notifications/{id}/read`；列表会解析通知 payload 中的 `action_url`，对当前账号不可见的任务/项目/资料/人员目标隐藏标题正文、清空跳转并返回 `payload.redacted=true`。
-- 明显差距：通知高级筛选、批量已读、未读筛选和通知偏好仍未接入。
-- 进展：已新增 `/notifications` 通知中心，支持通知列表、打开 action_url、标记已读，并在侧边栏提供入口；2026-06-20 已在服务器验证隐藏任务通知脱敏和标记已读。
+- 明显差距：后端通知偏好模型、分组折叠、稍后提醒和实时同步仍未接入。
+- 进展：已新增 `/notifications` 通知中心，支持全部/未读/已读/权限受限筛选、通知列表、详情预览、打开 action_url、单条/批量标记已读和本地通知偏好；2026-06-20 已在服务器验证隐藏任务通知脱敏、批量已读和本机偏好保存。
 
 ### 报表首页和专项报表
 
 - 当前前端：已新增 `/reports` 报表中心。
 - 当前后端：`GET /reports`、`GET /reports/{type}`、`POST /reports/{type}/export`；`task_overview`、`person_workload`、`resource_archive` 已按当前用户数据范围生成服务器聚合 payload。
-- 明显差距：当前是快照目录、最新详情和生成入口，缺趋势图、专项图表展示、导出文件下载和复杂筛选。
-- 进展：已接入报表列表、最新快照详情和生成快照动作；2026-06-20 已在服务器验证受限账号生成三类报表均返回 `server_aggregate` payload，且任务总览只统计范围内任务。
+- 明显差距：复杂筛选、PDF/Excel/图片导出、Dashboard 配置保存和后台大报表通知仍未完整接入。
+- 进展：已接入报表列表、最新快照详情、生成快照动作、时间范围预设、专项指标卡、服务器 payload 分布图、原始指标口径表和本机 JSON 下载记录；生成下载时调用 `POST /api/reports/{type}/export` 由后端按当前用户权限重新聚合，再下载 `{ report_type, snapshot_id, generated_at, period_start, period_end, payload }` JSON 包。2026-06-20 已在服务器验证受限账号生成三类报表均返回 `server_aggregate` payload，且任务总览只统计范围内任务。
 
 ## 10 智能工具台
 
@@ -346,9 +346,10 @@
 
 ### 甘特图
 
-- 当前前端：`/gantt` 请求 `/gantt` 和 `/gantt/summary`，只传 start/end。
-- 当前后端：`/gantt` 基于任务日期返回条目；`/gantt/summary` 统计状态。
-- 明显差距：维度切换、粒度、项目/人员筛选、风险过滤没有传参和交互；权限提示缺失。
+- 当前前端：`/gantt` 请求 `/gantt` 和 `/gantt/summary`，支持时间范围、项目、负责人、组织、状态、只看风险、维度、粒度，URL query 可恢复；页面展示服务器数据范围提示，并支持导出当前视图 JSON。
+- 当前后端：`/gantt` 基于任务日期返回条目，并消费 `project_id`、`owner_id`、`org_id`、`status`、`risk_only`；`/gantt/summary` 使用同一筛选和数据范围统计 `in_progress`、`acceptance_pending`、`archived`、`open_risk`。
+- 明显差距：日历/负载视图、拖拽调整日期、后端 PDF/PNG 导出和深层冲突建议仍未完整接入。
+- 进展：已补筛选甘特切片；后端按当前用户权限重新过滤甘特条和 summary，前端显示 `data_scope_applied` 口径，导出的 JSON 包包含 `{ generated_at, filters, dimension, granularity, data_scope_applied, summary, items }`。
 
 ### 全局搜索
 

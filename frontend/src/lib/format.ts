@@ -179,6 +179,7 @@ export interface ApiResource {
   uploader_name?: string | null
   visibility?: string
   status?: string
+  current_version_id?: string | null
   object_key?: string
   file_size?: number | string
   size_bytes?: number | string
@@ -216,6 +217,8 @@ export interface ApiTodo {
   id: string
   title: string
   todo_type?: string
+  target_type?: string | null
+  target_id?: string | null
   action_url?: string | null
   status?: string
   due_at?: string | null

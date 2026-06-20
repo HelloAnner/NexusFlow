@@ -22,14 +22,20 @@ import {
   Inbox,
   CalendarDays,
   PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  CornerDownLeft,
+  Clock3,
+  File,
+  User,
+  Briefcase,
 } from 'lucide-react'
-import { NavItem, SearchInput, Button, Avatar } from '@/components/ui'
+import { NavItem, Button, Avatar } from '@/components/ui'
 import { apiGet } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import { useBranding } from '@/lib/branding'
 import { useApiData } from '@/lib/useApiData'
-import { useRef, useState } from 'react'
-import type { FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 const mainNav = [
@@ -70,7 +76,15 @@ function canAccess(
   return !('businessOnly' in item) || item.businessOnly
 }
 
-export function Sidebar({ className }: { className?: string }) {
+export function Sidebar({
+  className,
+  collapsed = false,
+  onToggleCollapsed,
+}: {
+  className?: string
+  collapsed?: boolean
+  onToggleCollapsed?: () => void
+}) {
   const location = useLocation()
   const { user } = useAuth()
   const { branding } = useBranding()
@@ -85,13 +99,17 @@ export function Sidebar({ className }: { className?: string }) {
     permissions.actions?.some((action) => ['admin.manage', 'admin.invitation_manage'].includes(action))
   return (
     <aside
-      className={cn('flex h-screen w-[220px] flex-col bg-bg-tertiary p-2.5', className)}
+      className={cn(
+        'flex h-screen flex-col bg-bg-tertiary p-2.5 transition-all duration-normal',
+        collapsed ? 'w-[52px]' : 'w-[220px]',
+        className
+      )}
     >
-      <Link to="/" className="mb-5 flex min-w-0 items-center gap-2 px-1.5 pt-1">
+      <Link to="/" className={cn('mb-5 flex min-w-0 items-center gap-2 px-1.5 pt-1', collapsed && 'justify-center px-0')} title={branding.product_name}>
         <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-primary-fill text-primary-text">
           <span className="text-xs font-bold">{branding.product_name.charAt(0)}</span>
         </span>
-        <span className="min-w-0 truncate text-base font-bold text-text-primary">{branding.product_name}</span>
+        {!collapsed && <span className="min-w-0 truncate text-base font-bold text-text-primary">{branding.product_name}</span>}
       </Link>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
@@ -100,6 +118,7 @@ export function Sidebar({ className }: { className?: string }) {
           permissions={permissions}
           fallbackActions={user?.actions ?? []}
           pathname={location.pathname}
+          collapsed={collapsed}
         />
         <NavGroup
           label="工作"
@@ -107,6 +126,7 @@ export function Sidebar({ className }: { className?: string }) {
           permissions={permissions}
           fallbackActions={user?.actions ?? []}
           pathname={location.pathname}
+          collapsed={collapsed}
         />
         <NavGroup
           label="系统"
@@ -114,19 +134,28 @@ export function Sidebar({ className }: { className?: string }) {
           permissions={permissions}
           fallbackActions={user?.actions ?? []}
           pathname={location.pathname}
+          collapsed={collapsed}
         />
       </nav>
 
       {showAdmin && (
         <div className="mt-2">
           <Link to="/admin" className="w-full">
-            <NavItem icon={Shield} label="后台" active={location.pathname === '/admin'} />
+            <NavItem icon={Shield} label="后台" active={location.pathname === '/admin'} compact={collapsed} />
           </Link>
         </div>
       )}
-      <button type="button" className="mt-2 flex h-10 items-center gap-2.5 rounded-md px-2.5 text-sm font-medium text-text-muted hover:bg-hover-bg">
-        <PanelLeftClose className="h-[18px] w-[18px]" />
-        收起
+      <button
+        type="button"
+        className={cn(
+          'mt-2 flex h-10 items-center rounded-md text-sm font-medium text-text-muted hover:bg-hover-bg',
+          collapsed ? 'justify-center px-0' : 'gap-2.5 px-2.5'
+        )}
+        title={collapsed ? '展开' : '收起'}
+        onClick={onToggleCollapsed}
+      >
+        {collapsed ? <PanelLeftOpen className="h-[18px] w-[18px]" /> : <PanelLeftClose className="h-[18px] w-[18px]" />}
+        {!collapsed && '收起'}
       </button>
     </aside>
   )
@@ -138,21 +167,28 @@ function NavGroup({
   permissions,
   fallbackActions,
   pathname,
+  collapsed,
 }: {
   label?: string
   items: typeof mainNav
   permissions: PermissionResponse
   fallbackActions: string[]
   pathname: string
+  collapsed: boolean
 }) {
   const visibleItems = items.filter((item) => canAccess(item, permissions, fallbackActions))
   if (!visibleItems.length) return null
   return (
     <div className="mb-3 flex flex-col gap-1">
-      {label && <div className="px-0.5 py-1 text-xs font-semibold text-text-muted">{label}</div>}
+      {label && !collapsed && <div className="px-0.5 py-1 text-xs font-semibold text-text-muted">{label}</div>}
       {visibleItems.map((item) => (
         <Link key={item.path} to={item.path} className="w-full">
-          <NavItem icon={item.icon} label={item.label} active={pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))} />
+          <NavItem
+            icon={item.icon}
+            label={item.label}
+            active={pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))}
+            compact={collapsed}
+          />
         </Link>
       ))}
     </div>
@@ -164,12 +200,11 @@ export interface TopHeaderProps {
   subtitle?: string
   className?: string
   onMenuClick?: () => void
+  onOpenCommand?: () => void
 }
-export function TopHeader({ className, onMenuClick }: TopHeaderProps) {
+export function TopHeader({ className, onMenuClick, onOpenCommand }: TopHeaderProps) {
   const { user, logout } = useAuth()
-  const navigate = useNavigate()
   const location = useLocation()
-  const [q, setQ] = useState('')
   const profileKey = `nexusflow.profile.${user?.account_id ?? 'anonymous'}`
   const [profileOpen, setProfileOpen] = useState(false)
   const [displayName, setDisplayName] = useState(() => localStorage.getItem(`${profileKey}.name`) || user?.login_name || '用户')
@@ -183,11 +218,6 @@ export function TopHeader({ className, onMenuClick }: TopHeaderProps) {
       : location.pathname.startsWith('/projects') && (isSa || user?.actions.includes('project.create'))
         ? { to: '/projects?create=1', label: '新建项目' }
         : null
-
-  function handleSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (q.trim()) navigate(`/search?q=${encodeURIComponent(q.trim())}`)
-  }
 
   function saveProfile() {
     const nextName = displayName.trim() || user?.login_name || '用户'
@@ -235,14 +265,15 @@ export function TopHeader({ className, onMenuClick }: TopHeaderProps) {
           </button>
         </div>
       </div>
-      <form onSubmit={handleSearch} className="hidden sm:block">
-          <SearchInput
-            placeholder="Cmd + K 搜索或跳转..."
-            className="w-[min(320px,36vw)]"
-            value={q}
-            onChange={(event) => setQ(event.target.value)}
-          />
-      </form>
+      <button
+        type="button"
+        className="hidden h-9 w-[min(320px,36vw)] items-center gap-2 rounded-md border border-border-subtle bg-bg-tertiary px-3 text-left text-base text-text-placeholder transition-fast hover:bg-hover-bg focus:border-text-muted focus:outline-none sm:inline-flex"
+        onClick={onOpenCommand}
+      >
+        <Search className="h-4 w-4 shrink-0 text-text-placeholder" />
+        <span className="min-w-0 flex-1 truncate">Cmd + K 搜索或跳转...</span>
+        <span className="rounded-sm bg-bg-secondary px-1.5 py-0.5 text-xs text-text-muted">K</span>
+      </button>
       <div className="flex min-w-0 items-center gap-2">
         {headerAction && (
           <Link to={headerAction.to}>
@@ -363,6 +394,302 @@ function ProfileField({ label, value }: { label: string; value: string }) {
   )
 }
 
+interface SearchResult {
+  object_type: string
+  object_id: string
+  title: string
+  summary?: string
+  status?: string | null
+  target_url?: string
+}
+
+interface CommandItem {
+  id: string
+  group: 'navigate' | 'actions' | 'recent' | 'results'
+  label: string
+  meta?: string
+  path: string
+  icon: React.ComponentType<{ className?: string }>
+  keywords?: string[]
+}
+
+const commandGroupLabels: Record<CommandItem['group'], string> = {
+  navigate: '快捷导航',
+  actions: '操作',
+  recent: '最近访问',
+  results: '搜索结果',
+}
+
+const actionCommands: CommandItem[] = [
+  { id: 'new-task', group: 'actions', label: '新建任务', meta: '/new task', path: '/tasks/new', icon: Plus, keywords: ['/new task', 'new task', '创建任务'] },
+  { id: 'new-project', group: 'actions', label: '新建项目', meta: '/new project', path: '/projects?create=1', icon: Folder, keywords: ['/new project', 'new project', '创建项目'] },
+  { id: 'upload-file', group: 'actions', label: '上传资料', meta: '/upload file', path: '/resources?upload=1', icon: FileText, keywords: ['/upload file', '上传资料'] },
+  { id: 'invite-people', group: 'actions', label: '邀请人员', meta: '/invite people', path: '/admin?view=links', icon: Users, keywords: ['/invite people', '邀请人员'] },
+]
+
+const routeAliases: Record<string, string[]> = {
+  '/': ['/go home', 'home'],
+  '/todos': ['/go inbox', 'inbox'],
+  '/tasks': ['/go work', '/go tasks', 'my work', 'tasks'],
+  '/projects': ['/go projects', 'projects'],
+  '/people': ['/go team', 'team'],
+  '/orgs': ['/go orgs', 'orgs'],
+  '/gantt': ['/go schedule', 'schedule'],
+  '/conflicts': ['/go conflicts', 'conflicts'],
+  '/resources': ['/go files', 'files'],
+  '/reports': ['/go reports', 'reports'],
+  '/tools': ['/go tools', 'tools'],
+  '/config': ['/go settings', 'settings'],
+  '/permissions': ['/go permissions', 'permissions'],
+}
+
+function resultIcon(type: string) {
+  if (type === 'task') return CheckSquare
+  if (type === 'project') return Briefcase
+  if (type === 'person') return User
+  if (type === 'resource') return File
+  return Search
+}
+
+function getRecentCommands(): CommandItem[] {
+  const raw = localStorage.getItem('nexusflow.command.recent')
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw) as CommandItem[]
+    return parsed.slice(0, 8).map((item) => ({ ...item, group: 'recent', icon: Clock3 }))
+  } catch {
+    localStorage.removeItem('nexusflow.command.recent')
+    return []
+  }
+}
+
+function saveRecentCommand(item: CommandItem) {
+  const nextItem = {
+    id: item.id,
+    group: 'recent' as const,
+    label: item.label,
+    meta: item.meta,
+    path: item.path,
+    icon: Clock3,
+  }
+  const rest = getRecentCommands().filter((recent) => recent.path !== item.path)
+  localStorage.setItem('nexusflow.command.recent', JSON.stringify([nextItem, ...rest].slice(0, 8)))
+}
+
+function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { user } = useAuth()
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState(0)
+  const [searching, setSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [results, setResults] = useState<SearchResult[]>([])
+  const [recent, setRecent] = useState<CommandItem[]>(() => getRecentCommands())
+  const q = query.trim().toLowerCase()
+  const isSlashCommand = q.startsWith('/')
+  const canSearch = q.length >= 2 && !isSlashCommand
+
+  const navigateCommands = useMemo<CommandItem[]>(() => {
+    const permissions: PermissionResponse = {
+      roles: user?.role_codes ?? [],
+      actions: user?.actions ?? [],
+      pending: user?.account_status === 'pending' || user?.role_codes.includes('pending'),
+    }
+    return mainNav
+      .filter((item) => canAccess(item, permissions, user?.actions ?? []))
+      .map((item) => ({
+        id: `nav-${item.path}`,
+        group: 'navigate' as const,
+        label: item.label,
+        meta: item.path === '/' ? '今日工作台' : item.path,
+        path: item.path,
+        icon: item.icon,
+        keywords: [`/go ${item.label}`, item.label, item.path, ...(routeAliases[item.path] ?? [])],
+      }))
+  }, [user])
+
+  useEffect(() => {
+    if (!open) return
+    const timer = window.setTimeout(() => {
+      setQuery('')
+      setSelected(0)
+      setRecent(getRecentCommands())
+      inputRef.current?.focus()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [open])
+
+  useEffect(() => {
+    if (!open || !canSearch) return
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      setSearching(true)
+      setSearchError(null)
+      apiGet<{ items: SearchResult[] }>('/search', { q })
+        .then((body) => setResults(body.items ?? []))
+        .catch((err) => {
+          if (!controller.signal.aborted) setSearchError(err instanceof Error ? err.message : '全局搜索暂不可用')
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setSearching(false)
+        })
+    }, 180)
+    return () => {
+      controller.abort()
+      window.clearTimeout(timer)
+    }
+  }, [canSearch, open, q])
+
+  const visibleGroups = useMemo(() => {
+    const matches = (item: CommandItem) => {
+      if (!q) return true
+      return [item.label, item.meta, ...(item.keywords ?? [])]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q))
+    }
+    const resultCommands: CommandItem[] = canSearch ? results.map((item) => ({
+      id: `result-${item.object_type}-${item.object_id}`,
+      group: 'results',
+      label: item.title,
+      meta: item.summary || item.status || item.object_type,
+      path: item.target_url || '/',
+      icon: resultIcon(item.object_type),
+      keywords: [item.object_type, item.object_id, item.status ?? ''],
+    })) : []
+    const groups: { group: CommandItem['group']; items: CommandItem[] }[] = []
+    const navItems = navigateCommands.filter(matches)
+    const actionItems = actionCommands.filter(matches)
+    const recentItems = recent.filter(matches)
+    const searchItems = resultCommands.filter(matches)
+    if (q && searchItems.length) groups.push({ group: 'results', items: searchItems })
+    if (!q && recentItems.length) groups.push({ group: 'recent', items: recentItems })
+    if (navItems.length) groups.push({ group: 'navigate', items: navItems })
+    if (actionItems.length) groups.push({ group: 'actions', items: actionItems })
+    return groups
+  }, [canSearch, navigateCommands, q, recent, results])
+
+  const flatItems = visibleGroups.flatMap((group) => group.items)
+  const selectedIndex = Math.min(selected, Math.max(0, flatItems.length - 1))
+
+  function execute(item: CommandItem | undefined) {
+    if (!item) return
+    saveRecentCommand(item)
+    setRecent(getRecentCommands())
+    onClose()
+    if (item.path !== location.pathname) navigate(item.path)
+  }
+
+  function handleKeyDown(event: React.KeyboardEvent) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      onClose()
+      return
+    }
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      if (flatItems.length === 0) return
+      setSelected((value) => Math.min(flatItems.length - 1, value + 1))
+      return
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      if (flatItems.length === 0) return
+      setSelected((value) => Math.max(0, value - 1))
+      return
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      execute(flatItems[selectedIndex])
+    }
+  }
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 px-3 py-16" onMouseDown={onClose}>
+      <div
+        className="flex max-h-[min(720px,calc(100vh-48px))] w-full max-w-[680px] flex-col overflow-hidden rounded-lg border border-border-subtle bg-bg-secondary shadow-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="命令面板"
+        onMouseDown={(event) => event.stopPropagation()}
+        onKeyDown={handleKeyDown}
+      >
+        <div className="flex h-14 items-center gap-3 border-b border-border-subtle px-4">
+          <Search className="h-4 w-4 text-text-muted" />
+          <input
+            ref={inputRef}
+            className="min-w-0 flex-1 bg-transparent text-lg text-text-primary placeholder:text-text-placeholder focus:outline-none"
+            placeholder="搜索或输入命令..."
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value)
+              setSelected(0)
+            }}
+          />
+          <span className="rounded-sm bg-bg-tertiary px-2 py-1 text-xs text-text-muted">Esc</span>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+          {searchError && canSearch && (
+            <div className="m-2 rounded-md bg-color-warning-bg px-3 py-2 text-sm text-color-warning">
+              {searchError}，本地导航仍可使用。
+            </div>
+          )}
+          {visibleGroups.map((group) => (
+            <div key={group.group} className="mb-2">
+              <div className="px-2 py-1.5 text-xs font-semibold uppercase text-text-muted">{commandGroupLabels[group.group]}</div>
+              <div className="flex flex-col">
+                {group.items.map((item) => {
+                  const Icon = item.icon
+                  const active = flatItems[selectedIndex]?.id === item.id
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={cn(
+                        'grid min-h-10 grid-cols-[28px_1fr_auto] items-center gap-3 rounded-md px-2 py-2 text-left transition-fast',
+                        active ? 'bg-selected-bg' : 'hover:bg-hover-bg'
+                      )}
+                      onMouseEnter={() => setSelected(flatItems.findIndex((candidate) => candidate.id === item.id))}
+                      onClick={() => execute(item)}
+                    >
+                      <Icon className="h-4 w-4 text-text-muted" />
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-text-primary">{item.label}</span>
+                        {item.meta && <span className="block truncate text-xs text-text-muted">{item.meta}</span>}
+                      </span>
+                      {active && <CornerDownLeft className="h-4 w-4 text-text-muted" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+          {!searching && flatItems.length === 0 && (
+            <div className="px-4 py-8 text-center">
+              <div className="text-sm font-medium text-text-primary">没有匹配结果</div>
+              {q && <div className="mt-1 text-sm text-text-muted">可按 Enter 新建搜索：{query}</div>}
+            </div>
+          )}
+          {searching && <div className="px-4 py-3 text-sm text-text-muted">正在搜索...</div>}
+        </div>
+        <div className="flex min-h-10 items-center justify-between border-t border-border-subtle px-4 text-xs text-text-muted">
+          <span>Arrow ↑↓ 选择</span>
+          <span>Enter 打开 · Esc 关闭</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function isEditableElement(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false
+  const tag = target.tagName.toLowerCase()
+  return target.isContentEditable || tag === 'input' || tag === 'textarea' || tag === 'select'
+}
+
 export function MainLayout({
   title,
   subtitle,
@@ -375,11 +702,36 @@ export function MainLayout({
   className?: string
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [commandOpen, setCommandOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem('nexusflow.sidebar.collapsed') === '1')
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    localStorage.setItem('nexusflow.sidebar.collapsed', sidebarCollapsed ? '1' : '0')
+  }, [sidebarCollapsed])
+
+  useEffect(() => {
+    function handleGlobalKeydown(event: KeyboardEvent) {
+      const mod = event.metaKey || event.ctrlKey
+      if (mod && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setCommandOpen(true)
+        return
+      }
+      if (mod && event.key.toLowerCase() === 'n' && !isEditableElement(event.target)) {
+        event.preventDefault()
+        navigate('/tasks/new')
+      }
+    }
+    window.addEventListener('keydown', handleGlobalKeydown)
+    return () => window.removeEventListener('keydown', handleGlobalKeydown)
+  }, [navigate])
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-bg-primary">
-      <Sidebar className="hidden lg:flex" />
+      <Sidebar className="hidden lg:flex" collapsed={sidebarCollapsed} onToggleCollapsed={() => setSidebarCollapsed((value) => !value)} />
       <main className="flex flex-1 flex-col overflow-hidden">
-        <TopHeader title={title} subtitle={subtitle} onMenuClick={() => setMobileNavOpen(true)} />
+        <TopHeader title={title} subtitle={subtitle} onMenuClick={() => setMobileNavOpen(true)} onOpenCommand={() => setCommandOpen(true)} />
         <div className={cn('flex-1 overflow-auto px-4 py-7 lg:px-7', className)}>
           <div className="mb-6 flex min-h-10 items-start justify-between gap-4">
             <div className="min-w-0">
@@ -397,6 +749,7 @@ export function MainLayout({
           </div>
         </div>
       )}
+      <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
     </div>
   )
 }

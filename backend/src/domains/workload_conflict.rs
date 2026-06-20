@@ -287,6 +287,8 @@ async fn list_conflicts(
          WHERE ($1::text IS NULL OR c.status = $1)
            AND ($4::text IS NULL OR c.conflict_type = $4)
            AND ($5::text IS NULL OR c.risk_level = $5)
+           AND ($6::uuid IS NULL OR task.project_id = $6)
+           AND ($7::uuid IS NULL OR $8::text IS NULL OR ($8 = 'task' AND c.task_id = $7) OR ($8 = 'assignment' AND c.assignment_id = $7))
          ORDER BY
            CASE c.risk_level WHEN 'critical' THEN 4 WHEN 'high' THEN 3 WHEN 'medium' THEN 2 WHEN 'low' THEN 1 ELSE 0 END DESC,
            c.created_at DESC
@@ -297,6 +299,9 @@ async fn list_conflicts(
     .bind(query.offset())
     .bind(query.conflict_type.clone())
     .bind(query.risk_level.clone())
+    .bind(query.project_id)
+    .bind(query.object_id)
+    .bind(query.object_type.clone())
     .fetch_all(&state.db)
     .await?;
     let total = rows.first().map(|r| r.get::<i64, _>("total")).unwrap_or(0);

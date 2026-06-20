@@ -140,6 +140,16 @@
 - 用户无权限拖拽时，任务条仍可点击查看，但鼠标不显示拖拽态。
 - 冲突标记点击失败时，保留任务详情入口，并提示冲突详情暂不可用。
 
+## 10. 当前落地切片：筛选甘特视图
+
+- `/gantt` 先以甘特视图为主，补齐文档中最关键的筛选与口径：时间范围、项目、负责人、组织、状态、只看风险和维度切换。
+- 前端筛选栏中的项目、负责人、组织来自 `/api/projects`、`/api/users`、`/api/orgs/tree`，筛选值同步到 URL query，刷新后可恢复。
+- 前端请求 `/api/gantt` 时传递 `start`、`end`、`project_id`、`owner_id`、`org_id`、`status`、`risk_only`；后端必须在权限范围内重新过滤，不能只依赖前端过滤。
+- `GET /api/gantt/summary` 需要同样应用当前账号的数据范围，至少返回 `in_progress`、`acceptance_pending`、`archived` 和 `open_risk`，避免管理者看到全局未授权统计。
+- “只看风险”模式由后端和前端双重保障：后端仅返回有 open conflict 的任务，前端在维度聚合后保留有风险分组。
+- 导出按钮当前先生成 JSON 数据包，包含 `{ generated_at, filters, dimension, granularity, items }`，用于后续 PDF/PNG 导出前的数据口径验证。
+- 权限提示在工具栏常驻展示：当前甘特图是 `data_scope_applied=true` 的服务器过滤结果；隐藏项目/任务以脱敏标题展示，不暴露未授权名称。
+
 ## 建议组件
 
 排程中心是技术难度最高的页面之一，尤其是甘特图，不建议直接套用第三方重型库，而是自研 SVG/Canvas 核心 + 虚拟滚动，以获得性能与视觉风格的完全控制。基础控件使用 **shadcn/ui**，并通过 CSS 变量锁定色调：页面背景 `--bg-primary`（#FAF9F7），视图容器 `--bg-secondary`（#FFFFFF），工具栏/侧边树 `--bg-tertiary`（#F5F4F2），所有边框 `--border-subtle`（rgba(0,0,0,0.05)），文字 `--text-primary`（#1A1A1A）/`--text-muted`（#7A7A7A）。甘特图内部所有颜色必须从系统语义色与中性色中选取，禁止引入新的项目彩虹色。

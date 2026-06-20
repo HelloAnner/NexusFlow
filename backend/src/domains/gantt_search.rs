@@ -13,41 +13,65 @@ async fn gantt(
         .get("end")
         .and_then(|v| DateTime::parse_from_rfc3339(v).ok())
         .map(|v| v.with_timezone(&Utc));
+    let project_id = query
+        .get("project_id")
+        .filter(|v| !v.is_empty())
+        .and_then(|v| Uuid::parse_str(v).ok());
+    let owner_id = query
+        .get("owner_id")
+        .filter(|v| !v.is_empty())
+        .and_then(|v| Uuid::parse_str(v).ok());
+    let org_id = query
+        .get("org_id")
+        .filter(|v| !v.is_empty())
+        .and_then(|v| Uuid::parse_str(v).ok());
+    let status = query.get("status").filter(|v| !v.is_empty()).cloned();
+    let risk_only = query.get("risk_only").map(|v| v == "1" || v == "true").unwrap_or(false);
     let rows = sqlx::query(
-        "SELECT jsonb_build_object(
-          'id', t.id,
-          'type', 'task',
-          'title', CASE WHEN pr.visibility = 'hidden' AND NOT $3::bool THEN '[隐藏任务]' ELSE t.name END,
-          'start', t.start_at,
-          'end', t.due_at,
-          'progress', t.progress::float8,
-          'status', t.status,
-          'risk_level', COALESCE((SELECT max(risk_level) FROM conflict_records c WHERE c.task_id = t.id AND c.status = 'open'), 'none'),
-          'target_url', '/tasks/' || t.id::text,
-          'readonly', t.status = 'archived',
-          'owner_id', t.owner_id,
-          'owner_name', owner.name,
-          'owner_org_id', t.owner_org_id,
-          'owner_org_name', org.name,
-          'project_id', t.project_id,
-          'project_name', pr.name
-        ) AS item
-         FROM tasks t
-         LEFT JOIN projects pr ON pr.id = t.project_id
-         LEFT JOIN persons owner ON owner.id = t.owner_id
-         LEFT JOIN organizations org ON org.id = t.owner_org_id
-         WHERE t.deleted_at IS NULL
-           AND ($1::timestamptz IS NULL OR t.due_at >= $1)
-           AND ($2::timestamptz IS NULL OR t.start_at <= $2)
-           AND ($3::bool OR t.visibility = 'normal' OR t.owner_id = $4 OR t.initiator_id = $4 OR EXISTS (SELECT 1 FROM task_members tm WHERE tm.task_id = t.id AND tm.person_id = $4))
-           AND (
-             $5::bool
-             OR t.initiator_id = $4 OR t.owner_id = $4 OR t.acceptor_id = $4
-             OR EXISTS (SELECT 1 FROM task_members tm WHERE tm.task_id = t.id AND tm.person_id = $4)
-             OR EXISTS (SELECT 1 FROM task_assignments ta WHERE ta.task_id = t.id AND (ta.owner_id = $4 OR $4 = ANY(ta.collaborator_ids)))
-             OR (($6::bool OR t.owner_org_id = ANY($8)) AND ($7::bool OR t.project_id IS NULL OR t.project_id = ANY($9)))
-           )
-         ORDER BY t.start_at NULLS LAST LIMIT 500",
+        "WITH visible_tasks AS (
+           SELECT t.*, pr.visibility AS project_visibility, pr.name AS project_name, owner.name AS owner_name, org.name AS owner_org_name,
+             COALESCE((SELECT max(risk_level) FROM conflict_records c WHERE c.task_id = t.id AND c.status = 'open'), 'none') AS risk_level
+           FROM tasks t
+           LEFT JOIN projects pr ON pr.id = t.project_id
+           LEFT JOIN persons owner ON owner.id = t.owner_id
+           LEFT JOIN organizations org ON org.id = t.owner_org_id
+           WHERE t.deleted_at IS NULL
+             AND ($1::timestamptz IS NULL OR t.due_at >= $1)
+             AND ($2::timestamptz IS NULL OR t.start_at <= $2)
+             AND ($10::uuid IS NULL OR t.project_id = $10)
+             AND ($11::uuid IS NULL OR t.owner_id = $11)
+             AND ($12::uuid IS NULL OR t.owner_org_id = $12)
+             AND ($13::text IS NULL OR t.status = $13)
+             AND (NOT $14::bool OR EXISTS (SELECT 1 FROM conflict_records cr WHERE cr.task_id = t.id AND cr.status = 'open'))
+             AND ($3::bool OR t.visibility = 'normal' OR t.owner_id = $4 OR t.initiator_id = $4 OR EXISTS (SELECT 1 FROM task_members tm WHERE tm.task_id = t.id AND tm.person_id = $4))
+             AND (
+               $5::bool
+               OR t.initiator_id = $4 OR t.owner_id = $4 OR t.acceptor_id = $4
+               OR EXISTS (SELECT 1 FROM task_members tm WHERE tm.task_id = t.id AND tm.person_id = $4)
+               OR EXISTS (SELECT 1 FROM task_assignments ta WHERE ta.task_id = t.id AND (ta.owner_id = $4 OR $4 = ANY(ta.collaborator_ids)))
+               OR (($6::bool OR t.owner_org_id = ANY($8)) AND ($7::bool OR t.project_id IS NULL OR t.project_id = ANY($9)))
+             )
+         )
+         SELECT jsonb_build_object(
+           'id', id,
+           'type', 'task',
+           'title', CASE WHEN project_visibility = 'hidden' AND NOT $3::bool THEN '[隐藏任务]' ELSE name END,
+           'start', start_at,
+           'end', due_at,
+           'progress', progress::float8,
+           'status', status,
+           'risk_level', risk_level,
+           'target_url', '/tasks/' || id::text,
+           'readonly', status = 'archived',
+           'owner_id', owner_id,
+           'owner_name', owner_name,
+           'owner_org_id', owner_org_id,
+           'owner_org_name', owner_org_name,
+           'project_id', project_id,
+           'project_name', project_name
+         ) AS item
+         FROM visible_tasks
+         ORDER BY start_at NULLS LAST LIMIT 500",
     )
     .bind(start)
     .bind(end)
@@ -58,31 +82,97 @@ async fn gantt(
     .bind(scope.all_projects)
     .bind(&scope.org_ids)
     .bind(&scope.project_ids)
+    .bind(project_id)
+    .bind(owner_id)
+    .bind(org_id)
+    .bind(status)
+    .bind(risk_only)
     .fetch_all(&state.db)
     .await?;
     Ok(Json(
-        json!({ "items": rows.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()? }),
+        json!({
+            "data_scope_applied": true,
+            "items": rows.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()?
+        }),
     ))
 }
 
 async fn gantt_summary(
     State(state): State<Arc<AppState>>,
     user: CurrentUser,
+    Query(query): Query<HashMap<String, String>>,
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
+    let scope = data_scope_context(&state.db, &user).await?;
+    let start = query
+        .get("start")
+        .and_then(|v| DateTime::parse_from_rfc3339(v).ok())
+        .map(|v| v.with_timezone(&Utc));
+    let end = query
+        .get("end")
+        .and_then(|v| DateTime::parse_from_rfc3339(v).ok())
+        .map(|v| v.with_timezone(&Utc));
+    let project_id = query
+        .get("project_id")
+        .filter(|v| !v.is_empty())
+        .and_then(|v| Uuid::parse_str(v).ok());
+    let owner_id = query
+        .get("owner_id")
+        .filter(|v| !v.is_empty())
+        .and_then(|v| Uuid::parse_str(v).ok());
+    let org_id = query
+        .get("org_id")
+        .filter(|v| !v.is_empty())
+        .and_then(|v| Uuid::parse_str(v).ok());
+    let status = query.get("status").filter(|v| !v.is_empty()).cloned();
+    let risk_only = query.get("risk_only").map(|v| v == "1" || v == "true").unwrap_or(false);
     let row = sqlx::query(
         "SELECT
-          count(*) FILTER (WHERE status = 'in_progress') AS in_progress,
-          count(*) FILTER (WHERE status = 'acceptance_pending') AS acceptance_pending,
-          count(*) FILTER (WHERE status = 'archived') AS archived
-         FROM tasks WHERE deleted_at IS NULL",
+          count(*) FILTER (WHERE t.status = 'in_progress') AS in_progress,
+          count(*) FILTER (WHERE t.status IN ('acceptance_pending', 'pending_acceptance')) AS acceptance_pending,
+          count(*) FILTER (WHERE t.status = 'archived') AS archived,
+          count(*) FILTER (WHERE EXISTS (SELECT 1 FROM conflict_records cr WHERE cr.task_id = t.id AND cr.status = 'open')) AS open_risk
+         FROM tasks t
+         LEFT JOIN projects pr ON pr.id = t.project_id
+         WHERE t.deleted_at IS NULL
+           AND ($1::timestamptz IS NULL OR t.due_at >= $1)
+           AND ($2::timestamptz IS NULL OR t.start_at <= $2)
+           AND ($10::uuid IS NULL OR t.project_id = $10)
+           AND ($11::uuid IS NULL OR t.owner_id = $11)
+           AND ($12::uuid IS NULL OR t.owner_org_id = $12)
+           AND ($13::text IS NULL OR t.status = $13)
+           AND (NOT $14::bool OR EXISTS (SELECT 1 FROM conflict_records cr WHERE cr.task_id = t.id AND cr.status = 'open'))
+           AND ($3::bool OR t.visibility = 'normal' OR t.owner_id = $4 OR t.initiator_id = $4 OR EXISTS (SELECT 1 FROM task_members tm WHERE tm.task_id = t.id AND tm.person_id = $4))
+           AND (
+             $5::bool
+             OR t.initiator_id = $4 OR t.owner_id = $4 OR t.acceptor_id = $4
+             OR EXISTS (SELECT 1 FROM task_members tm WHERE tm.task_id = t.id AND tm.person_id = $4)
+             OR EXISTS (SELECT 1 FROM task_assignments ta WHERE ta.task_id = t.id AND (ta.owner_id = $4 OR $4 = ANY(ta.collaborator_ids)))
+             OR (($6::bool OR t.owner_org_id = ANY($8)) AND ($7::bool OR t.project_id IS NULL OR t.project_id = ANY($9)))
+           )",
     )
+    .bind(start)
+    .bind(end)
+    .bind(user.is_sa())
+    .bind(user.person_id)
+    .bind(scope.unrestricted)
+    .bind(scope.all_orgs)
+    .bind(scope.all_projects)
+    .bind(&scope.org_ids)
+    .bind(&scope.project_ids)
+    .bind(project_id)
+    .bind(owner_id)
+    .bind(org_id)
+    .bind(status)
+    .bind(risk_only)
     .fetch_one(&state.db)
     .await?;
     Ok(Json(json!({
+        "data_scope_applied": true,
         "in_progress": row.get::<i64, _>("in_progress"),
         "acceptance_pending": row.get::<i64, _>("acceptance_pending"),
-        "archived": row.get::<i64, _>("archived")
+        "archived": row.get::<i64, _>("archived"),
+        "open_risk": row.get::<i64, _>("open_risk")
     })))
 }
 

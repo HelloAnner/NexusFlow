@@ -187,6 +187,13 @@ async fn set_role_actions(
                 .collect()
         })
         .unwrap_or_default();
+    let before_actions = sqlx::query("SELECT action_code FROM role_actions WHERE role_id = $1")
+        .bind(id)
+        .fetch_all(&state.db)
+        .await?
+        .iter()
+        .map(|r| r.get::<String, _>("action_code"))
+        .collect::<Vec<_>>();
     let mut tx = state.db.begin().await?;
     sqlx::query("DELETE FROM role_actions WHERE role_id = $1")
         .bind(id)
@@ -206,9 +213,9 @@ async fn set_role_actions(
         "role",
         Some(id),
         "role.actions_updated",
-        json!({}),
-        json!({ "actions": actions }),
-        "",
+        json!({ "actions": before_actions }),
+        json!({ "actions": actions, "impact": payload.get("impact").cloned().unwrap_or_else(|| json!({})) }),
+        value_str(&payload, "reason", "").as_str(),
         None,
     )
     .await?;

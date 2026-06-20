@@ -25,14 +25,59 @@ async fn complete_todo(
     State(state): State<Arc<AppState>>,
     Path(id): Path<Uuid>,
     user: CurrentUser,
+    payload: Option<Json<Value>>,
 ) -> Result<Json<Value>, ApiError> {
-    sqlx::query("UPDATE todo_items SET status = 'completed' WHERE id = $1 AND ($2::bool OR assignee_id = $3)")
+    let payload = payload.map(|Json(value)| value).unwrap_or_else(|| json!({}));
+    let reason = value_str(&payload, "completion_reason", "");
+    let before = sqlx::query("SELECT to_jsonb(todo_items.*) AS item FROM todo_items WHERE id = $1 AND ($2::bool OR assignee_id = $3)")
         .bind(id)
         .bind(user.is_sa())
         .bind(user.person_id)
-        .execute(&state.db)
-        .await?;
-    Ok(Json(json!({ "id": id, "status": "completed" })))
+        .fetch_optional(&state.db)
+        .await?
+        .map(|r| json_row(&r, "item"))
+        .transpose()?
+        .ok_or_else(|| ApiError::not_found("todo not found"))?;
+    let completed_by = user.person_id.map(|id| id.to_string());
+    let after = sqlx::query(
+        "UPDATE todo_items
+         SET status = 'completed',
+             payload = payload || jsonb_build_object(
+               'completion_reason', $2::text,
+               'completed_at', now(),
+               'completed_by', $3::text
+             )
+         WHERE id = $1
+         RETURNING to_jsonb(todo_items.*) AS item",
+    )
+    .bind(id)
+    .bind(reason.clone())
+    .bind(completed_by)
+    .fetch_one(&state.db)
+    .await?;
+    let after = json_row(&after, "item")?;
+    audit(
+        &state.db,
+        user.person_id,
+        "todo_item",
+        Some(id),
+        "todo.complete",
+        before,
+        after.clone(),
+        reason.as_str(),
+        None,
+    )
+    .await?;
+    emit_event(
+        &state.db,
+        "todo.completed",
+        "todo_item",
+        Some(id),
+        user.person_id,
+        json!({ "completion_reason": reason }),
+    )
+    .await?;
+    Ok(Json(after))
 }
 
 async fn list_notifications(

@@ -8,7 +8,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 echo "[deploy] building frontend locally"
-(cd "$ROOT_DIR/frontend" && bun install --frozen-lockfile && bun run build)
+if command -v bun >/dev/null 2>&1; then
+  (cd "$ROOT_DIR/frontend" && bun install --frozen-lockfile && bun run build)
+else
+  (cd "$ROOT_DIR/frontend" && npm ci && npm run build)
+fi
 
 echo "[deploy] refreshing Rust vendor dependencies for offline server build"
 (cd "$ROOT_DIR/backend" && cargo vendor vendor >/dev/null)

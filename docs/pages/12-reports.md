@@ -109,6 +109,16 @@
 - 大报表生成超过 5 秒时进入后台任务，完成后通过 Inbox 通知用户下载。
 - 分享 Dashboard 时默认只分享布局和筛选，不提升接收者数据权限。
 
+## 10. 当前落地切片：服务器快照 Dashboard
+
+- `/reports` 先围绕现有三类服务器聚合快照落地：任务总览、人员负载、资料归档。
+- 左侧保留报表库列表，右侧展示当前报表的 Dashboard 视图：核心指标卡、分布图、风险/口径提示和原始指标表。
+- Dashboard 级筛选先支持时间范围与报表类型；用户点击“生成并下载”时，前端调用 `POST /api/reports/{type}/export`，由后端按当前用户权限重新聚合，再把返回的 snapshot payload 下载为 JSON 文件。
+- 如果生成失败，页面保留当前筛选和旧快照，不清空图表；如果当前报表无快照，展示空态并引导生成。
+- 任务总览图表展示进行中、待处理、已完成、逾期和开放冲突；人员负载展示可见人员、已有负载人员、超载天数、全天占用天数和平均负载率；资料归档展示总数、已归档、阶段成果、最终成果、版本和关联数。
+- 每个 Widget 必须显示数据口径：`generated_from=server_aggregate`、`data_scope_applied=true`、统计周期和生成时间，避免用户误以为是前端本地统计。
+- 导出的 JSON 文件至少包含 `{ report_type, snapshot_id, generated_at, period_start, period_end, payload }`，便于后续补 Excel/PDF 时复用同一数据包。
+
 ## 建议组件
 
 报表中心是可配置的数据洞察页面，视觉风格需要克制，避免图表默认彩色主题破坏整体色调。建议基础控件使用 **shadcn/ui**，并通过 CSS 变量将 `Card`、`Tabs`、`Button`、`Select`、`Popover`、`Skeleton` 映射到 NexusFlow 色板：Dashboard 背景 `--bg-primary`（#FAF9F7），Widget 卡片 `--bg-secondary`（#FFFFFF），边框 `--border-subtle`（rgba(0,0,0,0.05)），文字 `--text-primary`（#1A1A1A）/`--text-muted`（#7A7A7A）。所有图表必须关闭默认主题，统一使用中性色与语义色。

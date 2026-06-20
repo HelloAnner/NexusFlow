@@ -3,7 +3,7 @@ import { Badge, Button, EmptyState, Input, Panel, Select, Table, Tabs, Tag, Tbod
 import { apiFetch, apiGet, apiPost } from '@/lib/api'
 import { type ApiList, type ApiOrg, type ApiPerson, type ApiProject, formatDateTime } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
-import { Save, ShieldCheck, Trash2 } from 'lucide-react'
+import { AlertTriangle, Eye, History, KeyRound, Save, ShieldCheck, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 interface Role {
@@ -12,6 +12,7 @@ interface Role {
   name: string
   role_type?: string
   enabled?: boolean
+  priority?: number
 }
 
 interface RoleActions {
@@ -47,6 +48,8 @@ interface AuditLog {
   object_id?: string
   action?: string
   reason?: string
+  before_payload?: unknown
+  after_payload?: unknown
   created_at?: string
 }
 
@@ -59,6 +62,16 @@ const actionGroups = [
   { module: 'report', label: '报表', actions: ['report.export'] },
   { module: 'admin', label: '后台', actions: ['admin.manage', 'admin.invitation_manage'] },
 ]
+
+const highRiskActions = new Set([
+  'admin.manage',
+  'config.publish',
+  'person.manage',
+  'org.manage',
+  'project.manage',
+  'resource.download',
+  'report.export',
+])
 
 const scopeOptions = [
   { value: 'self', label: '仅本人' },
@@ -121,13 +134,37 @@ function labelById(items: { id: string; name?: string; code?: string }[], id?: s
   return item?.name ?? item?.code ?? id ?? '-'
 }
 
+function uniqueSorted(values: string[]) {
+  return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b))
+}
+
+function formatJson(value: unknown) {
+  if (!value || (typeof value === 'object' && Object.keys(value as Record<string, unknown>).length === 0)) return '-'
+  try {
+    return JSON.stringify(value, null, 2)
+  } catch {
+    return String(value)
+  }
+}
+
+function tagVariantForAudit(action?: string) {
+  if (!action) return 'info'
+  if (action.includes('deleted')) return 'error'
+  if (action.includes('updated')) return 'warning'
+  return 'info'
+}
+
 export function PermissionManagementPage() {
   const { data, loading, error, reload } = useApiData(loadPermissionData, [])
-  const roles = data?.roles ?? []
+  const roles = useMemo(() => data?.roles ?? [], [data?.roles])
   const [activeTab, setActiveTab] = useState('actions')
   const [selectedRoleId, setSelectedRoleId] = useState('')
   const [roleActions, setRoleActions] = useState<string[]>([])
+  const [initialRoleActions, setInitialRoleActions] = useState<string[]>([])
   const [actionLoadedFor, setActionLoadedFor] = useState('')
+  const [actionReason, setActionReason] = useState('')
+  const [auditQuery, setAuditQuery] = useState('')
+  const [selectedAuditId, setSelectedAuditId] = useState('')
   const [scopeForm, setScopeForm] = useState({
     role_id: '',
     scope_type: 'self',
@@ -153,6 +190,49 @@ export function PermissionManagementPage() {
     [roles]
   )
 
+  const selectedRole = roles.find((role) => role.id === selectedRoleId)
+
+  const roleScopeCount = useMemo(
+    () => (data?.scopes ?? []).filter((scope) => scope.role_id === selectedRoleId).length,
+    [data?.scopes, selectedRoleId]
+  )
+
+  const roleGrantCount = useMemo(
+    () => (data?.grants ?? []).filter((grant) => grant.subject_type === 'role' && grant.subject_id === selectedRoleId).length,
+    [data?.grants, selectedRoleId]
+  )
+
+  const roleAuditLogs = useMemo(
+    () => (data?.audits ?? []).filter((audit) => audit.object_type === 'role' && audit.object_id === selectedRoleId),
+    [data?.audits, selectedRoleId]
+  )
+
+  const latestRoleAudit = roleAuditLogs[0]
+
+  const actionImpact = useMemo(() => {
+    const added = uniqueSorted(roleActions.filter((action) => !initialRoleActions.includes(action)))
+    const removed = uniqueSorted(initialRoleActions.filter((action) => !roleActions.includes(action)))
+    const unchanged = uniqueSorted(roleActions.filter((action) => initialRoleActions.includes(action)))
+    const highRiskChanged = uniqueSorted([...added, ...removed].filter((action) => highRiskActions.has(action)))
+    return { added, removed, unchanged, highRiskChanged }
+  }, [initialRoleActions, roleActions])
+
+  const filteredAudits = useMemo(() => {
+    const q = auditQuery.trim().toLowerCase()
+    const audits = data?.audits ?? []
+    if (!q) return audits
+    return audits.filter((audit) => [
+      audit.action,
+      audit.object_type,
+      audit.object_id,
+      audit.reason,
+      formatJson(audit.before_payload),
+      formatJson(audit.after_payload),
+    ].some((value) => String(value ?? '').toLowerCase().includes(q)))
+  }, [auditQuery, data?.audits])
+
+  const selectedAudit = filteredAudits.find((audit) => audit.id === selectedAuditId) ?? filteredAudits[0]
+
   async function perform(label: string, action: () => Promise<unknown>) {
     setActing(label)
     setMessage(null)
@@ -171,12 +251,17 @@ export function PermissionManagementPage() {
     setSelectedRoleId(roleId)
     if (!roleId) {
       setRoleActions([])
+      setInitialRoleActions([])
       setActionLoadedFor('')
+      setActionReason('')
       return
     }
     const res = await apiGet<RoleActions>(`/roles/${roleId}/actions`)
-    setRoleActions(res.actions)
+    const actions = uniqueSorted(res.actions)
+    setRoleActions(actions)
+    setInitialRoleActions(actions)
     setActionLoadedFor(roleId)
+    setActionReason('')
   }
 
   function toggleAction(action: string) {
@@ -185,10 +270,22 @@ export function PermissionManagementPage() {
 
   function saveRoleActions() {
     if (!selectedRoleId) return
-    void perform('保存角色动作', () => apiFetch(`/roles/${selectedRoleId}/actions`, {
-      method: 'PUT',
-      body: JSON.stringify({ actions: roleActions }),
-    }))
+    if (actionImpact.highRiskChanged.length > 0 && !actionReason.trim()) {
+      setMessage('高风险权限变更必须填写变更原因')
+      return
+    }
+    void perform('保存角色动作', async () => {
+      await apiFetch(`/roles/${selectedRoleId}/actions`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          actions: roleActions,
+          reason: actionReason.trim(),
+          impact: actionImpact,
+        }),
+      })
+      setInitialRoleActions(uniqueSorted(roleActions))
+      setActionReason('')
+    })
   }
 
   function saveDataScope(event: React.FormEvent<HTMLFormElement>) {
@@ -262,35 +359,143 @@ export function PermissionManagementPage() {
         </div>
 
         {activeTab === 'actions' && (
-          <Panel title="角色动作矩阵" right={<ShieldCheck className="h-5 w-5 text-text-muted" />}>
-            <div className="flex items-end gap-3">
-              <Select
-                label="角色"
-                className="w-[320px]"
-                value={selectedRoleId}
-                onChange={(event) => void loadRoleActions(event.target.value)}
-                options={roleOptions}
-              />
-              <Button type="button" className="h-10 px-4 py-0 text-sm" disabled={!selectedRoleId || acting !== null || actionLoadedFor !== selectedRoleId} onClick={saveRoleActions}>
-                <Save className="h-4 w-4" />保存
-              </Button>
-            </div>
-            <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
-              {actionGroups.map((group) => (
-                <div key={group.module} className="rounded-md border border-border-subtle p-4">
-                  <div className="mb-3 text-sm font-semibold text-text-primary">{group.label}</div>
-                  <div className="flex flex-col gap-2">
-                    {group.actions.map((action) => (
-                      <label key={action} className="flex items-center gap-2 text-sm text-text-secondary">
-                        <input type="checkbox" checked={roleActions.includes(action)} disabled={!selectedRoleId} onChange={() => toggleAction(action)} />
-                        <span>{action}</span>
-                      </label>
-                    ))}
+          <div className="grid grid-cols-[300px_1fr_300px] gap-5">
+            <Panel title="角色详情" right={<KeyRound className="h-5 w-5 text-text-muted" />}>
+              <div className="flex flex-col gap-4">
+                <Select
+                  label="角色"
+                  value={selectedRoleId}
+                  onChange={(event) => void loadRoleActions(event.target.value)}
+                  options={roleOptions}
+                />
+                {selectedRole ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="rounded-md border border-border-subtle bg-bg-tertiary p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-base font-semibold text-text-primary">{selectedRole.name}</div>
+                          <div className="mt-1 font-mono text-xs text-text-muted">{selectedRole.code}</div>
+                        </div>
+                        <Tag variant={selectedRole.enabled === false ? 'error' : 'success'}>
+                          {selectedRole.enabled === false ? '停用' : '启用'}
+                        </Tag>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Badge>{selectedRole.role_type ?? 'employee'}</Badge>
+                        <Badge>优先级 {selectedRole.priority ?? '-'}</Badge>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        ['当前动作', roleActions.length],
+                        ['数据范围', roleScopeCount],
+                        ['隐藏授权', roleGrantCount],
+                        ['最近审计', latestRoleAudit ? formatDateTime(latestRoleAudit.created_at) : '-'],
+                      ].map(([label, value]) => (
+                        <div key={String(label)} className="rounded-md bg-bg-tertiary p-3">
+                          <div className="text-xs text-text-muted">{label}</div>
+                          <div className="mt-1 text-sm font-semibold text-text-primary">{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="rounded-md border border-border-subtle p-3 text-sm text-text-muted">
+                      权限变更即时生效；已登录用户的菜单和入口可能需要重新进入页面后刷新。
+                    </div>
+                  </div>
+                ) : (
+                  <EmptyState title="选择角色" desc="选择角色后查看动作、数据范围和审计摘要。" />
+                )}
+              </div>
+            </Panel>
+
+            <Panel title="角色动作矩阵" right={<ShieldCheck className="h-5 w-5 text-text-muted" />}>
+              <div className="grid grid-cols-2 gap-4">
+                {actionGroups.map((group) => (
+                  <div key={group.module} className="rounded-md border border-border-subtle p-4">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div className="text-sm font-semibold text-text-primary">{group.label}</div>
+                      <Badge>{group.actions.filter((action) => roleActions.includes(action)).length}/{group.actions.length}</Badge>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {group.actions.map((action) => {
+                        const checked = roleActions.includes(action)
+                        const changed = checked !== initialRoleActions.includes(action)
+                        const highRisk = highRiskActions.has(action)
+                        return (
+                          <label key={action} className={`flex min-h-9 items-center justify-between gap-3 rounded-md px-2 text-sm transition-fast ${changed ? 'bg-color-warning-bg text-text-primary' : 'text-text-secondary hover:bg-hover-bg'}`}>
+                            <span className="flex items-center gap-2">
+                              <input type="checkbox" checked={checked} disabled={!selectedRoleId} onChange={() => toggleAction(action)} />
+                              <span className="font-mono text-xs">{action}</span>
+                            </span>
+                            <span className="flex items-center gap-1">
+                              {highRisk && <Tag variant="warning">高风险</Tag>}
+                              {changed && <Badge>{checked ? '新增' : '移除'}</Badge>}
+                            </span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel title="发布影响" right={<History className="h-5 w-5 text-text-muted" />}>
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    ['新增动作', actionImpact.added.length],
+                    ['移除动作', actionImpact.removed.length],
+                    ['高风险', actionImpact.highRiskChanged.length],
+                    ['未变化', actionImpact.unchanged.length],
+                  ].map(([label, value]) => (
+                    <div key={String(label)} className="rounded-md bg-bg-tertiary p-3">
+                      <div className="text-xs text-text-muted">{label}</div>
+                      <div className="mt-1 text-xl font-bold text-text-primary">{value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {actionImpact.highRiskChanged.length > 0 && (
+                  <div className="rounded-md border border-color-warning bg-color-warning-bg p-3 text-sm text-color-warning">
+                    <div className="mb-2 flex items-center gap-2 font-semibold">
+                      <AlertTriangle className="h-4 w-4" />高风险动作变更
+                    </div>
+                    <div className="font-mono text-xs leading-5">{actionImpact.highRiskChanged.join(', ')}</div>
+                  </div>
+                )}
+
+                <Input
+                  label={actionImpact.highRiskChanged.length > 0 ? '变更原因（必填）' : '变更原因'}
+                  placeholder="说明授权或收回权限的业务原因"
+                  value={actionReason}
+                  onChange={(event) => setActionReason(event.target.value)}
+                />
+
+                <div className="rounded-md bg-bg-tertiary p-3">
+                  <div className="mb-2 text-xs font-semibold text-text-muted">差异预览</div>
+                  <div className="flex flex-col gap-2 text-xs text-text-secondary">
+                    <div><span className="text-color-success">新增：</span>{actionImpact.added.join(', ') || '-'}</div>
+                    <div><span className="text-color-error">移除：</span>{actionImpact.removed.join(', ') || '-'}</div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </Panel>
+
+                <Button
+                  type="button"
+                  disabled={
+                    !selectedRoleId
+                    || acting !== null
+                    || actionLoadedFor !== selectedRoleId
+                    || (actionImpact.added.length === 0 && actionImpact.removed.length === 0)
+                    || (actionImpact.highRiskChanged.length > 0 && !actionReason.trim())
+                  }
+                  onClick={saveRoleActions}
+                >
+                  <Save className="h-4 w-4" />发布权限变更
+                </Button>
+              </div>
+            </Panel>
+          </div>
         )}
 
         {activeTab === 'scopes' && (
@@ -371,23 +576,71 @@ export function PermissionManagementPage() {
         )}
 
         {activeTab === 'audit' && (
-          <Panel title="权限审计">
-            <Table>
-              <Thead><Tr><Th>动作</Th><Th>对象</Th><Th>对象 ID</Th><Th>原因</Th><Th>时间</Th></Tr></Thead>
-              <Tbody>
-                {(data?.audits ?? []).map((audit) => (
-                  <Tr key={audit.id}>
-                    <Td><Tag variant="info">{audit.action ?? '-'}</Tag></Td>
-                    <Td>{audit.object_type ?? '-'}</Td>
-                    <Td className="font-mono text-xs">{audit.object_id ?? '-'}</Td>
-                    <Td>{audit.reason || '-'}</Td>
-                    <Td>{formatDateTime(audit.created_at)}</Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-            {!loading && (data?.audits ?? []).length === 0 && <EmptyState title="暂无审计日志" desc="权限和授权变更会写入审计。" />}
-          </Panel>
+          <div className="grid grid-cols-[1fr_380px] gap-5">
+            <Panel
+              title="权限审计"
+              right={<span className="text-sm text-text-muted">{filteredAudits.length} 条</span>}
+            >
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <Input
+                  className="w-[360px]"
+                  placeholder="搜索动作、对象、原因或 payload"
+                  value={auditQuery}
+                  onChange={(event) => setAuditQuery(event.target.value)}
+                />
+                <Button type="button" variant="secondary" onClick={() => setAuditQuery('')}>清空</Button>
+              </div>
+              <Table>
+                <Thead><Tr><Th>动作</Th><Th>对象</Th><Th>对象 ID</Th><Th>原因</Th><Th>时间</Th><Th>详情</Th></Tr></Thead>
+                <Tbody>
+                  {filteredAudits.map((audit) => (
+                    <Tr
+                      key={audit.id}
+                      className={selectedAudit?.id === audit.id ? 'bg-selected-bg' : undefined}
+                      onClick={() => setSelectedAuditId(audit.id)}
+                    >
+                      <Td><Tag variant={tagVariantForAudit(audit.action)}>{audit.action ?? '-'}</Tag></Td>
+                      <Td>{audit.object_type ?? '-'}</Td>
+                      <Td className="max-w-[180px] truncate font-mono text-xs">{audit.object_id ?? '-'}</Td>
+                      <Td className="max-w-[240px] truncate">{audit.reason || '-'}</Td>
+                      <Td>{formatDateTime(audit.created_at)}</Td>
+                      <Td>
+                        <Button type="button" variant="ghost" className="h-8 px-2 py-0 text-sm" onClick={() => setSelectedAuditId(audit.id)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+              {!loading && filteredAudits.length === 0 && <EmptyState title="暂无审计日志" desc="当前筛选下没有权限或授权变更。" />}
+            </Panel>
+
+            <Panel title="审计详情">
+              {selectedAudit ? (
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <div className="text-sm font-semibold text-text-primary">{selectedAudit.action ?? '-'}</div>
+                    <div className="mt-1 font-mono text-xs text-text-muted">{selectedAudit.object_type ?? '-'} / {selectedAudit.object_id ?? '-'}</div>
+                  </div>
+                  <div className="rounded-md bg-bg-tertiary p-3">
+                    <div className="text-xs font-semibold text-text-muted">原因</div>
+                    <div className="mt-2 text-sm text-text-secondary">{selectedAudit.reason || '-'}</div>
+                  </div>
+                  <div className="rounded-md border border-border-subtle">
+                    <div className="border-b border-border-subtle px-3 py-2 text-xs font-semibold text-text-muted">Before</div>
+                    <pre className="max-h-44 overflow-auto whitespace-pre-wrap p-3 font-mono text-xs text-text-secondary">{formatJson(selectedAudit.before_payload)}</pre>
+                  </div>
+                  <div className="rounded-md border border-border-subtle">
+                    <div className="border-b border-border-subtle px-3 py-2 text-xs font-semibold text-text-muted">After</div>
+                    <pre className="max-h-44 overflow-auto whitespace-pre-wrap p-3 font-mono text-xs text-text-secondary">{formatJson(selectedAudit.after_payload)}</pre>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState title="选择审计记录" desc="点击左侧记录查看变更前后和原因。" />
+              )}
+            </Panel>
+          </div>
         )}
       </div>
     </MainLayout>

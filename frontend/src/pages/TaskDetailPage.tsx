@@ -1,22 +1,27 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { MainLayout } from '@/components/layout'
 import { AvatarGroup, Badge, Button, EmptyState, Input, Panel, ProgressBar, Select, Table, Tabs, Tag, Tbody, Td, Th, Thead, TimelineItem, Tr } from '@/components/ui'
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '@/lib/api'
 import {
+  type ApiConflict,
   type ApiList,
   type ApiResource,
   type ApiTask,
+  conflictTypeLabel,
   formatDate,
   formatDateTime,
   numberValue,
   priorityLabel,
   resourceStatusLabel,
+  riskLabel,
+  riskVariant,
   taskStatusLabel,
   taskStatusVariant,
   textFromPayload,
 } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
-import { Check, ChevronRight, Download, Link as LinkIcon, Pencil, Plus, RotateCcw, Save, Trash2, Upload, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { AlertTriangle, Archive as ArchiveIcon, Check, ChevronRight, Download, ExternalLink, Link as LinkIcon, Pencil, Plus, RotateCcw, Save, ShieldCheck, Trash2, Upload, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 interface TaskDetailResponse {
@@ -127,6 +132,8 @@ const tabs = [
   { value: 'gantt', label: '甘特图' },
   { value: 'resources', label: '资料' },
   { value: 'approval', label: '审批' },
+  { value: 'risk', label: '风险' },
+  { value: 'archive', label: '档案' },
   { value: 'logs', label: '日志' },
 ]
 
@@ -154,6 +161,16 @@ const actionPaths: Record<string, string> = {
 
 function loadTask(id: string) {
   return apiGet<TaskDetailResponse>(`/tasks/${id}`)
+}
+
+function loadTaskRisks(id: string) {
+  if (!id) return Promise.resolve({ items: [], total: 0 } satisfies ApiList<ApiConflict>)
+  return apiGet<ApiList<ApiConflict>>('/conflicts', {
+    object_type: 'task',
+    object_id: id,
+    status: 'open',
+    page_size: 100,
+  })
 }
 
 function loadResourceChoices() {
@@ -246,6 +263,24 @@ function assignmentStatusLabel(status?: string) {
   return map[status ?? ''] ?? status ?? '未开始'
 }
 
+function conflictPeriod(conflict: ApiConflict) {
+  const start = formatDate(conflict.conflict_date_start)
+  const end = formatDate(conflict.conflict_date_end)
+  return start === end ? start : `${start} - ${end}`
+}
+
+function approvalPendingCount(approvals: ApprovalTicket[]) {
+  return approvals.filter((approval) => approval.status === 'pending' || approval.status === 'escalated').length
+}
+
+function acceptancePendingCount(acceptances: TaskDetailResponse['acceptances']) {
+  return acceptances.filter((acceptance) => acceptance.status === 'submitted' || acceptance.status === 'pending').length
+}
+
+function archiveStatusText(task?: ApiTask) {
+  return task?.status === 'archived' ? '已归档' : '未归档'
+}
+
 export function TaskDetailContent({
   id,
   compact = false,
@@ -297,16 +332,29 @@ export function TaskDetailContent({
   const [uploadFinalResult, setUploadFinalResult] = useState(false)
   const fileRef = useRef<HTMLInputElement | null>(null)
   const { data, loading, error, reload } = useApiData(() => loadTask(id), [id])
+  const { data: riskData, loading: risksLoading, error: risksError, reload: reloadRisks } = useApiData(() => loadTaskRisks(id), [id])
   const { data: resourceChoices, loading: resourcesLoading, error: resourcesError, reload: reloadResourceChoices } = useApiData(loadResourceChoices, [])
   const task = data?.task
   const progress = numberValue(task?.progress)
-  const members = data?.members ?? []
-  const assignments = data?.assignments ?? []
+  const members = useMemo(() => data?.members ?? [], [data?.members])
+  const assignments = useMemo(() => data?.assignments ?? [], [data?.assignments])
   const progressReports = data?.progress_reports ?? []
   const memberNames = members.map((member) => member.person_name || member.person_id || '成员')
   const approvals = data?.approvals ?? []
   const acceptances = data?.acceptances ?? []
   const linkedResources = data?.resources ?? []
+  const openRisks = riskData?.items ?? []
+  const highRiskCount = openRisks.filter((risk) => risk.risk_level === 'critical' || risk.risk_level === 'high').length
+  const riskPeopleCount = new Set(openRisks.map((risk) => risk.person_id).filter(Boolean)).size
+  const latestRiskTime = openRisks
+    .map((risk) => risk.updated_at ?? risk.created_at)
+    .filter(Boolean)
+    .sort()
+    .at(-1)
+  const pendingApprovalCount = approvalPendingCount(approvals)
+  const pendingAcceptanceCount = acceptancePendingCount(acceptances)
+  const finalResources = linkedResources.filter((resource) => resource.is_final_result)
+  const stageResources = linkedResources.filter((resource) => resource.is_stage_result)
   const linkedIds = new Set(linkedResources.map((resource) => resource.id))
   const availableResources = (resourceChoices?.items ?? []).filter((resource) => !linkedIds.has(resource.id))
   const requirements = data?.resource_requirements ?? []
@@ -314,12 +362,15 @@ export function TaskDetailContent({
   const requirementRate = Math.round(numberValue(requirementSummary?.completion_rate) * 100)
   const changeLogs = data?.change_logs ?? []
   const events = data?.events ?? []
-  const personOptions = members
-    .filter((member) => member.person_id)
-    .map((member) => ({ value: member.person_id as string, label: member.person_name || member.person_id || '成员' }))
-  if (task?.owner_id && !personOptions.some((option) => option.value === task.owner_id)) {
-    personOptions.unshift({ value: task.owner_id, label: textFromPayload(task.payload, 'owner_name', task.owner_id) })
-  }
+  const personOptions = useMemo(() => {
+    const options = members
+      .filter((member) => member.person_id)
+      .map((member) => ({ value: member.person_id as string, label: member.person_name || member.person_id || '成员' }))
+    if (task?.owner_id && !options.some((option) => option.value === task.owner_id)) {
+      options.unshift({ value: task.owner_id, label: textFromPayload(task.payload, 'owner_name', task.owner_id) })
+    }
+    return options
+  }, [members, task])
 
   useEffect(() => {
     setScheduleStart(toDatetimeLocal(task?.start_at))
@@ -340,12 +391,19 @@ export function TaskDetailContent({
 
   async function runAction(action: string) {
     if (!id) return
+    if (action === 'archive') {
+      const confirmed = window.confirm(
+        `确认归档任务「${task?.name ?? id}」？\n\n将固化 ${linkedResources.length} 份资料、${acceptances.length} 条验收记录、${openRisks.length} 条未解决风险快照；归档后会从默认列表隐藏，关联资料进入归档状态，任务只保留档案查看与追溯入口。`,
+      )
+      if (!confirmed) return
+    }
     setActing(action)
     setTaskMessage(null)
     try {
       await apiPost(`/tasks/${id}/${actionPaths[action]}`, { reason: actionReason })
       setActionReason('')
       await reload()
+      await reloadRisks()
       setTaskMessage(`${actionLabels[action] ?? action}已完成。`)
     } catch (err) {
       setTaskMessage(err instanceof Error ? err.message : '任务操作失败')
@@ -715,6 +773,9 @@ export function TaskDetailContent({
                     </span>
                   </div>
                   <div className="flex items-center gap-4">
+                    <Tag variant={openRisks.length ? (highRiskCount ? 'error' : 'warning') : 'success'}>
+                      {openRisks.length ? `${openRisks.length} 个风险` : '无未解决风险'}
+                    </Tag>
                     <Tag variant={progress >= 100 ? 'success' : 'info'}>进度 {Math.round(progress)}%</Tag>
                     <AvatarGroup names={memberNames} />
                   </div>
@@ -728,6 +789,48 @@ export function TaskDetailContent({
                   </Panel>
                   <Panel title="交付要求">
                     <p className="text-base leading-relaxed text-text-secondary">{task?.deliverable_requirement || '暂无交付要求。'}</p>
+                  </Panel>
+                  <Panel title="异常状态解释">
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div className="flex flex-col gap-2 rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-medium text-text-primary">未解决风险</span>
+                          <Tag variant={openRisks.length ? (highRiskCount ? 'error' : 'warning') : 'success'}>{openRisks.length} 条</Tag>
+                        </div>
+                        <p className="text-sm leading-6 text-text-muted">
+                          {openRisks.length ? `影响 ${riskPeopleCount} 人，${highRiskCount} 条高风险需要先处理或强制排程。` : '当前任务没有未解决排程风险。'}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-medium text-text-primary">资料完整率</span>
+                          <Tag variant={requirementSummary?.can_submit_acceptance ? 'success' : 'warning'}>{requirementRate}%</Tag>
+                        </div>
+                        <p className="text-sm leading-6 text-text-muted">
+                          {requirementSummary?.can_submit_acceptance ? '必需资料已满足，可进入验收链路。' : `${requirementSummary?.missing_count ?? 0} 项必需资料仍未满足。`}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-medium text-text-primary">审批与验收</span>
+                          <Tag variant={pendingApprovalCount || pendingAcceptanceCount ? 'warning' : 'success'}>
+                            {pendingApprovalCount + pendingAcceptanceCount} 项待处理
+                          </Tag>
+                        </div>
+                        <p className="text-sm leading-6 text-text-muted">
+                          待审批 {pendingApprovalCount} 条，待验收 {pendingAcceptanceCount} 条。
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-medium text-text-primary">归档状态</span>
+                          <Tag variant={task?.status === 'archived' ? 'success' : 'info'}>{archiveStatusText(task)}</Tag>
+                        </div>
+                        <p className="text-sm leading-6 text-text-muted">
+                          {task?.status === 'archived' ? '任务已进入档案查看状态。' : '归档前请确认成果资料、验收记录和风险处置状态。'}
+                        </p>
+                      </div>
+                    </div>
                   </Panel>
                   <Panel title="最新动态">
                     {events.slice(0, 5).map((event) => (
@@ -1142,6 +1245,189 @@ export function TaskDetailContent({
                     {acceptances.length === 0 && <EmptyState title="暂无验收记录" desc="提交验收后会在这里显示验收过程。" />}
                   </div>
                 </Panel>
+              )}
+
+              {activeTab === 'risk' && (
+                <div className="flex flex-col gap-6">
+                  {risksError && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{risksError}</div>}
+                  <Panel
+                    title="风险摘要"
+                    right={
+                      <Button variant="secondary" className="h-8 px-3 text-sm" disabled={risksLoading} onClick={() => void reloadRisks()}>
+                        <RotateCcw className="h-4 w-4" />刷新
+                      </Button>
+                    }
+                  >
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <div className="rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                        <span className="text-sm text-text-muted">未解决</span>
+                        <div className="mt-2 text-2xl font-semibold text-text-primary">{openRisks.length}</div>
+                      </div>
+                      <div className="rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                        <span className="text-sm text-text-muted">高风险</span>
+                        <div className="mt-2 text-2xl font-semibold text-color-error">{highRiskCount}</div>
+                      </div>
+                      <div className="rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                        <span className="text-sm text-text-muted">影响人员</span>
+                        <div className="mt-2 text-2xl font-semibold text-text-primary">{riskPeopleCount}</div>
+                      </div>
+                      <div className="rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                        <span className="text-sm text-text-muted">最近风险</span>
+                        <div className="mt-2 text-base font-medium text-text-primary">{formatDateTime(latestRiskTime)}</div>
+                      </div>
+                    </div>
+                  </Panel>
+                  <Panel title="未解决风险清单">
+                    <Table>
+                      <Thead>
+                        <Tr><Th>风险</Th><Th>人员</Th><Th>时间</Th><Th>超载</Th><Th>状态</Th><Th>入口</Th></Tr>
+                      </Thead>
+                      <Tbody>
+                        {openRisks.map((risk) => (
+                          <Tr key={risk.id}>
+                            <Td>
+                              <div className="flex flex-col gap-1">
+                                <span className="text-base font-medium text-text-primary">{conflictTypeLabel(risk.conflict_type)}</span>
+                                <Tag variant={riskVariant(risk.risk_level)}>{riskLabel(risk.risk_level)}</Tag>
+                              </div>
+                            </Td>
+                            <Td>
+                              <div className="flex flex-col gap-1">
+                                <span>{risk.person_name ?? risk.person_id ?? '未指定'}</span>
+                                <span className="text-xs text-text-muted">{risk.owner_org_name ?? risk.person_employee_no ?? '无组织信息'}</span>
+                              </div>
+                            </Td>
+                            <Td>{conflictPeriod(risk)}</Td>
+                            <Td>{risk.overload_hours ? `${risk.overload_hours}h` : '-'}</Td>
+                            <Td><Badge>{risk.status ?? 'open'}</Badge></Td>
+                            <Td>
+                              <div className="flex flex-col gap-2">
+                                <Link to={`/conflicts?conflict=${risk.id}`} className="inline-flex items-center gap-1 text-sm text-text-muted hover:text-text-primary">
+                                  <AlertTriangle className="h-4 w-4" />冲突中心
+                                </Link>
+                                <Link to={`/gantt?risk=1&task_id=${risk.task_id ?? id}`} className="inline-flex items-center gap-1 text-sm text-text-muted hover:text-text-primary">
+                                  <ExternalLink className="h-4 w-4" />排程视图
+                                </Link>
+                              </div>
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                    {!risksLoading && openRisks.length === 0 && <EmptyState title="暂无未解决风险" desc="任务当前没有未解决的排程或资源冲突。" />}
+                  </Panel>
+                </div>
+              )}
+
+              {activeTab === 'archive' && (
+                <div className="flex flex-col gap-6">
+                  <Panel
+                    title="归档摘要"
+                    right={<Tag variant={task?.status === 'archived' ? 'success' : 'info'}>{archiveStatusText(task)}</Tag>}
+                  >
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <div className="rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                        <span className="text-sm text-text-muted">成果资料</span>
+                        <div className="mt-2 text-2xl font-semibold text-text-primary">{finalResources.length}</div>
+                        <p className="mt-1 text-xs text-text-muted">阶段成果 {stageResources.length} 份</p>
+                      </div>
+                      <div className="rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                        <span className="text-sm text-text-muted">验收记录</span>
+                        <div className="mt-2 text-2xl font-semibold text-text-primary">{acceptances.length}</div>
+                        <p className="mt-1 text-xs text-text-muted">待处理 {pendingAcceptanceCount} 条</p>
+                      </div>
+                      <div className="rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                        <span className="text-sm text-text-muted">审批记录</span>
+                        <div className="mt-2 text-2xl font-semibold text-text-primary">{approvals.length}</div>
+                        <p className="mt-1 text-xs text-text-muted">待处理 {pendingApprovalCount} 条</p>
+                      </div>
+                      <div className="rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                        <span className="text-sm text-text-muted">未解决风险</span>
+                        <div className="mt-2 text-2xl font-semibold text-color-error">{openRisks.length}</div>
+                        <p className="mt-1 text-xs text-text-muted">高风险 {highRiskCount} 条</p>
+                      </div>
+                    </div>
+                  </Panel>
+                  <Panel title="档案基本信息">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="rounded-md border border-border-subtle p-3">
+                        <InfoRow label="任务编号" value={task?.task_no ?? task?.id ?? '未知'} />
+                        <InfoRow label="任务名称" value={task?.name ?? '未知'} />
+                        <InfoRow label="项目" value={textFromPayload(task?.payload, 'project_name', task?.project_id ?? '未关联')} />
+                        <InfoRow label="负责人" value={textFromPayload(task?.payload, 'owner_name', task?.owner_id ?? '未设置')} />
+                      </div>
+                      <div className="rounded-md border border-border-subtle p-3">
+                        <InfoRow label="任务状态" value={taskStatusLabel(task?.status)} />
+                        <InfoRow label="优先级" value={priorityLabel(task?.priority)} />
+                        <InfoRow label="计划周期" value={`${formatDate(task?.start_at)} - ${formatDate(task?.due_at)}`} />
+                        <InfoRow label="进度" value={`${Math.round(progress)}%`} />
+                      </div>
+                    </div>
+                  </Panel>
+                  <Panel title="成果与验收">
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                          <ArchiveIcon className="h-4 w-4" />成果资料
+                        </div>
+                        {linkedResources.slice(0, 6).map((resource) => (
+                          <div key={resource.id} className="flex items-center justify-between gap-3 rounded-md border border-border-subtle p-3">
+                            <div className="min-w-0">
+                              <div className="truncate text-sm font-medium text-text-primary">{resource.name}</div>
+                              <div className="text-xs text-text-muted">v{resource.version_no ?? 1} · {resource.resource_type ?? 'file'} · {formatDateTime(resource.updated_at ?? resource.created_at)}</div>
+                            </div>
+                            <div className="flex shrink-0 gap-2">
+                              {resource.is_stage_result && <Tag variant="info">阶段</Tag>}
+                              {resource.is_final_result && <Tag variant="success">最终</Tag>}
+                            </div>
+                          </div>
+                        ))}
+                        {linkedResources.length === 0 && <EmptyState title="暂无成果资料" desc="任务还没有关联资料。" />}
+                      </div>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                          <ShieldCheck className="h-4 w-4" />验收记录
+                        </div>
+                        {acceptances.slice(0, 6).map((acceptance) => (
+                          <TimelineItem
+                            key={acceptance.id}
+                            title={approvalStatusLabel(acceptance.status)}
+                            desc={`${acceptance.submitter_name ?? '提交人'} -> ${acceptance.acceptor_name ?? '验收人'} · ${acceptance.comment || '无备注'}`}
+                            time={formatDateTime(acceptance.acted_at ?? acceptance.submitted_at)}
+                          />
+                        ))}
+                        {acceptances.length === 0 && <EmptyState title="暂无验收记录" desc="验收完成后会进入归档证据链。" />}
+                      </div>
+                    </div>
+                  </Panel>
+                  <Panel title="风险与日志证据">
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      <div className="flex flex-col gap-3">
+                        {openRisks.slice(0, 4).map((risk) => (
+                          <div key={risk.id} className="rounded-md border border-border-subtle p-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="text-sm font-medium text-text-primary">{conflictTypeLabel(risk.conflict_type)}</span>
+                              <Tag variant={riskVariant(risk.risk_level)}>{riskLabel(risk.risk_level)}</Tag>
+                            </div>
+                            <p className="mt-2 text-sm text-text-muted">{risk.person_name ?? '未指定人员'} · {conflictPeriod(risk)}</p>
+                          </div>
+                        ))}
+                        {openRisks.length === 0 && <EmptyState title="无未解决风险" desc="归档风险状态正常。" />}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {changeLogs.slice(0, 5).map((log) => (
+                          <TimelineItem
+                            key={log.id}
+                            title={changeTypeLabel(log.change_type)}
+                            desc={`${log.changed_by_name ?? '系统'}${log.reason ? ` · ${log.reason}` : ''}`}
+                            time={formatDateTime(log.created_at)}
+                          />
+                        ))}
+                        {changeLogs.length === 0 && <EmptyState title="暂无变更日志" desc="任务变更后会在这里形成审计记录。" />}
+                      </div>
+                    </div>
+                  </Panel>
+                </div>
               )}
 
               {activeTab === 'logs' && (
