@@ -53,15 +53,19 @@ export function NotificationCenterPage() {
   }
 
   return (
-    <MainLayout title="通知中心" subtitle={`未读 ${unreadCount} 条`}>
-      <div className="flex h-full flex-col gap-5">
+    <MainLayout title="通知" subtitle={`未读 ${unreadCount} 条`}>
+      <div className="flex h-full min-h-0 flex-col gap-4">
         {(error || message) && (
           <div className={error ? 'rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error' : 'rounded-md bg-color-success-bg px-4 py-3 text-sm text-color-success'}>
             {error || message}
           </div>
         )}
 
-        <div className="flex-1 overflow-hidden rounded-lg border border-border-subtle bg-bg-secondary">
+        <div className="min-h-0 flex-1 overflow-hidden rounded-md border border-border-subtle bg-bg-secondary">
+          <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+            <div className="text-sm font-semibold text-text-primary">通知列表</div>
+            <div className="text-xs text-text-muted">{loading ? '加载中...' : `共 ${notifications.length} 条`}</div>
+          </div>
           <div className="h-full overflow-auto">
             <Table>
               <Thead>

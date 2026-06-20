@@ -227,16 +227,16 @@ export function PersonDetailPage() {
 
   return (
     <MainLayout title="人员详情" subtitle={person ? `${person.name} · ${primaryOrg}` : '人员工作台'}>
-      <div className="flex flex-col gap-5">
+      <div className="flex h-full min-h-0 flex-col gap-4">
         {detailState.error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{detailState.error}</div>}
         {person && (
-          <div className="rounded-lg border border-border-subtle bg-bg-secondary p-5">
+          <div className="rounded-md border border-border-subtle bg-bg-secondary p-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex min-w-0 items-center gap-4">
                 <Avatar name={person.name} className="h-14 w-14 text-lg" />
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="text-2xl font-semibold text-text-primary">{person.name}</h1>
+                    <h1 className="text-xl font-semibold text-text-primary">{person.name}</h1>
                     <Tag variant={workVariant(person.work_status)}>{workStatusLabel(person.work_status)}</Tag>
                     <Tag variant={person.account_status === 'enabled' ? 'success' : 'warning'}>{accountStatusLabel(person.account_status)}</Tag>
                   </div>
@@ -244,18 +244,18 @@ export function PersonDetailPage() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Link className="inline-flex h-10 items-center gap-2 rounded-md bg-bg-tertiary px-4 text-sm text-text-muted hover:bg-hover-bg hover:text-text-primary" to={`/tasks/new?owner_id=${person.id}`}>
+                <Link className="inline-flex h-9 items-center gap-2 rounded-md bg-bg-tertiary px-3 text-sm text-text-muted hover:bg-hover-bg hover:text-text-primary" to={`/tasks/new?owner_id=${person.id}`}>
                   <Plus className="h-4 w-4" />发起任务
                 </Link>
-                <Link className="inline-flex h-10 items-center gap-2 rounded-md bg-bg-tertiary px-4 text-sm text-text-muted hover:bg-hover-bg hover:text-text-primary" to={`/gantt?member_id=${person.id}`}>
+                <Link className="inline-flex h-9 items-center gap-2 rounded-md bg-bg-tertiary px-3 text-sm text-text-muted hover:bg-hover-bg hover:text-text-primary" to={`/gantt?member_id=${person.id}`}>
                   <CalendarDays className="h-4 w-4" />查看甘特
                 </Link>
-                <Link className="inline-flex h-10 items-center gap-2 rounded-md bg-bg-tertiary px-4 text-sm text-text-muted hover:bg-hover-bg hover:text-text-primary" to={`/people?q=${encodeURIComponent(person.name)}`}>
+                <Link className="inline-flex h-9 items-center gap-2 rounded-md bg-bg-tertiary px-3 text-sm text-text-muted hover:bg-hover-bg hover:text-text-primary" to={`/people?q=${encodeURIComponent(person.name)}`}>
                   <Pencil className="h-4 w-4" />编辑
                 </Link>
               </div>
             </div>
-            <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-5">
+            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
               <Info label="主组织" value={primaryOrg} />
               <Info label="管理等级" value={person.management_level ?? payloadText(person, 'level')} />
               <Info label="专业等级" value={person.professional_level ?? '未设置'} />
@@ -268,13 +268,13 @@ export function PersonDetailPage() {
           </div>
         )}
 
-        <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab} className="rounded-lg border border-border-subtle bg-bg-secondary p-2" />
+        <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab} className="rounded-md border border-border-subtle bg-bg-secondary p-2" />
 
         {detailState.loading && <Panel><EmptyState title="正在加载人员详情" /></Panel>}
         {!detailState.loading && detail && person && (
           <>
             {activeTab === 'profile' && (
-              <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
                 <Panel title="基础信息">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <Info label="账号 ID" value={person.account_id ?? '未绑定'} />
@@ -475,7 +475,7 @@ export function PersonDetailPage() {
               </Panel>
             )}
             {activeTab === 'history' && (
-              <div className="grid gap-5 lg:grid-cols-[1fr_0.95fr]">
+              <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
                 <Panel title="历史记录">
                   {detail.events.length ? detail.events.map((event) => (
                     <button key={event.id} className="block w-full text-left" onClick={() => setSelectedEvent(event)}>

@@ -143,7 +143,7 @@ export function ResourceDetailPage() {
 
   return (
     <MainLayout title="资料详情" subtitle={resource ? `${resource.name} · v${currentVersion?.version_no ?? resource.version_no ?? 1}` : '资料工作台'}>
-      <div className="flex flex-col gap-5">
+      <div className="flex h-full min-h-0 flex-col gap-4">
         {(detailState.error || message) && (
           <div className={`rounded-md px-4 py-3 text-sm ${detailState.error ? 'bg-color-error-bg text-color-error' : 'bg-color-info-bg text-color-info'}`}>
             {detailState.error ?? message}
@@ -151,11 +151,11 @@ export function ResourceDetailPage() {
         )}
 
         {resource && (
-          <div className="rounded-lg border border-border-subtle bg-bg-secondary p-5">
+          <div className="rounded-md border border-border-subtle bg-bg-secondary p-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl font-semibold text-text-primary">{resource.name}</h1>
+                  <h1 className="text-xl font-semibold text-text-primary">{resource.name}</h1>
                   <Tag variant={statusVariant(resource.status)}>{resourceStatusLabel(resource.status)}</Tag>
                   <Badge>{resource.resource_type ?? 'file'}</Badge>
                   {resource.is_stage_result && <Badge>阶段成果</Badge>}
@@ -173,18 +173,18 @@ export function ResourceDetailPage() {
                     if (file) void uploadVersion(file)
                   }}
                 />
-                <Button variant="secondary" className="h-10 px-4 py-0 text-sm" disabled={acting === 'version'} onClick={() => fileRef.current?.click()}>
+                <Button variant="secondary" className="h-9 px-3 py-0 text-sm" disabled={acting === 'version'} onClick={() => fileRef.current?.click()}>
                   <FileUp className="h-4 w-4" />新版本
                 </Button>
-                <Button variant="secondary" className="h-10 px-4 py-0 text-sm" disabled={acting === 'download'} onClick={() => void downloadResource()}>
+                <Button variant="secondary" className="h-9 px-3 py-0 text-sm" disabled={acting === 'download'} onClick={() => void downloadResource()}>
                   <Download className="h-4 w-4" />下载
                 </Button>
-                <Button variant="secondary" className="h-10 px-4 py-0 text-sm" disabled={acting === 'archive' || resource.status === 'archived'} onClick={() => void archiveResource()}>
+                <Button variant="secondary" className="h-9 px-3 py-0 text-sm" disabled={acting === 'archive' || resource.status === 'archived'} onClick={() => void archiveResource()}>
                   <Archive className="h-4 w-4" />归档
                 </Button>
               </div>
             </div>
-            <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-5">
+            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
               <Info label="最新版本" value={`v${currentVersion?.version_no ?? resource.version_no ?? 1}`} />
               <Info label="文件大小" value={formatSize(currentVersion?.file_size ?? resource.file_size ?? resource.size_bytes)} />
               <Info label="内容类型" value={currentVersion?.content_type ?? '未知'} />
@@ -194,7 +194,7 @@ export function ResourceDetailPage() {
           </div>
         )}
 
-        <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab} className="rounded-lg border border-border-subtle bg-bg-secondary p-2" />
+        <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab} className="rounded-md border border-border-subtle bg-bg-secondary p-2" />
 
         {detailState.loading && <Panel><EmptyState title="正在加载资料详情" /></Panel>}
         {!detailState.loading && detail && (
@@ -204,7 +204,7 @@ export function ResourceDetailPage() {
                 <div className="rounded-md border border-dashed border-border-subtle bg-bg-tertiary p-8 text-center">
                   <div className="text-lg font-semibold text-text-primary">{resource?.name}</div>
                   <p className="mt-2 text-sm text-text-muted">当前版本对象：{currentVersion?.object_key ?? '未记录对象 key'}</p>
-                  <Button className="mt-5 h-10 px-4 py-0 text-sm" onClick={() => void downloadResource()}>
+                  <Button className="mt-4 h-9 px-3 py-0 text-sm" onClick={() => void downloadResource()}>
                     <Download className="h-4 w-4" />下载查看
                   </Button>
                 </div>
@@ -249,7 +249,7 @@ export function ResourceDetailPage() {
             )}
             {activeTab === 'scope' && (
               <Panel title="权限范围">
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div className="grid gap-3 md:grid-cols-4">
                   <Info label="可见性" value={resource?.visibility ?? 'normal'} />
                   <Info label="上传人" value={resource?.uploader_id ?? '未记录'} />
                   <Info label="阶段成果" value={resource?.is_stage_result ? '是' : '否'} />

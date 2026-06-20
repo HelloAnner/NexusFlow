@@ -74,9 +74,9 @@ export function TodoCenterPage() {
   }
 
   return (
-    <MainLayout title="待办中心" subtitle="集中处理审批、任务、资料和系统事项">
-      <div className="flex h-full flex-col gap-5">
-        <div className="flex items-center justify-between">
+    <MainLayout title="收件箱" subtitle="集中处理审批、任务、资料和系统事项">
+      <div className="flex h-full min-h-0 flex-col gap-4">
+        <div className="flex items-center justify-between rounded-md border border-border-subtle bg-bg-secondary px-3 py-2">
           <Tabs tabs={tabs} value={status} onChange={setStatus} />
           <span className="text-sm text-text-muted">{loading ? '加载中...' : `共 ${todos.length} 条`}</span>
         </div>
@@ -86,8 +86,8 @@ export function TodoCenterPage() {
           </div>
         )}
 
-        <div className="grid min-h-0 flex-1 grid-cols-[minmax(320px,420px)_1fr] gap-5 overflow-hidden">
-          <div className="overflow-hidden rounded-lg border border-border-subtle bg-bg-secondary">
+        <div className="grid min-h-0 flex-1 gap-4 overflow-hidden xl:grid-cols-[minmax(300px,400px)_1fr]">
+          <div className="overflow-hidden rounded-md border border-border-subtle bg-bg-secondary">
             <div className="h-full overflow-auto">
               {todos.map((todo) => {
                 const active = activeTodo?.id === todo.id
@@ -95,16 +95,16 @@ export function TodoCenterPage() {
                   <button
                     key={todo.id}
                     type="button"
-                    className={`flex w-full flex-col gap-3 border-b border-border-subtle px-5 py-4 text-left transition-fast last:border-b-0 ${
+                    className={`flex w-full flex-col gap-2 border-b border-border-subtle px-4 py-3 text-left transition-fast last:border-b-0 ${
                       active ? 'bg-hover-bg' : 'hover:bg-hover-bg'
                     }`}
                     onClick={() => selectTodo(todo.id)}
                   >
                     <div className="flex items-start justify-between gap-4">
-                      <span className="min-w-0 text-base font-medium text-text-primary">{todo.title}</span>
+                      <span className="min-w-0 text-sm font-semibold text-text-primary">{todo.title}</span>
                       <Badge>{todoTypeLabel(todo.todo_type)}</Badge>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-text-muted">
+                    <div className="flex items-center justify-between text-xs text-text-muted">
                       <span>{formatDateTime(todo.created_at)}</span>
                       <span>{statusLabel(todo.status)}</span>
                     </div>
@@ -121,17 +121,17 @@ export function TodoCenterPage() {
             right={activeTodo && <Tag variant={activeTodo.status === 'completed' ? 'success' : 'warning'}>{statusLabel(activeTodo.status)}</Tag>}
           >
             {activeTodo ? (
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-2">
                     <Badge>{todoTypeLabel(activeTodo.todo_type)}</Badge>
                     {activeTodo.due_at && <span className="text-sm text-text-muted">截止 {formatDateTime(activeTodo.due_at)}</span>}
                   </div>
-                  <h2 className="text-2xl font-semibold text-text-primary">{activeTodo.title}</h2>
+                  <h2 className="text-xl font-semibold text-text-primary">{activeTodo.title}</h2>
                   <span className="text-sm text-text-muted">创建于 {formatDateTime(activeTodo.created_at)}</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-3 md:grid-cols-2">
                   <DetailBox label="处理入口" value={activeTodo.action_url || '默认任务中心'} />
                   <DetailBox label="待办编号" value={activeTodo.id} />
                 </div>

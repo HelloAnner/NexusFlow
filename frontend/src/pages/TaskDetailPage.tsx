@@ -636,26 +636,26 @@ export function TaskDetailContent({
   }
 
   return (
-      <div className="flex flex-col gap-6 pb-6">
+      <div className="flex min-h-0 flex-col gap-4 pb-4">
         {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border-subtle bg-bg-secondary px-3 py-2.5">
           <div className="flex items-center gap-2 text-sm text-text-muted">
             <Link to="/tasks" className="transition-fast hover:text-text-primary">任务</Link>
             <ChevronRight className="h-4 w-4" />
             <span className="text-text-primary">{task?.name ?? '任务详情'}</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {compact && onClose && (
               <Button variant="ghost" className="h-9 w-9 px-0" aria-label="关闭任务详情" onClick={onClose}>
                 <X className="h-4 w-4" />
               </Button>
             )}
-            <Button variant="secondary" className="h-9 px-4" onClick={() => setScheduleOpen((open) => !open)}>
+            <Button variant="secondary" className="h-9 px-3 text-sm" onClick={() => setScheduleOpen((open) => !open)}>
               <Pencil className="h-4 w-4" />
               调整计划
             </Button>
-            <Button variant="danger" className="h-9 px-4" disabled={acting === 'delete'} onClick={() => void deleteTask()}>
+            <Button variant="danger" className="h-9 px-3 text-sm" disabled={acting === 'delete'} onClick={() => void deleteTask()}>
               <Trash2 className="h-4 w-4" />
               删除
             </Button>
@@ -663,7 +663,7 @@ export function TaskDetailContent({
               <Button
                 key={action}
                 variant={action === 'reject' ? 'danger' : 'primary'}
-                className="h-9 px-4"
+                className="h-9 px-3 text-sm"
                 disabled={acting === action}
                 onClick={() => void runAction(action)}
               >
@@ -674,7 +674,7 @@ export function TaskDetailContent({
           </div>
         </div>
 
-        <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab} />
+        <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab} className="rounded-md border border-border-subtle bg-bg-secondary p-2" />
         {taskMessage && <div className="rounded-md bg-color-info-bg px-4 py-3 text-sm text-color-info">{taskMessage}</div>}
         {scheduleOpen && (
           <Panel title="调整任务计划时间">
@@ -703,13 +703,13 @@ export function TaskDetailContent({
         {!task && !loading ? (
           <EmptyState title="未找到任务" desc="当前任务不存在或没有访问权限。" />
         ) : (
-          <div className={compact ? 'grid grid-cols-[minmax(0,1fr)_320px] gap-5' : 'grid grid-cols-[1fr_360px] gap-6'}>
-            <div className="flex flex-col gap-6">
-              <div className="flex flex-col gap-4 rounded-lg border border-border-subtle bg-bg-secondary p-5">
+          <div className={compact ? 'grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]' : 'grid gap-4 xl:grid-cols-[1fr_330px]'}>
+            <div className="flex min-w-0 flex-col gap-4">
+              <div className="flex flex-col gap-3 rounded-md border border-border-subtle bg-bg-secondary p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex flex-col gap-3">
                     <Tag variant={taskStatusVariant(task?.status)}>{taskStatusLabel(task?.status)}</Tag>
-                    <h2 className="text-2xl font-semibold text-text-primary">{task?.name ?? '加载中'}</h2>
+                    <h2 className="text-xl font-semibold text-text-primary">{task?.name ?? '加载中'}</h2>
                     <span className="text-sm text-text-muted">
                       创建于 {formatDateTime(task?.created_at)} · 最后更新 {formatDateTime(task?.updated_at)}
                     </span>
@@ -1164,7 +1164,7 @@ export function TaskDetailContent({
               )}
             </div>
 
-            <div className="flex flex-col gap-6">
+            <div className="flex min-w-0 flex-col gap-4">
               <Panel title="基本信息">
                 <div className="flex flex-col">
                   <InfoRow label="负责人" value={textFromPayload(task?.payload, 'owner_name', task?.owner_id ?? '未设置')} />

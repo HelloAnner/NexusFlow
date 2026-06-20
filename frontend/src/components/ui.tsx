@@ -14,15 +14,15 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 export function Button({ variant = 'primary', className, children, ...props }: ButtonProps) {
   const variants: Record<ButtonVariant, string> = {
-    primary: 'bg-primary-fill text-primary-text hover:bg-black/85',
-    secondary: 'bg-bg-secondary text-text-muted border border-border-subtle hover:bg-hover-bg',
+    primary: 'bg-primary-fill text-primary-text shadow-[0_1px_0_rgba(255,255,255,0.08)_inset] hover:bg-black/85',
+    secondary: 'bg-bg-secondary text-text-secondary border border-border-subtle hover:bg-hover-bg',
     ghost: 'bg-transparent text-text-muted hover:bg-hover-bg',
     danger: 'bg-bg-secondary text-color-error border border-color-error hover:bg-color-error-bg',
   }
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center gap-3 rounded-md px-5 py-3 text-base font-medium transition-fast',
+        'inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition-fast disabled:cursor-not-allowed disabled:opacity-50',
         variants[variant],
         className
       )}
@@ -47,7 +47,7 @@ export function Input({ label, className, ...props }: InputProps) {
         {...props}
         id={inputId}
         name={props.name ?? inputId}
-        className="w-full rounded-md border border-border-subtle bg-bg-secondary px-4 py-2.5 text-base text-text-primary placeholder:text-text-placeholder focus:border-text-muted focus:outline-none transition-fast"
+        className="h-10 w-full rounded-md border border-border-subtle bg-bg-secondary px-3 text-base text-text-primary placeholder:text-text-placeholder transition-fast focus:border-text-muted focus:outline-none"
       />
     </div>
   )
@@ -69,7 +69,7 @@ export function Select({ label, options, className, children, ...props }: Select
           {...props}
           id={selectId}
           name={props.name ?? selectId}
-          className="w-full appearance-none rounded-md border border-border-subtle bg-bg-secondary px-4 py-2.5 text-base text-text-primary focus:border-text-muted focus:outline-none transition-fast"
+          className="h-10 w-full appearance-none rounded-md border border-border-subtle bg-bg-secondary px-3 pr-8 text-base text-text-primary transition-fast focus:border-text-muted focus:outline-none"
         >
           {options?.map((o) => (
             <option key={o.value} value={o.value}>
@@ -92,7 +92,7 @@ export function SearchInput({ className, ...props }: SearchInputProps) {
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-3 rounded-md border border-transparent bg-bg-tertiary px-4 py-2.5 text-base transition-fast focus-within:border-text-muted',
+        'inline-flex h-9 items-center gap-2 rounded-md border border-border-subtle bg-bg-tertiary px-3 text-base transition-fast focus-within:border-text-muted',
         className
       )}
     >
@@ -115,7 +115,7 @@ export function Badge({ children, className }: BadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center rounded-sm px-2 py-0.5 text-xs font-medium text-text-muted bg-hover-bg',
+        'inline-flex items-center justify-center rounded-sm bg-hover-bg px-2 py-0.5 text-xs font-medium text-text-muted',
         className
       )}
     >
@@ -196,7 +196,7 @@ export interface StatCardProps {
 }
 export function StatCard({ label, value, sub, className }: StatCardProps) {
   return (
-    <div className={cn('flex flex-col gap-2 rounded-lg border border-border-subtle bg-bg-secondary p-4', className)}>
+    <div className={cn('flex min-h-[88px] flex-col justify-center gap-1.5 rounded-md border border-border-subtle bg-bg-secondary p-4', className)}>
       <span className="text-sm font-medium text-text-muted">{label}</span>
       <span className="text-stat font-bold text-text-primary">{value}</span>
       {sub && <span className="text-xs text-text-muted">{sub}</span>}
@@ -214,15 +214,15 @@ export interface PanelProps {
 }
 export function Panel({ title, children, className, right, footer }: PanelProps) {
   return (
-    <div className={cn('flex flex-col gap-4 rounded-lg border border-border-subtle bg-bg-secondary p-5', className)}>
-      <div className="flex items-center justify-between">
+    <div className={cn('flex flex-col rounded-md border border-border-subtle bg-bg-secondary', className)}>
+      {(title || right) && <div className="flex min-h-12 items-center justify-between border-b border-border-subtle px-4">
         {title && (
-          <h3 className="text-sm font-semibold uppercase tracking-wider text-text-muted">{title}</h3>
+          <h3 className="text-base font-semibold text-text-primary">{title}</h3>
         )}
         {right}
-      </div>
-      {children}
-      {footer && <div className="pt-2">{footer}</div>}
+      </div>}
+      <div className="flex min-w-0 flex-1 flex-col p-4">{children}</div>
+      {footer && <div className="border-t border-border-subtle px-4 py-3">{footer}</div>}
     </div>
   )
 }
@@ -296,14 +296,15 @@ export function NavItem({ icon: Icon = Circle, label, active, className, onClick
     <button
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-3 rounded-md px-4 py-2.5 text-sm font-medium transition-fast',
+        'flex h-10 w-full items-center gap-2.5 rounded-md px-2.5 text-sm font-medium transition-fast',
         active
-          ? 'bg-primary-fill text-primary-text'
-          : 'bg-transparent text-text-muted hover:bg-hover-bg hover:text-text-primary',
+          ? 'bg-selected-bg text-text-primary'
+          : 'bg-transparent text-text-secondary hover:bg-hover-bg hover:text-text-primary',
         className
       )}
     >
-      <Icon className="h-[18px] w-[18px] shrink-0" />
+      {active && <span className="-ml-2 h-5 w-0.5 rounded-full bg-primary-fill" />}
+      <Icon className="h-[18px] w-[18px] shrink-0 text-current" />
       <span>{label}</span>
     </button>
   )
@@ -326,7 +327,7 @@ export function Tabs({ tabs, value, onChange, className }: TabsProps) {
             key={t.value}
             onClick={() => onChange(t.value)}
             className={cn(
-              'rounded-md px-4 py-1.5 text-sm transition-fast',
+              'rounded-md px-3 py-1.5 text-sm transition-fast',
               active ? 'bg-primary-fill font-semibold text-primary-text' : 'text-text-muted hover:bg-hover-bg'
             )}
           >
@@ -346,7 +347,7 @@ export interface EmptyStateProps {
 }
 export function EmptyState({ title = '暂无数据', desc = '当前条件下没有匹配的内容', className }: EmptyStateProps) {
   return (
-    <div className={cn('flex flex-col items-center justify-center gap-4 py-10', className)}>
+    <div className={cn('flex flex-col items-center justify-center gap-3 py-10', className)}>
       <span className="text-lg font-semibold text-text-primary">{title}</span>
       <span className="text-sm text-text-muted">{desc}</span>
     </div>
@@ -414,7 +415,7 @@ export function Table({ children, className, style, ...props }: TableProps) {
   return <table className={cn('w-full border-collapse text-sm', className)} style={style} {...props}>{children}</table>
 }
 export function Thead({ children, className, style }: TableProps) {
-  return <thead className={cn('bg-bg-tertiary text-text-muted', className)} style={style}>{children}</thead>
+  return <thead className={cn('border-b border-border-subtle bg-bg-tertiary text-text-muted', className)} style={style}>{children}</thead>
 }
 
 interface TbodyProps extends React.HTMLAttributes<HTMLTableSectionElement> {
@@ -441,7 +442,7 @@ interface ThProps extends React.ThHTMLAttributes<HTMLTableCellElement> {
   style?: React.CSSProperties
 }
 export function Th({ children, className, style, ...props }: ThProps) {
-  return <th className={cn('px-4 py-3 text-left font-medium', className)} style={style} {...props}>{children}</th>
+  return <th className={cn('h-10 px-3 text-left font-medium', className)} style={style} {...props}>{children}</th>
 }
 
 interface TdProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
@@ -450,5 +451,5 @@ interface TdProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
   style?: React.CSSProperties
 }
 export function Td({ children, className, style, ...props }: TdProps) {
-  return <td className={cn('px-4 py-3 text-text-secondary', className)} style={style} {...props}>{children}</td>
+  return <td className={cn('px-3 py-3 text-text-secondary', className)} style={style} {...props}>{children}</td>
 }

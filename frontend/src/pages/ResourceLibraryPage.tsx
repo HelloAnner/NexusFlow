@@ -3,7 +3,7 @@ import { Badge, Button, EmptyState, Panel, Table, Tag, Tbody, Td, Th, Thead, Tr 
 import { apiGet, apiPost } from '@/lib/api'
 import { type ApiList, type ApiResource, formatDateTime, numberValue, resourceStatusLabel } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
-import { Download, Upload } from 'lucide-react'
+import { Archive, Download, FileText, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -60,34 +60,55 @@ export function ResourceLibraryPage() {
   }
 
   return (
-    <MainLayout title="资料库" subtitle="任务资料与归档文件">
-      <div className="flex flex-col gap-6">
+    <MainLayout title="资料" subtitle="任务资料与归档文件">
+      <div className="flex h-full min-h-0 flex-col gap-4">
         {(error || message) && (
           <div className={`rounded-md px-4 py-3 text-sm ${error ? 'bg-color-error-bg text-color-error' : 'bg-color-info-bg text-color-info'}`}>
             {error || message}
           </div>
         )}
+        <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto]">
+          <Metric label="资料总数" value={resources.length} />
+          <Metric label="已确认" value={resources.filter((item) => item.status === 'confirmed' || item.status === 'archived').length} />
+          <Metric label="待处理" value={resources.filter((item) => item.status !== 'confirmed' && item.status !== 'archived').length} />
+          <div className="flex items-center justify-end rounded-md border border-border-subtle bg-bg-secondary px-3">
+            <input
+              ref={fileRef}
+              type="file"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                if (file) void uploadFile(file)
+              }}
+            />
+            <Button className="h-9 px-3 py-0 text-sm" onClick={() => fileRef.current?.click()}>
+              <Upload className="h-4 w-4" />
+              上传资料
+            </Button>
+          </div>
+        </div>
         <Panel
           title="资料列表"
-          right={
-            <div className="flex items-center gap-3">
-              <input
-                ref={fileRef}
-                type="file"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  if (file) void uploadFile(file)
-                }}
-              />
-              <Button className="h-9 px-4" onClick={() => fileRef.current?.click()}>
-                <Upload className="h-4 w-4" />
-                上传资料
-              </Button>
-            </div>
-          }
-          className="min-h-[calc(100vh-180px)]"
+          right={<span className="text-xs text-text-muted">{loading ? '加载中...' : `${resources.length} 个文件`}</span>}
+          className="min-h-0 flex-1 overflow-hidden"
         >
+          <div className="mb-3 grid gap-3 md:grid-cols-3">
+            {resources.slice(0, 3).map((resource) => (
+              <Link key={resource.id} className="rounded-md border border-border-subtle bg-bg-tertiary p-3 transition-fast hover:bg-hover-bg" to={`/resources/${resource.id}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <FileText className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />
+                  <Tag variant={statusVariant(resource.status)}>{resourceStatusLabel(resource.status)}</Tag>
+                </div>
+                <div className="mt-3 truncate text-sm font-semibold text-text-primary">{resource.name}</div>
+                <div className="mt-1 text-xs text-text-muted">{formatSize(resource.size_bytes)} · {formatDateTime(resource.created_at)}</div>
+              </Link>
+            ))}
+            {!loading && resources.length === 0 && (
+              <div className="rounded-md border border-dashed border-border-subtle bg-bg-tertiary p-4 text-sm text-text-muted">
+                上传资料后会在这里出现最近文件。
+              </div>
+            )}
+          </div>
           <Table>
             <Thead>
               <Tr><Th>资料名称</Th><Th>类型</Th><Th>状态</Th><Th>大小</Th><Th>创建时间</Th><Th>操作</Th></Tr>
@@ -119,5 +140,17 @@ export function ResourceLibraryPage() {
         </Panel>
       </div>
     </MainLayout>
+  )
+}
+
+function Metric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-md border border-border-subtle bg-bg-secondary px-4 py-3">
+      <div className="flex items-center gap-2 text-xs text-text-muted">
+        <Archive className="h-3.5 w-3.5" />
+        {label}
+      </div>
+      <div className="mt-1 text-xl font-semibold text-text-primary">{value}</div>
+    </div>
   )
 }

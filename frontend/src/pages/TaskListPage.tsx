@@ -190,16 +190,16 @@ export function TaskListPage() {
   }
 
   return (
-    <MainLayout title="任务">
-      <div className="flex h-full flex-col gap-5">
+    <MainLayout title="我的工作" subtitle="任务筛选、分工状态与详情面板">
+      <div className="flex h-full min-h-0 flex-col gap-4">
         {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
 
-        <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border-subtle bg-bg-secondary p-4">
+        <div className="flex flex-wrap items-end gap-2 rounded-md border border-border-subtle bg-bg-secondary p-3">
           <form className="flex items-center gap-2" onSubmit={submitSearch}>
             <div className="relative">
               <SearchInput
                 placeholder="搜索任务名称、编号、负责人、项目..."
-                className="w-full bg-bg-tertiary sm:w-[360px]"
+                className="w-full bg-bg-tertiary sm:w-[320px]"
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
               />
@@ -216,7 +216,7 @@ export function TaskListPage() {
             </div>
             <button
               type="submit"
-              className="inline-flex h-10 items-center gap-2 rounded-md bg-primary-fill px-4 text-sm font-medium text-primary-text transition-fast hover:bg-black/85"
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-primary-fill px-3 text-sm font-medium text-primary-text transition-fast hover:bg-black/85"
             >
               <Search className="h-4 w-4" />
               搜索
@@ -227,41 +227,48 @@ export function TaskListPage() {
           <Select aria-label="优先级筛选" className="w-[140px]" value={params.get('priority') ?? ''} onChange={(event) => setFilter('priority', event.target.value)} options={priorityOptions} />
           <Select
             aria-label="负责人筛选"
-            className="w-[170px]"
+            className="w-[160px]"
             value={params.get('owner_id') ?? ''}
             onChange={(event) => setFilter('owner_id', event.target.value)}
             options={[{ value: '', label: '全部负责人' }, ...people.map((person) => ({ value: person.id, label: person.name }))]}
           />
           <Select
             aria-label="组织筛选"
-            className="w-[180px]"
+            className="w-[170px]"
             value={params.get('org_id') ?? ''}
             onChange={(event) => setFilter('org_id', event.target.value)}
             options={[{ value: '', label: '全部组织' }, ...orgs.map((org) => ({ value: org.id, label: org.name }))]}
           />
           <Select
             aria-label="项目筛选"
-            className="w-[190px]"
+            className="w-[180px]"
             value={params.get('project_id') ?? ''}
             onChange={(event) => setFilter('project_id', event.target.value)}
             options={[{ value: '', label: '全部项目' }, ...projects.map((project) => ({ value: project.id, label: project.name }))]}
           />
           <label className="flex flex-col gap-2 text-sm font-medium text-text-muted">
             开始不早于
-            <input className="h-10 rounded-md border border-border-subtle bg-bg-secondary px-3 text-base text-text-primary" type="date" value={params.get('start_date') ?? ''} onChange={(event) => setFilter('start_date', event.target.value)} />
+            <input className="h-9 rounded-md border border-border-subtle bg-bg-tertiary px-3 text-sm text-text-primary" type="date" value={params.get('start_date') ?? ''} onChange={(event) => setFilter('start_date', event.target.value)} />
           </label>
           <label className="flex flex-col gap-2 text-sm font-medium text-text-muted">
             截止不晚于
-            <input className="h-10 rounded-md border border-border-subtle bg-bg-secondary px-3 text-base text-text-primary" type="date" value={params.get('end_date') ?? ''} onChange={(event) => setFilter('end_date', event.target.value)} />
+            <input className="h-9 rounded-md border border-border-subtle bg-bg-tertiary px-3 text-sm text-text-primary" type="date" value={params.get('end_date') ?? ''} onChange={(event) => setFilter('end_date', event.target.value)} />
           </label>
           {hasFilters && (
-            <button type="button" className="h-10 rounded-md px-3 text-sm text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary" onClick={clearFilters}>
+            <button type="button" className="h-9 rounded-md px-3 text-sm text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary" onClick={clearFilters}>
               清空筛选
             </button>
           )}
         </div>
 
-        <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border-subtle bg-bg-secondary">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border-subtle bg-bg-secondary">
+          <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+            <div>
+              <div className="text-sm font-semibold text-text-primary">任务列表</div>
+              <div className="mt-1 text-xs text-text-muted">点击一行在右侧打开任务详情。</div>
+            </div>
+            <span className="text-xs text-text-muted">{loading ? '加载中...' : `共 ${total} 条`}</span>
+          </div>
           <div className="flex-1 overflow-auto">
             <div className="flex flex-col divide-y divide-border-subtle md:hidden">
               {tasks.map((task) => {
@@ -392,8 +399,8 @@ export function TaskListPage() {
 
         {selectedTaskId && (
           <div className="pointer-events-none fixed inset-y-0 right-0 z-40 flex w-full justify-end">
-            <aside className="pointer-events-auto h-full w-full max-w-full border-l border-border-subtle bg-bg-primary shadow-2xl md:w-[66.666vw] md:max-w-[calc(100vw-220px)]">
-              <div className="h-full overflow-auto px-6 py-5">
+            <aside className="pointer-events-auto h-full w-full max-w-full border-l border-border-subtle bg-bg-primary shadow-2xl md:w-[72vw] md:max-w-[calc(100vw-220px)]">
+              <div className="h-full overflow-auto px-5 py-4">
                 <TaskDetailContent id={selectedTaskId} compact onClose={closeTask} />
               </div>
             </aside>

@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import {
-  LayoutDashboard,
+  Home,
   CheckSquare,
   BarChart3,
   Folder,
@@ -13,12 +13,15 @@ import {
   Shield,
   Plus,
   Bell,
-  ListTodo,
   Camera,
   LogOut,
   LockKeyhole,
   X,
   Menu,
+  ChevronDown,
+  Inbox,
+  CalendarDays,
+  PanelLeftClose,
 } from 'lucide-react'
 import { NavItem, SearchInput, Button, Avatar } from '@/components/ui'
 import { apiGet } from '@/lib/api'
@@ -30,20 +33,19 @@ import type { FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 const mainNav = [
-  { path: '/', label: '首页', icon: LayoutDashboard },
-  { path: '/tasks', label: '任务', icon: CheckSquare, actions: ['task.create', 'task.dispatch', 'task.accept'] },
-  { path: '/gantt', label: '甘特图', icon: BarChart3, businessOnly: true },
+  { path: '/', label: '今日', icon: Home, group: 'top' },
+  { path: '/todos', label: '收件箱', icon: Inbox, group: 'top', businessOnly: true },
+  { path: '/tasks', label: '我的工作', icon: CheckSquare, group: 'top', actions: ['task.create', 'task.dispatch', 'task.accept'] },
   { path: '/projects', label: '项目', icon: Folder, actions: ['project.create', 'project.manage', 'project.manage_member'] },
+  { path: '/people', label: '团队', icon: Users, actions: ['person.manage'] },
   { path: '/orgs', label: '组织', icon: Building2, actions: ['org.manage', 'person.manage'] },
-  { path: '/people', label: '人员', icon: Users, actions: ['person.manage'] },
-  { path: '/conflicts', label: '冲突中心', icon: AlertCircle, actions: ['task.dispatch', 'task.approve'] },
-  { path: '/todos', label: '待办中心', icon: ListTodo, businessOnly: true },
-  { path: '/notifications', label: '通知中心', icon: Bell, businessOnly: true },
-  { path: '/reports', label: '报表中心', icon: BarChart3, actions: ['report.export'] },
-  { path: '/resources', label: '资料库', icon: FileText, actions: ['resource.upload', 'resource.download'] },
-  { path: '/tools', label: '工具台', icon: Wrench, businessOnly: true },
-  { path: '/permissions', label: '权限管理', icon: LockKeyhole, actions: ['admin.manage'] },
-  { path: '/config', label: '配置中心', icon: Settings, actions: ['config.publish', 'admin.manage'] },
+  { path: '/gantt', label: '排程', icon: CalendarDays, businessOnly: true },
+  { path: '/conflicts', label: '冲突', icon: AlertCircle, actions: ['task.dispatch', 'task.approve'] },
+  { path: '/resources', label: '资料', icon: FileText, actions: ['resource.upload', 'resource.download'] },
+  { path: '/reports', label: '报表', icon: BarChart3, actions: ['report.export'] },
+  { path: '/tools', label: '工具', icon: Wrench, group: 'system', businessOnly: true },
+  { path: '/config', label: '设置', icon: Settings, group: 'system', actions: ['config.publish', 'admin.manage'] },
+  { path: '/permissions', label: '权限', icon: LockKeyhole, group: 'system', actions: ['admin.manage'] },
 ]
 
 interface PermissionResponse {
@@ -83,34 +85,77 @@ export function Sidebar({ className }: { className?: string }) {
     permissions.actions?.some((action) => ['admin.manage', 'admin.invitation_manage'].includes(action))
   return (
     <aside
-      className={cn(
-        'flex h-screen w-[220px] flex-col border-r border-border-subtle bg-bg-tertiary px-4 py-5',
-        className
-      )}
+      className={cn('flex h-screen w-[220px] flex-col bg-bg-tertiary p-2.5', className)}
     >
-      <Link to="/" className="mb-6 flex min-w-0 items-center gap-3 px-3">
-        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary-fill text-primary-text">
-          <span className="text-sm font-bold">{branding.product_name.charAt(0)}</span>
+      <Link to="/" className="mb-5 flex min-w-0 items-center gap-2 px-1.5 pt-1">
+        <span className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-primary-fill text-primary-text">
+          <span className="text-xs font-bold">{branding.product_name.charAt(0)}</span>
         </span>
-        <span className="min-w-0 truncate text-lg font-bold text-text-primary">{branding.product_name}</span>
+        <span className="min-w-0 truncate text-base font-bold text-text-primary">{branding.product_name}</span>
       </Link>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto">
-        {mainNav.filter((item) => canAccess(item, permissions, user?.actions ?? [])).map((item) => (
-          <Link key={item.path} to={item.path} className="w-full">
-            <NavItem icon={item.icon} label={item.label} active={location.pathname === item.path} />
-          </Link>
-        ))}
+        <NavGroup
+          items={mainNav.filter((item) => (item.group ?? 'work') === 'top')}
+          permissions={permissions}
+          fallbackActions={user?.actions ?? []}
+          pathname={location.pathname}
+        />
+        <NavGroup
+          label="工作"
+          items={mainNav.filter((item) => (item.group ?? 'work') === 'work')}
+          permissions={permissions}
+          fallbackActions={user?.actions ?? []}
+          pathname={location.pathname}
+        />
+        <NavGroup
+          label="系统"
+          items={mainNav.filter((item) => item.group === 'system')}
+          permissions={permissions}
+          fallbackActions={user?.actions ?? []}
+          pathname={location.pathname}
+        />
       </nav>
 
       {showAdmin && (
-        <div className="mt-4 border-t border-border-subtle pt-4">
+        <div className="mt-2">
           <Link to="/admin" className="w-full">
-            <NavItem icon={Shield} label="系统管理" active={location.pathname === '/admin'} />
+            <NavItem icon={Shield} label="后台" active={location.pathname === '/admin'} />
           </Link>
         </div>
       )}
+      <button type="button" className="mt-2 flex h-10 items-center gap-2.5 rounded-md px-2.5 text-sm font-medium text-text-muted hover:bg-hover-bg">
+        <PanelLeftClose className="h-[18px] w-[18px]" />
+        收起
+      </button>
     </aside>
+  )
+}
+
+function NavGroup({
+  label,
+  items,
+  permissions,
+  fallbackActions,
+  pathname,
+}: {
+  label?: string
+  items: typeof mainNav
+  permissions: PermissionResponse
+  fallbackActions: string[]
+  pathname: string
+}) {
+  const visibleItems = items.filter((item) => canAccess(item, permissions, fallbackActions))
+  if (!visibleItems.length) return null
+  return (
+    <div className="mb-3 flex flex-col gap-1">
+      {label && <div className="px-0.5 py-1 text-xs font-semibold text-text-muted">{label}</div>}
+      {visibleItems.map((item) => (
+        <Link key={item.path} to={item.path} className="w-full">
+          <NavItem icon={item.icon} label={item.label} active={pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path))} />
+        </Link>
+      ))}
+    </div>
   )
 }
 
@@ -120,7 +165,7 @@ export interface TopHeaderProps {
   className?: string
   onMenuClick?: () => void
 }
-export function TopHeader({ title, subtitle, className, onMenuClick }: TopHeaderProps) {
+export function TopHeader({ className, onMenuClick }: TopHeaderProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -170,7 +215,7 @@ export function TopHeader({ title, subtitle, className, onMenuClick }: TopHeader
   }
 
   return (
-    <header className={cn('flex min-h-[70px] items-center justify-between gap-3 px-4 py-4 lg:px-8', className)}>
+    <header className={cn('flex h-12 shrink-0 items-center justify-between gap-3 border-b border-border-subtle bg-bg-secondary px-3', className)}>
       <div className="flex min-w-0 items-center gap-3">
         {onMenuClick && (
           <button
@@ -182,34 +227,54 @@ export function TopHeader({ title, subtitle, className, onMenuClick }: TopHeader
             <Menu className="h-5 w-5" />
           </button>
         )}
-        <div className="flex min-w-0 flex-col">
-        <h1 className="text-xl font-semibold text-text-primary">{title}</h1>
-        {subtitle && <span className="text-sm text-text-muted">{subtitle}</span>}
+        <div className="hidden min-w-0 items-center gap-2 lg:flex">
+          <span className="font-semibold text-text-primary">NexusFlow</span>
+          <button className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm text-text-secondary hover:bg-hover-bg">
+            研发中心
+            <ChevronDown className="h-3.5 w-3.5 text-text-muted" />
+          </button>
         </div>
       </div>
-      <div className="flex min-w-0 items-center gap-2 lg:gap-4">
-        <form onSubmit={handleSearch} className="hidden sm:block">
+      <form onSubmit={handleSearch} className="hidden sm:block">
           <SearchInput
-            placeholder="搜索任务、项目、人员..."
-            className="w-[min(16rem,34vw)]"
+            placeholder="Cmd + K 搜索或跳转..."
+            className="w-[min(320px,36vw)]"
             value={q}
             onChange={(event) => setQ(event.target.value)}
           />
-        </form>
+      </form>
+      <div className="flex min-w-0 items-center gap-2">
         {headerAction && (
           <Link to={headerAction.to}>
-            <Button className="h-10 px-4">
+            <Button className="h-8 px-3">
               <Plus className="h-4 w-4" />
-              {headerAction.label}
+              新建
+              <ChevronDown className="h-3.5 w-3.5" />
             </Button>
           </Link>
         )}
+        {!headerAction && (
+          <Link to="/tasks/new">
+            <Button className="h-8 px-3">
+              <Plus className="h-4 w-4" />
+              新建
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        )}
+        <Link
+          to="/notifications"
+          className="relative inline-flex h-8 w-8 items-center justify-center rounded-md bg-bg-tertiary text-text-secondary hover:bg-hover-bg"
+          aria-label="通知中心"
+        >
+          <Bell className="h-4 w-4" />
+        </Link>
         <button
-          className="rounded-md px-2 py-1 transition-fast hover:bg-hover-bg"
+          className="rounded-full transition-fast hover:bg-hover-bg"
           onClick={() => setProfileOpen(true)}
           title="个人信息"
         >
-          <Avatar name={displayName} src={avatarUrl} className="h-9 w-9" />
+          <Avatar name={displayName} src={avatarUrl} className="h-7 w-7" />
         </button>
       </div>
 
@@ -315,7 +380,15 @@ export function MainLayout({
       <Sidebar className="hidden lg:flex" />
       <main className="flex flex-1 flex-col overflow-hidden">
         <TopHeader title={title} subtitle={subtitle} onMenuClick={() => setMobileNavOpen(true)} />
-        <div className={cn('flex-1 overflow-auto px-4 pb-6 lg:px-8 lg:pb-8', className)}>{children}</div>
+        <div className={cn('flex-1 overflow-auto px-4 py-7 lg:px-7', className)}>
+          <div className="mb-6 flex min-h-10 items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="truncate text-3xl font-bold text-text-primary">{title}</h1>
+              {subtitle && <p className="mt-1 text-sm text-text-muted">{subtitle}</p>}
+            </div>
+          </div>
+          {children}
+        </div>
       </main>
       {mobileNavOpen && (
         <div className="fixed inset-0 z-50 bg-black/30 lg:hidden" onClick={() => setMobileNavOpen(false)}>

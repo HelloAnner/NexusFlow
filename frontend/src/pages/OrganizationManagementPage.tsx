@@ -318,8 +318,8 @@ export function OrganizationManagementPage() {
   )
 
   return (
-    <MainLayout title="组织管理" subtitle="组织树、部门治理、人员归属和审批关系">
-      <div className="flex min-h-[calc(100vh-132px)] flex-col gap-5">
+    <MainLayout title="组织" subtitle="组织树、部门治理、人员归属和审批关系">
+      <div className="flex h-full min-h-0 flex-col gap-4">
         {(error || message) && (
           <div className={[
             'rounded-md px-4 py-3 text-sm',
@@ -330,18 +330,18 @@ export function OrganizationManagementPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Metric label="组织总数" value={orgs.length} />
           <Metric label="启用组织" value={enabled} />
           <Metric label="组织层级" value={maxDepth} />
           <Metric label="当前成员" value={members.length} />
         </div>
 
-        <div className="grid flex-1 grid-cols-[minmax(360px,430px)_1fr] gap-5">
-          <section className="flex min-h-[720px] flex-col rounded-lg border border-border-subtle bg-bg-secondary">
+        <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(340px,410px)_1fr]">
+          <section className="flex min-h-0 flex-col rounded-md border border-border-subtle bg-bg-secondary">
             <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
               <div>
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted">部门树</h2>
+                <h2 className="text-sm font-semibold text-text-primary">部门树</h2>
                 <p className="mt-1 text-xs text-text-muted">点击节点切换右侧详情；三点菜单执行层级动作。</p>
               </div>
               <Button className="h-9 px-3 py-0 text-sm" onClick={() => openCreate(null, 'company')}>
@@ -368,14 +368,14 @@ export function OrganizationManagementPage() {
             </div>
           </section>
 
-          <section className="flex min-w-0 flex-col gap-5">
-            <div className="rounded-lg border border-border-subtle bg-bg-secondary p-5">
+          <section className="flex min-h-0 min-w-0 flex-col gap-4 overflow-auto">
+            <div className="rounded-md border border-border-subtle bg-bg-secondary p-4">
               {selected ? (
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="text-2xl font-semibold text-text-primary">{selected.name}</h2>
+                        <h2 className="text-xl font-semibold text-text-primary">{selected.name}</h2>
                         <Tag variant={selected.enabled ? 'success' : 'error'}>
                           {selected.enabled ? <CheckCircle2 className="mr-1 h-3 w-3" /> : <CircleOff className="mr-1 h-3 w-3" />}
                           {selected.enabled ? '启用' : '停用'}
@@ -396,7 +396,7 @@ export function OrganizationManagementPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid gap-3 lg:grid-cols-3">
                     <Input label="组织名称" value={form.name} onChange={(event) => updateField('name', event.target.value)} />
                     <Input label="组织编码" value={form.code} onChange={(event) => updateField('code', event.target.value)} />
                     <Select label="组织类型" value={form.org_type} onChange={(event) => updateField('org_type', event.target.value)} options={orgTypeOptions} />
@@ -434,11 +434,11 @@ export function OrganizationManagementPage() {
               )}
             </div>
 
-            <div className="rounded-lg border border-border-subtle bg-bg-secondary">
-              <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4">
+            <div className="rounded-md border border-border-subtle bg-bg-secondary">
+              <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-text-muted" />
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-text-muted">关联人员</h3>
+                  <h3 className="text-sm font-semibold text-text-primary">关联人员</h3>
                 </div>
                 <span className="text-sm text-text-muted">{membersState.loading ? '加载中' : `${members.length} 人`}</span>
               </div>
@@ -473,18 +473,18 @@ export function OrganizationManagementPage() {
         </div>
 
         {creating && (
-          <div className="fixed inset-y-0 right-0 z-30 flex w-[min(680px,96vw)] flex-col border-l border-border-subtle bg-bg-primary shadow-2xl">
-            <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
+          <div className="fixed inset-y-0 right-0 z-30 flex w-[min(660px,96vw)] flex-col border-l border-border-subtle bg-bg-primary shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4">
               <div>
-                <h2 className="text-xl font-semibold text-text-primary">新建组织/部门</h2>
+                <h2 className="text-lg font-semibold text-text-primary">新建组织/部门</h2>
                 <p className="mt-1 text-sm text-text-muted">从任意层级创建下级，创建后会自动关联到树上。</p>
               </div>
               <button className="rounded-md p-2 text-text-muted hover:bg-hover-bg" onClick={() => setCreating(false)}>
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-auto p-6">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="min-h-0 flex-1 overflow-auto p-5">
+              <div className="grid gap-3 md:grid-cols-2">
                 <Input label="组织名称" value={createForm.name} onChange={(event) => updateCreateField('name', event.target.value)} />
                 <Input label="组织编码" value={createForm.code} onChange={(event) => updateCreateField('code', event.target.value)} />
                 <Select label="上级组织" value={createForm.parent_id} onChange={(event) => updateCreateField('parent_id', event.target.value)} options={allOrgOptions} />
@@ -503,7 +503,7 @@ export function OrganizationManagementPage() {
                 </label>
               </div>
             </div>
-            <div className="flex justify-end gap-3 border-t border-border-subtle px-6 py-4">
+            <div className="flex justify-end gap-2 border-t border-border-subtle px-5 py-3">
               <Button variant="secondary" onClick={() => setCreating(false)}>取消</Button>
               <Button disabled={!createForm.name || !createForm.code || saving !== null} onClick={() => void createOrg()}>
                 <GitBranchPlus className="h-4 w-4" />创建
@@ -518,9 +518,9 @@ export function OrganizationManagementPage() {
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-border-subtle bg-bg-secondary px-5 py-4">
-      <div className="text-sm text-text-muted">{label}</div>
-      <div className="mt-2 text-2xl font-semibold text-text-primary">{value}</div>
+    <div className="rounded-md border border-border-subtle bg-bg-secondary px-4 py-3">
+      <div className="text-xs text-text-muted">{label}</div>
+      <div className="mt-1 text-xl font-semibold text-text-primary">{value}</div>
     </div>
   )
 }

@@ -73,37 +73,37 @@ export function ReportCenterPage() {
   }
 
   return (
-    <MainLayout title="报表中心" subtitle="任务、人员与资料的统计快照">
-      <div className="grid h-full grid-cols-[260px_1fr] gap-6">
-        <aside className="flex flex-col gap-2 overflow-auto">
+    <MainLayout title="报表" subtitle="任务、人员与资料的统计快照">
+      <div className="grid h-full min-h-0 gap-4 lg:grid-cols-[240px_1fr]">
+        <aside className="flex min-h-0 flex-col gap-2 overflow-auto">
           {reportTypes.map((item) => {
             const active = item.report_type === activeType
             const summary = summaries.find((summaryItem) => summaryItem.report_type === item.report_type)
             return (
               <button
                 key={item.report_type}
-                className={active ? 'rounded-lg border border-primary-fill bg-bg-secondary p-4 text-left' : 'rounded-lg border border-border-subtle bg-bg-secondary p-4 text-left transition-fast hover:bg-hover-bg'}
+                className={active ? 'rounded-md border border-primary-fill bg-bg-secondary p-3 text-left' : 'rounded-md border border-border-subtle bg-bg-secondary p-3 text-left transition-fast hover:bg-hover-bg'}
                 onClick={() => setActiveType(item.report_type)}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-base font-semibold text-text-primary">{item.label}</span>
+                  <span className="text-sm font-semibold text-text-primary">{item.label}</span>
                   <Badge>{numberValue(summary?.count)} 份</Badge>
                 </div>
-                <div className="mt-2 text-sm text-text-muted">{item.desc}</div>
+                <div className="mt-2 text-xs leading-5 text-text-muted">{item.desc}</div>
                 <div className="mt-3 text-xs text-text-muted">最新 {formatDateTime(summary?.latest)}</div>
               </button>
             )
           })}
         </aside>
 
-        <section className="flex min-w-0 flex-col gap-5 overflow-auto">
+        <section className="flex min-h-0 min-w-0 flex-col gap-4 overflow-auto">
           {(error || detailState.error || message) && (
             <div className={error || detailState.error ? 'rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error' : 'rounded-md bg-color-success-bg px-4 py-3 text-sm text-color-success'}>
               {error || detailState.error || message}
             </div>
           )}
 
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <Panel title="报表类型"><MetricMini label={activeType} value={reportLabel(activeType)} /></Panel>
             <Panel title="历史快照"><MetricMini label="snapshot count" value={numberValue(activeSummary?.count)} /></Panel>
             <Panel title="最新生成"><MetricMini label="generated at" value={formatDateTime(activeSummary?.latest)} /></Panel>
@@ -125,14 +125,14 @@ export function ReportCenterPage() {
               </div>
             }
           >
-            <div className="grid grid-cols-[1fr_1fr_160px] gap-3">
+            <div className="grid gap-3 lg:grid-cols-[1fr_1fr_180px]">
               <Input label="开始日期" type="date" value={periodStart} onChange={(event) => setPeriodStart(event.target.value)} />
               <Input label="结束日期" type="date" value={periodEnd} onChange={(event) => setPeriodEnd(event.target.value)} />
-              <div className="flex flex-col justify-end text-sm text-text-muted">{reportDesc(activeType)}</div>
+              <div className="flex flex-col justify-end rounded-md bg-bg-tertiary px-3 py-2 text-xs leading-5 text-text-muted">{reportDesc(activeType)}</div>
             </div>
           </Panel>
 
-          <Panel title="最新快照详情" className="min-h-[320px]">
+          <Panel title="最新快照详情" className="min-h-[320px] flex-1">
             {detailState.loading || loading ? (
               <div className="py-10 text-center text-sm text-text-muted">加载中...</div>
             ) : !snapshot ? (

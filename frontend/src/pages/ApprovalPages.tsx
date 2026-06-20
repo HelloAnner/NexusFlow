@@ -85,9 +85,9 @@ export function ApprovalListPage() {
 
   return (
     <MainLayout title="协调审批" subtitle="跨部门派发、调整和后补填报审批">
-      <div className="flex h-full flex-col gap-5">
+      <div className="flex h-full min-h-0 flex-col gap-4">
         {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between rounded-md border border-border-subtle bg-bg-secondary px-3 py-2">
           <Tabs tabs={statusTabs} value={status} onChange={setStatus} />
           <span className="text-sm text-text-muted">{loading ? '加载中...' : `共 ${approvals.length} 条`}</span>
         </div>
@@ -160,8 +160,8 @@ export function ApprovalDetailPage() {
 
   return (
     <MainLayout title="协调审批详情" subtitle={id}>
-      <div className="flex flex-col gap-5">
-        <div className="flex items-center justify-between">
+      <div className="flex h-full min-h-0 flex-col gap-4">
+        <div className="flex items-center justify-between rounded-md border border-border-subtle bg-bg-secondary px-3 py-2.5">
           <button className="inline-flex items-center gap-2 text-sm text-text-muted hover:text-text-primary" onClick={() => navigate('/approvals')}>
             <ArrowLeft className="h-4 w-4" />返回列表
           </button>
@@ -174,10 +174,10 @@ export function ApprovalDetailPage() {
         )}
         {!loading && !ticket && !error && <EmptyState title="协调单不存在" desc="未找到对应的审批记录。" />}
         {ticket && (
-          <div className="grid grid-cols-[1fr_380px] gap-6">
-            <div className="flex flex-col gap-6">
+          <div className="grid min-h-0 gap-4 xl:grid-cols-[1fr_340px]">
+            <div className="flex min-w-0 flex-col gap-4">
               <Panel title="基础信息">
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid gap-3 md:grid-cols-3">
                   <Info label="类型" value={ticketTypeLabel(ticket.ticket_type)} />
                   <Info label="状态" value={<Tag variant={approvalStatusVariant(ticket.status)}>{approvalStatusLabel(ticket.status)}</Tag>} />
                   <Info label="当前步骤" value={String(ticket.current_step ?? 1)} />
@@ -210,7 +210,7 @@ export function ApprovalDetailPage() {
                 </pre>
               </Panel>
             </div>
-            <div className="flex flex-col gap-6">
+            <div className="flex min-w-0 flex-col gap-4">
               <Panel title="审批操作">
                 <Input label="审批意见" value={comment} onChange={(event) => setComment(event.target.value)} placeholder="拒绝、调整或升级时必须填写" />
                 <div className="grid grid-cols-2 gap-3">

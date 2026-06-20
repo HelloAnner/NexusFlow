@@ -1,5 +1,5 @@
 import { MainLayout } from '@/components/layout'
-import { Badge, Button, EmptyState, ProgressBar, StatCard, Tag } from '@/components/ui'
+import { Badge, Button, EmptyState, ProgressBar, Tag } from '@/components/ui'
 import { apiGet } from '@/lib/api'
 import { formatDate, numberValue, riskLabel } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
@@ -205,17 +205,18 @@ export function GanttChartPage() {
   }
 
   return (
-    <MainLayout title="甘特图" subtitle="项目与任务时间线">
+    <MainLayout title="排程" subtitle="项目与任务时间线">
       <div className="flex flex-col gap-4">
         {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
-        <div className="grid grid-cols-3 gap-4">
-          <StatCard label="进行中" value={data?.summary.in_progress ?? 0} />
-          <StatCard label="待验收" value={data?.summary.acceptance_pending ?? 0} />
-          <StatCard label="已归档" value={data?.summary.archived ?? 0} />
+        <div className="-mt-[58px] flex flex-wrap items-center justify-end gap-2">
+          <Button variant="secondary" className="h-9 px-3">甘特</Button>
+          <Button variant="secondary" className="h-9 px-3">日历</Button>
+          <Button variant="secondary" className="h-9 px-3">负载</Button>
+          <Button variant="secondary" className="h-9 px-3">导出</Button>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="inline-flex items-center gap-1 rounded-md bg-bg-secondary p-1">
               {dimensionTabs.map((tab) => (
                 <button
@@ -248,9 +249,9 @@ export function GanttChartPage() {
           </button>
         </div>
 
-        <div className="relative flex min-h-[520px] overflow-hidden rounded-lg border border-border-subtle bg-bg-secondary">
-          <div className="flex w-[420px] flex-col border-r border-border-subtle">
-            <div className="grid h-10 grid-cols-[1fr_90px_90px_70px] items-center border-b border-border-subtle bg-bg-tertiary px-3 text-xs text-text-muted">
+        <div className="relative flex min-h-[calc(100vh-198px)] overflow-hidden rounded-md border border-border-subtle bg-bg-secondary">
+          <div className="flex w-[320px] flex-col border-r border-border-subtle bg-bg-tertiary">
+            <div className="grid h-10 grid-cols-[1fr_64px_64px_48px] items-center border-b border-border-subtle bg-bg-tertiary px-3 text-xs text-text-muted">
               <span>{dimensionLabels[dimension] ?? '任务名称'}</span><span>开始</span><span>截止</span><span>风险</span>
             </div>
             <div className="flex flex-col overflow-y-auto">
@@ -259,7 +260,7 @@ export function GanttChartPage() {
                   key={item.id}
                   type="button"
                   className={cn(
-                    'grid h-10 grid-cols-[1fr_90px_90px_70px] items-center border-b border-border-subtle px-3 text-left text-sm transition-fast last:border-b-0 hover:bg-hover-bg',
+                    'grid h-12 grid-cols-[1fr_64px_64px_48px] items-center border-b border-border-subtle px-3 text-left text-sm transition-fast last:border-b-0 hover:bg-hover-bg',
                     activeItem?.id === item.id && 'bg-hover-bg'
                   )}
                   onClick={() => showItem(item)}
@@ -267,9 +268,9 @@ export function GanttChartPage() {
                   onMouseLeave={() => setHoveredItemId(null)}
                 >
                   <span className="truncate font-medium text-text-primary">{item.title}</span>
-                  <span className="text-text-secondary">{formatDate(item.start)}</span>
-                  <span className="text-text-secondary">{formatDate(item.end)}</span>
-                  <span className="text-text-muted">{riskLabel(item.risk_level)}</span>
+                  <span className="truncate text-xs text-text-secondary">{formatDate(item.start)}</span>
+                  <span className="truncate text-xs text-text-secondary">{formatDate(item.end)}</span>
+                  <span className="truncate text-xs text-text-muted">{riskLabel(item.risk_level)}</span>
                 </button>
               ))}
             </div>
@@ -289,7 +290,7 @@ export function GanttChartPage() {
                 const width = Math.max(((dateDays(end) - dateDays(start)) / range.days) * 100, 1)
                 const progress = numberValue(item.progress)
                 return (
-                  <div key={item.id} className="relative h-10 border-b border-border-subtle last:border-b-0">
+                  <div key={item.id} className="relative h-12 border-b border-border-subtle last:border-b-0">
                     <button
                       type="button"
                       aria-label={`查看 ${item.title}`}

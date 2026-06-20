@@ -351,52 +351,54 @@ export function NewTaskPage() {
 
   return (
     <MainLayout title="新建任务" subtitle="按派发向导完成负责人、分工和冲突检查">
-      <div className="mx-auto flex w-full max-w-[760px] flex-col gap-6">
+      <div className="mx-auto grid w-full max-w-[1120px] gap-4 xl:grid-cols-[240px_1fr]">
         <StepHeader activeStep={activeStep} />
 
-        {(error || submitError) && (
-          <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">
-            {error || submitError}
-          </div>
-        )}
+        <div className="min-w-0">
+          {(error || submitError) && (
+            <div className="mb-4 rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">
+              {error || submitError}
+            </div>
+          )}
 
-        <form onSubmit={handleNext} className="flex flex-col gap-6">
-          {(() => {
-            const footer = (
-              <StepActions
-                activeStep={activeStep}
-                canGoNext={canGoNext}
-                acting={acting}
-                draftTaskId={draftTaskId}
-                preview={preview}
-                saveDraft={saveDraft}
-                submitDispatch={submitDispatch}
-                setActiveStep={setActiveStep}
-              />
-            )
-            return (
-              <>
-                {activeStep === 0 && <BasicStep form={form} loading={loading} projects={projects} updateField={updateField} footer={footer} />}
-                {activeStep === 1 && (
-                  <PeopleStep
-                    form={form}
-                    people={people}
-                    members={members}
-                    newMemberId={newMemberId}
-                    setNewMemberId={setNewMemberId}
-                    selectOwner={selectOwner}
-                    addMember={addMember}
-                    removeMember={removeMember}
-                    footer={footer}
-                  />
-                )}
-                {activeStep === 2 && <DivisionStep people={people} members={members} updateMember={updateMember} removeMember={removeMember} footer={footer} />}
-                {activeStep === 3 && <PreviewStep preview={preview} workloadPreviews={workloadPreviews} people={people} draftTaskId={draftTaskId} runPreview={runPreview} acting={acting} footer={footer} />}
-                {activeStep === 4 && <ConfirmStep form={form} people={people} projects={projects} members={members} preview={preview} workloadPreviews={workloadPreviews} footer={footer} />}
-              </>
-            )
-          })()}
-        </form>
+          <form onSubmit={handleNext} className="flex flex-col gap-4">
+            {(() => {
+              const footer = (
+                <StepActions
+                  activeStep={activeStep}
+                  canGoNext={canGoNext}
+                  acting={acting}
+                  draftTaskId={draftTaskId}
+                  preview={preview}
+                  saveDraft={saveDraft}
+                  submitDispatch={submitDispatch}
+                  setActiveStep={setActiveStep}
+                />
+              )
+              return (
+                <>
+                  {activeStep === 0 && <BasicStep form={form} loading={loading} projects={projects} updateField={updateField} footer={footer} />}
+                  {activeStep === 1 && (
+                    <PeopleStep
+                      form={form}
+                      people={people}
+                      members={members}
+                      newMemberId={newMemberId}
+                      setNewMemberId={setNewMemberId}
+                      selectOwner={selectOwner}
+                      addMember={addMember}
+                      removeMember={removeMember}
+                      footer={footer}
+                    />
+                  )}
+                  {activeStep === 2 && <DivisionStep people={people} members={members} updateMember={updateMember} removeMember={removeMember} footer={footer} />}
+                  {activeStep === 3 && <PreviewStep preview={preview} workloadPreviews={workloadPreviews} people={people} draftTaskId={draftTaskId} runPreview={runPreview} acting={acting} footer={footer} />}
+                  {activeStep === 4 && <ConfirmStep form={form} people={people} projects={projects} members={members} preview={preview} workloadPreviews={workloadPreviews} footer={footer} />}
+                </>
+              )
+            })()}
+          </form>
+        </div>
       </div>
     </MainLayout>
   )
@@ -404,14 +406,11 @@ export function NewTaskPage() {
 
 function StepHeader({ activeStep }: { activeStep: number }) {
   return (
-    <div className="flex items-center justify-center gap-2 overflow-x-auto rounded-lg border border-border-subtle bg-bg-secondary p-3 text-sm">
+    <div className="flex flex-col gap-2 rounded-md border border-border-subtle bg-bg-secondary p-3 text-sm">
       {steps.map((label, index) => (
-        <div key={label} className="flex items-center gap-2">
-          <div className={`flex items-center gap-2 rounded-md px-3 py-1.5 font-medium ${index === activeStep ? 'bg-primary-fill text-primary-text' : index < activeStep ? 'bg-color-success-bg text-color-success' : 'bg-bg-tertiary text-text-muted'}`}>
-            <span>{index + 1}</span>
-            <span>{label}</span>
-          </div>
-          {index < steps.length - 1 && <span className="text-text-muted">&gt;</span>}
+        <div key={label} className={`flex items-center gap-3 rounded-md px-3 py-2 font-medium ${index === activeStep ? 'bg-primary-fill text-primary-text' : index < activeStep ? 'bg-color-success-bg text-color-success' : 'bg-bg-tertiary text-text-muted'}`}>
+          <span className="flex h-5 w-5 items-center justify-center rounded-sm bg-current/10 text-xs">{index + 1}</span>
+          <span>{label}</span>
         </div>
       ))}
     </div>
@@ -439,7 +438,7 @@ function StepActions({
 }) {
   const navigate = useNavigate()
   return (
-    <div className="flex flex-wrap items-center justify-end gap-3">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       <Link to="/tasks">
         <Button type="button" variant="ghost" className="h-9 px-4 text-sm">取消</Button>
       </Link>
@@ -475,12 +474,12 @@ function BasicStep({ form, loading, projects, updateField, footer }: { form: For
   return (
     <Panel title="基本信息" footer={footer}>
       <Input label="任务标题" placeholder="请输入任务标题" value={form.title} onChange={(event) => updateField('title', event.target.value)} required />
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid gap-3 md:grid-cols-2">
         <Select label="任务类型" options={taskTypeOptions} value={form.type} onChange={(event) => updateField('type', event.target.value)} />
         <Select label="优先级" options={priorityOptions} value={form.priority} onChange={(event) => updateField('priority', event.target.value)} />
       </div>
       <Select label="所属项目" options={projectOptions} value={form.projectId} onChange={(event) => updateField('projectId', event.target.value)} />
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid gap-3 md:grid-cols-2">
         <Input label="开始时间" type="date" value={form.start} onChange={(event) => updateField('start', event.target.value)} required />
         <Input label="截止时间" type="date" value={form.end} onChange={(event) => updateField('end', event.target.value)} required />
       </div>

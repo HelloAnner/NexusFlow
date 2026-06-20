@@ -68,12 +68,12 @@ export function ConfigCenterPage() {
   const draft = versions.filter((version) => version.status === 'draft').length
 
   return (
-    <MainLayout title="配置中心" subtitle="流程、权限、通知与系统设置">
-      <div className="flex flex-col gap-6">
+    <MainLayout title="设置" subtitle="流程、权限、通知与系统设置">
+      <div className="flex h-full min-h-0 flex-col gap-4">
         {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
-        <div className="flex items-center justify-between">
-          <SearchInput placeholder="搜索配置项..." className="w-80" value={q} onChange={(event) => setQ(event.target.value)} />
-          <div className="flex items-center gap-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border-subtle bg-bg-secondary px-3 py-2.5">
+          <SearchInput placeholder="搜索配置项..." className="w-full bg-bg-tertiary sm:w-80" value={q} onChange={(event) => setQ(event.target.value)} />
+          <div className="grid flex-1 grid-cols-2 gap-2 sm:flex sm:flex-none sm:items-center sm:gap-3">
             <Metric label="配置模块" value={modules.length} />
             <Metric label="已发布" value={published} />
             <Metric label="草稿" value={draft} />
@@ -81,20 +81,20 @@ export function ConfigCenterPage() {
           </div>
         </div>
 
-        <div className="flex min-h-[420px] gap-6">
-          <div className="flex w-[220px] flex-col gap-1">
+        <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[220px_1fr]">
+          <div className="flex min-h-0 flex-col gap-1 overflow-auto rounded-md border border-border-subtle bg-bg-secondary p-2">
             {modules.map((item) => (
               <button
                 key={item}
                 onClick={() => setActiveMenu(item)}
-                className={cn('w-full rounded-md px-4 py-2.5 text-left text-sm font-medium transition-fast', activeMenu === item ? 'bg-primary-fill text-primary-text' : 'text-text-muted hover:bg-hover-bg hover:text-text-primary')}
+                className={cn('w-full rounded-md px-3 py-2 text-left text-sm font-medium transition-fast', activeMenu === item ? 'bg-primary-fill text-primary-text' : 'text-text-muted hover:bg-hover-bg hover:text-text-primary')}
               >
                 {menuLabels[item] ?? item}
               </button>
             ))}
           </div>
 
-          <div className="grid flex-1 grid-cols-[1fr_320px] gap-6">
+          <div className="grid min-h-0 gap-4 lg:grid-cols-[1fr_300px]">
             <Panel title={menuLabels[activeMenu] ?? activeMenu} className="overflow-hidden">
               {activeVersions.length === 0 && !loading ? (
                 <EmptyState title="暂无配置版本" desc="该模块尚未创建配置版本。" />
@@ -127,17 +127,17 @@ export function ConfigCenterPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_380px] gap-6">
+        <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
           <Panel
             title="我的任务"
             right={<Link to="/tasks" className="flex items-center text-sm text-text-muted hover:text-text-primary">查看全部 <ChevronRight className="h-4 w-4" /></Link>}
           >
             <div className="flex flex-col">
               {(data?.tasks.items ?? []).map((task) => (
-                <Link key={task.id} to={`/tasks/${task.id}`} className="-mx-5 flex items-center justify-between border-b border-border-subtle px-5 py-4 transition-fast last:border-b-0 hover:bg-hover-bg">
+                <Link key={task.id} to={`/tasks/${task.id}`} className="-mx-4 flex items-center justify-between border-b border-border-subtle px-4 py-3 transition-fast last:border-b-0 hover:bg-hover-bg">
                   <div className="flex flex-col gap-1">
-                    <span className="text-base font-medium text-text-primary">{task.name}</span>
-                    <span className="text-sm text-text-muted">截止 {formatDateTime(task.due_at)}</span>
+                    <span className="text-sm font-medium text-text-primary">{task.name}</span>
+                    <span className="text-xs text-text-muted">截止 {formatDateTime(task.due_at)}</span>
                   </div>
                   <Tag variant={taskStatusVariant(task.status)}>{taskStatusLabel(task.status)}</Tag>
                 </Link>
@@ -145,7 +145,7 @@ export function ConfigCenterPage() {
             </div>
           </Panel>
 
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
             <Panel title="我的待办">
               {(data?.todos.items ?? []).map((todo) => (
                 <Link key={todo.id} to={todo.action_url || '/tasks'} className="flex items-center justify-between border-b border-border-subtle py-3 last:border-b-0">
@@ -171,9 +171,9 @@ export function ConfigCenterPage() {
 
 function Metric({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-2xl font-bold text-text-primary">{value}</span>
-      <span className="text-sm text-text-muted">{label}</span>
+    <div className="rounded-md bg-bg-tertiary px-3 py-2">
+      <span className="block text-xs text-text-muted">{label}</span>
+      <span className="mt-0.5 block text-sm font-semibold text-text-primary">{value}</span>
     </div>
   )
 }

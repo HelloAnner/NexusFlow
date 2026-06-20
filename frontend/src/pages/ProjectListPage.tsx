@@ -1,5 +1,5 @@
 import { MainLayout } from '@/components/layout'
-import { Avatar, Badge, Button, EmptyState, Input, ProgressBar, SearchInput, Select, StatCard, Table, Tbody, Td, Th, Thead, Tr } from '@/components/ui'
+import { Avatar, Badge, Button, EmptyState, Input, ProgressBar, SearchInput, Select } from '@/components/ui'
 import { apiGet, apiPost } from '@/lib/api'
 import { type ApiList, type ApiOrg, type ApiPerson, type ApiProject, formatDate, numberValue, projectStatusLabel, projectTypeLabel, textFromPayload, visibilityLabel } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
@@ -83,9 +83,6 @@ export function ProjectListPage() {
   const projects = data?.items ?? []
   const people = optionsState.data?.people ?? []
   const orgs = optionsState.data?.orgs ?? []
-  const active = projects.filter((project) => project.status === 'active').length
-  const hidden = projects.filter((project) => project.visibility === 'hidden').length
-  const archived = projects.filter((project) => project.status === 'archived').length
 
   function closeCreate() {
     const next = new URLSearchParams(params)
@@ -147,29 +144,48 @@ export function ProjectListPage() {
 
   return (
     <MainLayout title="项目" subtitle="全部项目与进度概览">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
-        <div className="grid grid-cols-4 gap-5">
-          <StatCard label="全部项目" value={projects.length} sub={loading ? '加载中' : '真实项目数据'} />
-          <StatCard label="进行中" value={active} />
-          <StatCard label="隐藏项目" value={hidden} />
-          <StatCard label="已归档" value={archived} />
+
+        <div className="-mt-[58px] flex flex-wrap items-center justify-end gap-2">
+          {['视图', '筛选', '排序'].map((label) => (
+            <button key={label} type="button" className="h-9 rounded-md border border-border-subtle bg-bg-secondary px-3 text-sm text-text-secondary hover:bg-hover-bg">
+              {label}
+            </button>
+          ))}
+          <Link to="/projects?create=1">
+            <Button className="h-9 px-3">新建项目</Button>
+          </Link>
         </div>
 
-        <div className="flex flex-col gap-4 rounded-lg border border-border-subtle bg-bg-secondary p-5">
-          <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex rounded-md bg-bg-secondary p-1">
+              {['列表', '表格', '看板', '画廊', '时间线'].map((tab, index) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={index === 0 ? 'rounded-md bg-bg-tertiary px-3 py-1.5 text-sm font-semibold text-text-primary' : 'rounded-md px-3 py-1.5 text-sm text-text-muted hover:bg-hover-bg'}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
             <form className="flex items-center gap-2" onSubmit={submitSearch}>
               <SearchInput
-                className="w-full bg-bg-tertiary sm:w-[320px]"
+                className="w-full sm:w-[280px]"
                 placeholder="搜索项目名称、编号、负责人..."
                 value={searchValue}
                 onChange={(event) => setSearchValue(event.target.value)}
               />
-              <Button className="h-10 px-4 py-0 text-sm">
+              <Button className="h-9 px-3">
                 <Search className="h-4 w-4" />
                 搜索
               </Button>
             </form>
+          </div>
+
+          <div className="flex flex-wrap items-end gap-2">
             <Select aria-label="项目状态筛选" className="w-[150px]" value={params.get('status') ?? ''} onChange={(event) => setFilter('status', event.target.value)} options={statusOptions} />
             <Select aria-label="项目类型筛选" className="w-[150px]" value={params.get('project_type') ?? ''} onChange={(event) => setFilter('project_type', event.target.value)} options={projectTypeOptions} />
             <Select
@@ -194,65 +210,38 @@ export function ProjectListPage() {
             )}
           </div>
 
-          <div className="flex flex-col divide-y divide-border-subtle md:hidden">
+          <div className="grid min-h-[calc(100vh-232px)] gap-3 md:grid-cols-2 xl:grid-cols-3">
             {projects.map((project) => {
               const progress = numberValue(project.payload?.progress, project.status === 'completed' ? 100 : 0)
               const owner = textFromPayload(project.payload, 'leader_name', project.payload?.owner_name as string | undefined)
               return (
-                <div key={project.id} className="flex flex-col gap-3 py-4">
-                  <div className="flex items-start justify-between gap-3">
+                <Link
+                  key={project.id}
+                  to={`/projects/${project.id}`}
+                  className="flex min-h-[320px] flex-col rounded-md border border-border-subtle bg-bg-secondary p-3 transition-fast hover:-translate-y-0.5 hover:shadow-dropdown"
+                >
+                  <div className="h-20 rounded-md bg-bg-tertiary" />
+                  <div className="mt-4 flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <Link className="truncate text-base font-semibold text-text-primary hover:underline" to={`/projects/${project.id}`}>{project.name}</Link>
-                      <div className="mt-1 truncate text-xs text-text-muted">{project.summary || project.project_no}</div>
+                      <h2 className="truncate text-lg font-bold text-text-primary">{project.name}</h2>
+                      <p className="mt-1 line-clamp-2 text-sm text-text-muted">{project.summary || project.project_no || '暂无项目摘要'}</p>
                     </div>
                     <Badge>{projectStatusLabel(project.status)}</Badge>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm text-text-secondary">
+                  <ProgressBar value={progress} className="mt-4 h-1.5" />
+                  <div className="mt-3 text-sm text-text-muted">{progress}%</div>
+                  <div className="mt-auto grid grid-cols-2 gap-3 pt-6 text-sm text-text-secondary">
                     <span>{projectTypeLabel(project.project_type)}</span>
                     <span>{visibilityLabel(project.visibility)}</span>
-                    <span className="truncate">负责人：{owner}</span>
+                    <span className="flex min-w-0 items-center gap-2">
+                      <Avatar name={owner} className="h-6 w-6 text-xs" />
+                      <span className="truncate">{owner}</span>
+                    </span>
                     <span>{formatDate(project.end_date)}</span>
                   </div>
-                  <ProgressBar value={progress} className="h-1.5" />
-                </div>
+                </Link>
               )
             })}
-          </div>
-
-          <div className="hidden overflow-auto md:block">
-          <Table className="min-w-[980px]">
-            <Thead>
-              <Tr><Th>项目名称</Th><Th>编号</Th><Th>状态</Th><Th>类型</Th><Th>负责人</Th><Th>起止时间</Th><Th>进度</Th><Th>可见性</Th></Tr>
-            </Thead>
-            <Tbody>
-              {projects.map((project) => {
-                const progress = numberValue(project.payload?.progress, project.status === 'completed' ? 100 : 0)
-                const owner = textFromPayload(project.payload, 'leader_name', project.payload?.owner_name as string | undefined)
-                return (
-                  <Tr key={project.id}>
-                    <Td>
-                      <div className="flex flex-col gap-0.5">
-                        <Link className="text-base font-medium text-text-primary hover:underline" to={`/projects/${project.id}`}>{project.name}</Link>
-                        <span className="text-xs text-text-muted">{project.summary || project.project_no}</span>
-                      </div>
-                    </Td>
-                    <Td>{project.project_no}</Td>
-                    <Td><Badge>{projectStatusLabel(project.status)}</Badge></Td>
-                    <Td>{projectTypeLabel(project.project_type)}</Td>
-                    <Td>
-                      <div className="flex items-center gap-2">
-                        <Avatar name={owner} className="h-6 w-6 text-xs" />
-                        <span>{owner}</span>
-                      </div>
-                    </Td>
-                    <Td>{formatDate(project.start_date)} - {formatDate(project.end_date)}</Td>
-                    <Td><ProgressBar value={progress} className="h-1.5" /></Td>
-                    <Td>{visibilityLabel(project.visibility)}</Td>
-                  </Tr>
-                )
-              })}
-            </Tbody>
-          </Table>
           </div>
           {!loading && projects.length === 0 && <EmptyState title="暂无项目" desc="当前可见范围内没有项目。" />}
         </div>

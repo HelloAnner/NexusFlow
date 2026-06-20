@@ -186,7 +186,7 @@ export function ProjectDetailPage() {
 
   return (
     <MainLayout title="项目详情" subtitle={project ? `${project.project_no ?? '未编号'} · ${project.name}` : '项目工作台'}>
-      <div className="flex flex-col gap-5">
+      <div className="flex h-full min-h-0 flex-col gap-4">
         {(detailState.error || message) && (
           <div className={`rounded-md px-4 py-3 text-sm ${detailState.error ? 'bg-color-error-bg text-color-error' : 'bg-color-info-bg text-color-info'}`}>
             {detailState.error ?? message}
@@ -194,18 +194,18 @@ export function ProjectDetailPage() {
         )}
 
         {project && (
-          <div className="rounded-lg border border-border-subtle bg-bg-secondary p-5">
+          <div className="rounded-md border border-border-subtle bg-bg-secondary p-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl font-semibold text-text-primary">{project.name}</h1>
+                  <h1 className="text-xl font-semibold text-text-primary">{project.name}</h1>
                   <Tag variant={statusVariant(project.status)}>{projectStatusLabel(project.status)}</Tag>
                   <Badge>{visibilityLabel(project.visibility)}</Badge>
                 </div>
                 <p className="mt-2 max-w-3xl text-sm text-text-muted">{project.summary || '暂无项目概述'}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Link className="inline-flex h-10 items-center gap-2 rounded-md bg-bg-tertiary px-4 text-sm text-text-muted hover:bg-hover-bg hover:text-text-primary" to={`/tasks/new?project_id=${project.id}`}>
+                <Link className="inline-flex h-9 items-center gap-2 rounded-md bg-bg-tertiary px-3 text-sm text-text-muted hover:bg-hover-bg hover:text-text-primary" to={`/tasks/new?project_id=${project.id}`}>
                   <Plus className="h-4 w-4" />新建任务
                 </Link>
                 <input
@@ -217,15 +217,15 @@ export function ProjectDetailPage() {
                     if (file) void uploadProjectResource(file)
                   }}
                 />
-                <Button variant="secondary" className="h-10 px-4 py-0 text-sm" disabled={acting === 'upload'} onClick={() => fileRef.current?.click()}>
+                <Button variant="secondary" className="h-9 px-3 py-0 text-sm" disabled={acting === 'upload'} onClick={() => fileRef.current?.click()}>
                   <FileUp className="h-4 w-4" />上传资料
                 </Button>
-                <Button variant="secondary" className="h-10 px-4 py-0 text-sm" disabled={acting === 'archive' || project.status === 'archived'} onClick={() => void archiveProject()}>
+                <Button variant="secondary" className="h-9 px-3 py-0 text-sm" disabled={acting === 'archive' || project.status === 'archived'} onClick={() => void archiveProject()}>
                   <Archive className="h-4 w-4" />归档
                 </Button>
               </div>
             </div>
-            <div className="mt-5 grid grid-cols-2 gap-4 text-sm text-text-secondary md:grid-cols-4">
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-text-secondary md:grid-cols-4">
               <Info label="项目类型" value={`${projectTypeLabel(project.project_type)} / ${project.level ?? '未分级'}`} />
               <Info label="归属组织" value={String(project.payload?.owner_org_name ?? '未设置')} />
               <Info label="负责人" value={String(project.payload?.leader_name ?? '未设置')} />
@@ -234,7 +234,7 @@ export function ProjectDetailPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
           <Metric label="任务" value={stats.task_count ?? 0} />
           <Metric label="进行中" value={stats.in_progress_count ?? 0} />
           <Metric label="延期" value={stats.overdue_count ?? 0} />
@@ -243,13 +243,13 @@ export function ProjectDetailPage() {
           <Metric label="资料" value={stats.resource_count ?? 0} />
         </div>
 
-        <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab} className="rounded-lg border border-border-subtle bg-bg-secondary p-2" />
+        <Tabs tabs={tabs} value={activeTab} onChange={setActiveTab} className="rounded-md border border-border-subtle bg-bg-secondary p-2" />
 
         {detailState.loading && <Panel><EmptyState title="正在加载项目详情" /></Panel>}
         {!detailState.loading && detail && (
           <>
             {activeTab === 'overview' && (
-              <div className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+              <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
                 <Panel title="当前重点任务">
                   <TaskTable tasks={detail.tasks.slice(0, 6)} />
                 </Panel>
@@ -361,9 +361,9 @@ function Info({ label, value }: { label: string; value: string }) {
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-border-subtle bg-bg-secondary px-4 py-3">
+    <div className="rounded-md border border-border-subtle bg-bg-secondary px-4 py-3">
       <div className="text-xs text-text-muted">{label}</div>
-      <div className="mt-1 text-2xl font-semibold text-text-primary">{value}</div>
+      <div className="mt-1 text-xl font-semibold text-text-primary">{value}</div>
     </div>
   )
 }

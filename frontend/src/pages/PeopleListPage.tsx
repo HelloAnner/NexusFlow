@@ -235,8 +235,8 @@ export function PeopleListPage() {
   }
 
   return (
-    <MainLayout title="人员" subtitle="人员档案、组织归属与派发状态">
-      <div className="flex flex-col gap-5">
+    <MainLayout title="团队" subtitle="人员档案、组织归属与派发状态">
+      <div className="flex h-full min-h-0 flex-col gap-4">
         {(peopleState.error || orgState.error || skillState.error || message) && (
           <div className={[
             'rounded-md px-4 py-3 text-sm',
@@ -247,33 +247,37 @@ export function PeopleListPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <Metric label="人员总数" value={total} sub={peopleState.loading ? '加载中' : '真实分页'} />
           <Metric label="本页在岗" value={active} />
           <Metric label="本页账号启用" value={enabled} />
           <Metric label="本页可派发" value={dispatchable} />
         </div>
 
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-border-subtle bg-bg-secondary p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border-subtle bg-bg-secondary px-3 py-2.5">
           <form
-            className="flex min-w-0 flex-1 items-center gap-3"
+            className="flex min-w-0 flex-1 items-center gap-2"
             onSubmit={(event) => {
               event.preventDefault()
               updateSearch({ page: 1, q: draftQ })
             }}
           >
-            <SearchInput className="w-full max-w-xl" placeholder="搜索姓名、工号、组织、邮箱、状态" value={draftQ} onChange={(event) => setDraftQ(event.target.value)} />
-            <Button className="h-10 px-4 py-0 text-sm">
+            <SearchInput className="w-full max-w-xl bg-bg-tertiary" placeholder="搜索姓名、工号、组织、邮箱、状态" value={draftQ} onChange={(event) => setDraftQ(event.target.value)} />
+            <Button className="h-9 px-3 py-0 text-sm">
               <Search className="h-4 w-4" />搜索
             </Button>
           </form>
-          <div className="flex items-center gap-2 text-sm text-text-muted">
+          <div className="flex h-9 items-center gap-2 rounded-md bg-bg-tertiary px-3 text-xs text-text-muted">
             <Users className="h-4 w-4" />
             第 {(page - 1) * pageSize + (people.length ? 1 : 0)}-{Math.min(page * pageSize, total)} 条 / 共 {total} 条
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col rounded-lg border border-border-subtle bg-bg-secondary">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border-subtle bg-bg-secondary">
+          <div className="border-b border-border-subtle px-4 py-3">
+            <div className="text-sm font-semibold text-text-primary">成员列表</div>
+            <div className="mt-1 text-xs text-text-muted">点击姓名查看详情，编辑抽屉用于维护派发字段和技能标签。</div>
+          </div>
           <Table>
             <Thead>
               <Tr><Th>姓名</Th><Th>归属组织</Th><Th>角色/等级</Th><Th>技能标签</Th><Th>本周负载</Th><Th>工作状态</Th><Th>账号状态</Th><Th>操作</Th></Tr>
@@ -289,7 +293,7 @@ export function PeopleListPage() {
                       <div className="flex items-center gap-3">
                         <Avatar name={person.name} className="h-8 w-8" />
                         <div>
-                          <Link className="text-base font-medium text-text-primary hover:underline" to={`/people/${person.id}`}>{person.name}</Link>
+                          <Link className="text-sm font-semibold text-text-primary hover:underline" to={`/people/${person.id}`}>{person.name}</Link>
                           <div className="text-xs text-text-muted">{person.employee_no ?? '未设置工号'}</div>
                         </div>
                       </div>
@@ -343,18 +347,18 @@ export function PeopleListPage() {
         </div>
 
         {editing && (
-          <div className="fixed inset-y-0 right-0 z-30 flex w-[min(760px,96vw)] flex-col border-l border-border-subtle bg-bg-primary shadow-2xl">
-            <div className="flex items-start justify-between border-b border-border-subtle px-6 py-4">
+          <div className="fixed inset-y-0 right-0 z-30 flex w-[min(720px,96vw)] flex-col border-l border-border-subtle bg-bg-primary shadow-2xl">
+            <div className="flex items-start justify-between border-b border-border-subtle px-5 py-4">
               <div>
-                <h2 className="text-xl font-semibold text-text-primary">编辑人员信息</h2>
+                <h2 className="text-lg font-semibold text-text-primary">编辑人员信息</h2>
                 <p className="mt-1 text-sm text-text-muted">{editing.name} · {editing.id}</p>
               </div>
               <button className="rounded-md p-2 text-text-muted hover:bg-hover-bg" onClick={() => setEditing(null)}>
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-auto p-6">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="min-h-0 flex-1 overflow-auto p-5">
+              <div className="grid gap-3 md:grid-cols-2">
                 <Input label="姓名" value={form.name} onChange={(event) => updateField('name', event.target.value)} />
                 <Input label="工号" value={form.employee_no} onChange={(event) => updateField('employee_no', event.target.value)} />
                 <Select label="主组织" value={form.primary_org_id} onChange={(event) => updateField('primary_org_id', event.target.value)} options={orgs.map((org) => ({ value: org.id, label: org.name }))} />
@@ -426,7 +430,7 @@ export function PeopleListPage() {
                 </label>
               </div>
             </div>
-            <div className="flex justify-end gap-3 border-t border-border-subtle px-6 py-4">
+            <div className="flex justify-end gap-2 border-t border-border-subtle px-5 py-3">
               <Button variant="danger" disabled={saving} onClick={() => void deletePerson()}>
                 <Trash2 className="h-4 w-4" />删除人员
               </Button>
@@ -444,9 +448,9 @@ export function PeopleListPage() {
 
 function Metric({ label, value, sub }: { label: string; value: number; sub?: string }) {
   return (
-    <div className="rounded-lg border border-border-subtle bg-bg-secondary px-5 py-4">
-      <div className="text-sm text-text-muted">{label}</div>
-      <div className="mt-2 text-2xl font-semibold text-text-primary">{value}</div>
+    <div className="rounded-md border border-border-subtle bg-bg-secondary px-4 py-3">
+      <div className="text-xs text-text-muted">{label}</div>
+      <div className="mt-1 text-xl font-semibold text-text-primary">{value}</div>
       {sub && <div className="mt-1 text-xs text-text-muted">{sub}</div>}
     </div>
   )
