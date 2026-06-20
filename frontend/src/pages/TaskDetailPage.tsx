@@ -1,6 +1,6 @@
 import { MainLayout } from '@/components/layout'
 import { AvatarGroup, Badge, Button, EmptyState, Input, Panel, ProgressBar, Select, Table, Tabs, Tag, Tbody, Td, Th, Thead, TimelineItem, Tr } from '@/components/ui'
-import { apiGet, apiPatch, apiPost, apiPut } from '@/lib/api'
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '@/lib/api'
 import {
   type ApiList,
   type ApiResource,
@@ -15,9 +15,9 @@ import {
   textFromPayload,
 } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
-import { Check, ChevronRight, Download, Link as LinkIcon, Pencil, Plus, RotateCcw, Save, Upload, X } from 'lucide-react'
+import { Check, ChevronRight, Download, Link as LinkIcon, Pencil, Plus, RotateCcw, Save, Trash2, Upload, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 interface TaskDetailResponse {
   task: ApiTask
@@ -255,6 +255,7 @@ export function TaskDetailContent({
   compact?: boolean
   onClose?: () => void
 }) {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
   const [acting, setActing] = useState<string | null>(null)
   const [taskMessage, setTaskMessage] = useState<string | null>(null)
@@ -348,6 +349,22 @@ export function TaskDetailContent({
       setTaskMessage(`${actionLabels[action] ?? action}已完成。`)
     } catch (err) {
       setTaskMessage(err instanceof Error ? err.message : '任务操作失败')
+    } finally {
+      setActing(null)
+    }
+  }
+
+  async function deleteTask() {
+    if (!id) return
+    setActing('delete')
+    setTaskMessage(null)
+    try {
+      await apiDelete(`/tasks/${id}`, { reason: actionReason || '删除任务' })
+      setTaskMessage('任务已删除。')
+      if (compact && onClose) onClose()
+      else navigate('/tasks')
+    } catch (err) {
+      setTaskMessage(err instanceof Error ? err.message : '删除任务失败')
     } finally {
       setActing(null)
     }
@@ -637,6 +654,10 @@ export function TaskDetailContent({
             <Button variant="secondary" className="h-9 px-4" onClick={() => setScheduleOpen((open) => !open)}>
               <Pencil className="h-4 w-4" />
               调整计划
+            </Button>
+            <Button variant="danger" className="h-9 px-4" disabled={acting === 'delete'} onClick={() => void deleteTask()}>
+              <Trash2 className="h-4 w-4" />
+              删除
             </Button>
             {data?.available_actions.map((action) => (
               <Button

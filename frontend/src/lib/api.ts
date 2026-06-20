@@ -100,3 +100,10 @@ export async function apiPut<T>(path: string, body?: unknown) {
     body: body === undefined ? undefined : JSON.stringify(body),
   })
 }
+
+export async function apiDelete<T>(path: string, body?: unknown) {
+  return apiFetch<T>(path, {
+    method: 'DELETE',
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+}

@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { MainLayout } from '@/components/layout'
 import { Avatar, Button, EmptyState, Input, Select, Table, Tag, Tbody, Td, Th, Thead, Tr } from '@/components/ui'
-import { apiGet, apiPatch, apiPost } from '@/lib/api'
+import { apiDelete, apiGet, apiPatch, apiPost } from '@/lib/api'
 import { type ApiList, type ApiPerson, accountStatusLabel, workStatusLabel } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
 import {
@@ -13,6 +13,7 @@ import {
   MoreHorizontal,
   MoveRight,
   Save,
+  Trash2,
   Users,
   X,
 } from 'lucide-react'
@@ -284,6 +285,22 @@ export function OrganizationManagementPage() {
     }
   }
 
+  async function deleteOrg() {
+    if (!selected) return
+    setSaving('删除组织')
+    setMessage(null)
+    try {
+      await apiDelete(`/orgs/${selected.id}`, { reason: form.reason || '删除组织' })
+      setSelectedId(null)
+      await reload()
+      setMessage('组织已删除')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : '删除失败')
+    } finally {
+      setSaving(null)
+    }
+  }
+
   const allOrgOptions = [{ value: '', label: '根组织' }].concat(
     orgs.map((org) => ({
       value: org.id,
@@ -372,6 +389,9 @@ export function OrganizationManagementPage() {
                       </Button>
                       <Button className="h-10 px-3 py-0 text-sm" disabled={saving !== null} onClick={() => void saveOrg()}>
                         <Save className="h-4 w-4" />保存字段
+                      </Button>
+                      <Button variant="danger" className="h-10 px-3 py-0 text-sm" disabled={saving !== null} onClick={() => void deleteOrg()}>
+                        <Trash2 className="h-4 w-4" />删除
                       </Button>
                     </div>
                   </div>

@@ -133,6 +133,21 @@ async fn person_detail_workbench(
     .bind(id)
     .fetch_all(db)
     .await?;
+    let skills = sqlx::query(
+        "SELECT jsonb_build_object(
+           'id', st.id,
+           'name', st.name,
+           'enabled', st.enabled,
+           'payload', st.payload
+         ) AS item
+         FROM person_skill_tags pst
+         JOIN skill_tags st ON st.id = pst.skill_id
+         WHERE pst.person_id = $1 AND st.enabled
+         ORDER BY st.name",
+    )
+    .bind(id)
+    .fetch_all(db)
+    .await?;
     let tasks = sqlx::query(
         "SELECT item
          FROM (
@@ -165,20 +180,38 @@ async fn person_detail_workbench(
            'standard_hours', standard_hours::float8,
            'load_rate', load_rate::float8,
            'full_day_occupied', full_day_occupied,
-           'source_task_ids', source_task_ids
+           'source_task_ids', source_task_ids,
+           'source_assignment_ids', source_assignment_ids,
+           'source_tasks', COALESCE(source_tasks.items, '[]'::jsonb)
          ) AS item
-         FROM workload_snapshots
-         WHERE person_id = $1 AND work_date BETWEEN current_date - interval '7 days' AND current_date + interval '21 days'
+         FROM workload_snapshots ws
+         LEFT JOIN LATERAL (
+           SELECT jsonb_agg(jsonb_build_object(
+             'id', t.id,
+             'task_no', t.task_no,
+             'name', t.name,
+             'status', t.status,
+             'due_at', t.due_at,
+             'progress', t.progress::float8
+           ) ORDER BY t.due_at NULLS LAST, t.created_at DESC) AS items
+           FROM tasks t
+           WHERE t.id = ANY(ws.source_task_ids) AND t.deleted_at IS NULL
+         ) source_tasks ON true
+         WHERE ws.person_id = $1 AND ws.work_date BETWEEN current_date - interval '7 days' AND current_date + interval '21 days'
          ORDER BY work_date",
     )
     .bind(id)
     .fetch_all(db)
     .await?;
     let events = sqlx::query(
-        "SELECT to_jsonb(domain_events.*) AS item
-         FROM domain_events
-         WHERE (object_type = 'person' AND object_id = $1) OR actor_id = $1
-         ORDER BY created_at DESC
+        "SELECT (
+           to_jsonb(de.*)
+           || jsonb_build_object('actor_name', actor.name)
+         ) AS item
+         FROM domain_events de
+         LEFT JOIN persons actor ON actor.id = de.actor_id
+         WHERE (de.object_type = 'person' AND de.object_id = $1) OR de.actor_id = $1
+         ORDER BY de.created_at DESC
          LIMIT 50",
     )
     .bind(id)
@@ -186,6 +219,7 @@ async fn person_detail_workbench(
     .await?;
     Ok(json!({
         "person": person,
+        "skills": rows_to_json(skills)?,
         "projects": rows_to_json(projects)?,
         "tasks": rows_to_json(tasks)?,
         "workload": rows_to_json(workload)?,
@@ -304,10 +338,20 @@ async fn ensure_person_visible(
     user: &CurrentUser,
     id: Uuid,
 ) -> Result<(), ApiError> {
-    let scope = data_scope_context(db, user).await?;
     if user.is_sa() {
-        return Ok(());
+        let exists = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM persons WHERE id = $1 AND deleted_at IS NULL)",
+        )
+        .bind(id)
+        .fetch_one(db)
+        .await?;
+        return if exists {
+            Ok(())
+        } else {
+            Err(ApiError::not_found("person not found"))
+        };
     }
+    let scope = data_scope_context(db, user).await?;
     let visible = sqlx::query_scalar::<_, bool>(
         "SELECT EXISTS (
           SELECT 1 FROM persons p
@@ -341,7 +385,17 @@ async fn ensure_resource_visible(
     id: Uuid,
 ) -> Result<(), ApiError> {
     if user.is_sa() {
-        return Ok(());
+        let exists = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM resource_files WHERE id = $1 AND deleted_at IS NULL)",
+        )
+        .bind(id)
+        .fetch_one(db)
+        .await?;
+        return if exists {
+            Ok(())
+        } else {
+            Err(ApiError::not_found("resource not found"))
+        };
     }
     let scope = data_scope_context(db, user).await?;
     let visible = sqlx::query_scalar::<_, bool>(

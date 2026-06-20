@@ -4,7 +4,17 @@ async fn ensure_project_visible(
     project_id: Uuid,
 ) -> Result<(), ApiError> {
     if user.is_sa() {
-        return Ok(());
+        let exists = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM projects WHERE id = $1 AND deleted_at IS NULL)",
+        )
+        .bind(project_id)
+        .fetch_one(db)
+        .await?;
+        return if exists {
+            Ok(())
+        } else {
+            Err(ApiError::not_found("project not found"))
+        };
     }
     let scope = data_scope_context(db, user).await?;
     let visible = sqlx::query_scalar::<_, bool>(
@@ -77,7 +87,17 @@ async fn ensure_task_visible(
     task_id: Uuid,
 ) -> Result<(), ApiError> {
     if user.is_sa() {
-        return Ok(());
+        let exists = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM tasks WHERE id = $1 AND deleted_at IS NULL)",
+        )
+        .bind(task_id)
+        .fetch_one(db)
+        .await?;
+        return if exists {
+            Ok(())
+        } else {
+            Err(ApiError::not_found("task not found"))
+        };
     }
     let scope = data_scope_context(db, user).await?;
     let visible = sqlx::query_scalar::<_, bool>(

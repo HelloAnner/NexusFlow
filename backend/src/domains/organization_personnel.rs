@@ -210,6 +210,7 @@ async fn list_users(
           'id', p.id, 'name', p.name, 'employee_no', p.employee_no, 'account_id', p.account_id,
           'primary_org_id', p.primary_org_id, 'primary_org_name', primary_org.name,
           'org_memberships', COALESCE(memberships.items, '[]'::jsonb),
+          'skills', COALESCE(skills.items, '[]'::jsonb),
           'management_level', p.management_level, 'professional_level', p.professional_level,
           'work_status', p.work_status, 'daily_standard_hours', p.daily_standard_hours,
           'dispatch_enabled', p.dispatch_enabled, 'account_status', p.account_status, 'system_role_ids', p.system_role_ids,
@@ -224,6 +225,12 @@ async fn list_users(
            JOIN organizations o ON o.id = pom.org_id
            WHERE pom.person_id = p.id AND pom.active AND o.deleted_at IS NULL
          ) memberships ON true
+         LEFT JOIN LATERAL (
+           SELECT jsonb_agg(jsonb_build_object('id', st.id, 'name', st.name, 'enabled', st.enabled, 'payload', st.payload) ORDER BY st.name) AS items
+           FROM person_skill_tags pst
+           JOIN skill_tags st ON st.id = pst.skill_id
+           WHERE pst.person_id = p.id AND st.enabled
+         ) skills ON true
          WHERE p.deleted_at IS NULL
            AND ($1::text IS NULL OR concat_ws(' ', p.name, p.employee_no, p.work_status, p.account_status, primary_org.name, p.payload->>'role_name', p.payload->>'email') ILIKE '%' || $1 || '%')
            AND ($2::text IS NULL OR p.work_status = $2)
@@ -324,6 +331,7 @@ async fn create_user(
         .execute(&state.db)
         .await?;
     sync_person_org_memberships(&state.db, id, &payload).await?;
+    sync_person_skill_tags(&state.db, id, &payload).await?;
     emit_event(
         &state.db,
         "person.created",
@@ -386,6 +394,7 @@ async fn update_user(
     .execute(&state.db)
     .await?;
     sync_person_org_memberships(&state.db, id, &payload).await?;
+    sync_person_skill_tags(&state.db, id, &payload).await?;
     audit(
         &state.db,
         user.person_id,

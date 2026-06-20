@@ -1,10 +1,10 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { MainLayout } from '@/components/layout'
 import { Avatar, Button, EmptyState, Input, LoadIndicator, SearchInput, Select, Table, Tag, Tbody, Td, Th, Thead, Tr } from '@/components/ui'
-import { apiGet, apiPatch } from '@/lib/api'
-import { type ApiList, type ApiPerson, accountStatusLabel, numberValue, workStatusLabel } from '@/lib/format'
+import { apiDelete, apiGet, apiPatch, apiPut } from '@/lib/api'
+import { type ApiList, type ApiPerson, type ApiSkill, accountStatusLabel, numberValue, workStatusLabel } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
-import { Edit3, Save, Search, Users, X } from 'lucide-react'
+import { Edit3, Save, Search, Trash2, Users, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
@@ -30,7 +30,7 @@ interface PersonForm {
   account_status: string
   role_name: string
   level: string
-  skills: string
+  skill_ids: string[]
   weekly_load: string
   phone: string
   email: string
@@ -78,7 +78,7 @@ function personToForm(person: ApiPerson | null): PersonForm {
     account_status: person?.account_status ?? 'enabled',
     role_name: payloadText(person, 'role_name'),
     level: payloadText(person, 'level'),
-    skills: payloadArrayText(person, 'skills'),
+    skill_ids: person?.skills?.map((skill) => skill.id) ?? [],
     weekly_load: payloadText(person, 'weekly_load', person?.dispatch_enabled ? '40' : '0'),
     phone: payloadText(person, 'phone'),
     email: payloadText(person, 'email'),
@@ -119,8 +119,10 @@ export function PeopleListPage() {
   const [message, setMessage] = useState<string | null>(null)
   const peopleState = useApiData(() => apiGet<ApiList<ApiPerson>>('/users', { page, page_size: pageSize, q }), [page, q])
   const orgState = useApiData(() => apiGet<ApiList<ApiOrg>>('/orgs/tree'), [])
+  const skillState = useApiData(() => apiGet<ApiList<ApiSkill>>('/skills'), [])
   const people = useMemo(() => peopleState.data?.items ?? [], [peopleState.data?.items])
   const orgs = useMemo(() => orgState.data?.items ?? [], [orgState.data?.items])
+  const skills = useMemo(() => skillState.data?.items.filter((skill) => skill.enabled !== false) ?? [], [skillState.data?.items])
   const total = peopleState.data?.total ?? people.length
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   const active = people.filter((person) => person.work_status === 'active').length
@@ -167,6 +169,15 @@ export function PeopleListPage() {
     }))
   }
 
+  function toggleSkill(skillId: string) {
+    setForm((current) => ({
+      ...current,
+      skill_ids: current.skill_ids.includes(skillId)
+        ? current.skill_ids.filter((id) => id !== skillId)
+        : current.skill_ids.concat(skillId),
+    }))
+  }
+
   async function savePerson() {
     if (!editing) return
     setSaving(true)
@@ -186,13 +197,16 @@ export function PeopleListPage() {
         account_status: form.account_status,
         role_name: form.role_name,
         level: form.level,
-        skills: splitComma(form.skills),
         weekly_load: Number(form.weekly_load || 0),
         phone: form.phone,
         email: form.email,
         location: form.location,
         note: form.note,
         reason: form.reason,
+      })
+      await apiPut(`/users/${editing.id}/skills`, {
+        skill_ids: form.skill_ids,
+        reason: form.reason || '人员技能绑定更新',
       })
       await peopleState.reload()
       setEditing(null)
@@ -204,16 +218,32 @@ export function PeopleListPage() {
     }
   }
 
+  async function deletePerson() {
+    if (!editing) return
+    setSaving(true)
+    setMessage(null)
+    try {
+      await apiDelete(`/users/${editing.id}`, { reason: form.reason || '删除人员' })
+      await peopleState.reload()
+      setEditing(null)
+      setMessage('人员已删除')
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : '删除失败')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <MainLayout title="人员" subtitle="人员档案、组织归属与派发状态">
       <div className="flex flex-col gap-5">
-        {(peopleState.error || orgState.error || message) && (
+        {(peopleState.error || orgState.error || skillState.error || message) && (
           <div className={[
             'rounded-md px-4 py-3 text-sm',
-            peopleState.error || orgState.error || message?.includes('失败') ? 'bg-color-error-bg text-color-error' : 'bg-color-success-bg text-color-success',
+            peopleState.error || orgState.error || skillState.error || message?.includes('失败') ? 'bg-color-error-bg text-color-error' : 'bg-color-success-bg text-color-success',
           ].join(' ')}
           >
-            {peopleState.error ?? orgState.error ?? message}
+            {peopleState.error ?? orgState.error ?? skillState.error ?? message}
           </div>
         )}
 
@@ -251,7 +281,7 @@ export function PeopleListPage() {
             <Tbody>
               {people.map((person) => {
                 const load = numberValue(person.payload?.weekly_load, person.dispatch_enabled ? 40 : 0)
-                const skills = Array.isArray(person.payload?.skills) ? person.payload.skills.map(String) : []
+                const personSkills = person.skills?.length ? person.skills.map((skill) => skill.name) : payloadArrayText(person, 'skills').split(', ').filter(Boolean)
                 const memberships = orgNames(person, orgs)
                 return (
                   <Tr key={person.id}>
@@ -283,7 +313,7 @@ export function PeopleListPage() {
                     </Td>
                     <Td>
                       <div className="flex flex-wrap gap-2">
-                        {(skills.length ? skills : ['未标记']).slice(0, 4).map((skill) => (
+                        {(personSkills.length ? personSkills : ['未标记']).slice(0, 4).map((skill) => (
                           <span key={skill} className="rounded-sm bg-hover-bg px-2 py-1 text-xs text-text-muted">{skill}</span>
                         ))}
                       </div>
@@ -350,11 +380,26 @@ export function PeopleListPage() {
                 <Input label="角色名称" value={form.role_name} onChange={(event) => updateField('role_name', event.target.value)} />
                 <Input label="展示等级" value={form.level} onChange={(event) => updateField('level', event.target.value)} />
                 <Input label="系统角色 ID" value={form.system_role_ids} onChange={(event) => updateField('system_role_ids', event.target.value)} placeholder="多个 ID 用逗号分隔" />
-                <Input label="技能标签" value={form.skills} onChange={(event) => updateField('skills', event.target.value)} placeholder="多个标签用逗号分隔" />
                 <Input label="手机号" value={form.phone} onChange={(event) => updateField('phone', event.target.value)} />
                 <Input label="邮箱" value={form.email} onChange={(event) => updateField('email', event.target.value)} />
                 <Input label="所在地" value={form.location} onChange={(event) => updateField('location', event.target.value)} />
                 <Input label="审计备注" value={form.reason} onChange={(event) => updateField('reason', event.target.value)} />
+                <label className="col-span-2 flex flex-col gap-2">
+                  <span className="text-sm font-medium text-text-muted">技能标签</span>
+                  <div className="grid max-h-52 grid-cols-2 gap-2 overflow-auto rounded-md border border-border-subtle bg-bg-secondary p-3">
+                    {skills.map((skill) => (
+                      <label key={skill.id} className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-text-secondary hover:bg-hover-bg">
+                        <input
+                          type="checkbox"
+                          checked={form.skill_ids.includes(skill.id)}
+                          onChange={() => toggleSkill(skill.id)}
+                        />
+                        <span className="truncate">{skill.name}</span>
+                      </label>
+                    ))}
+                    {skills.length === 0 && <span className="text-sm text-text-muted">暂无可用技能标签，请先在权限/人员配置中创建。</span>}
+                  </div>
+                </label>
                 <label className="col-span-2 flex flex-col gap-2">
                   <span className="text-sm font-medium text-text-muted">兼属组织</span>
                   <div className="grid max-h-52 grid-cols-2 gap-2 overflow-auto rounded-md border border-border-subtle bg-bg-secondary p-3">
@@ -382,6 +427,9 @@ export function PeopleListPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3 border-t border-border-subtle px-6 py-4">
+              <Button variant="danger" disabled={saving} onClick={() => void deletePerson()}>
+                <Trash2 className="h-4 w-4" />删除人员
+              </Button>
               <Button variant="secondary" onClick={() => setEditing(null)}>取消</Button>
               <Button disabled={saving || !form.name || !form.primary_org_id} onClick={() => void savePerson()}>
                 <Save className="h-4 w-4" />保存

@@ -1,10 +1,11 @@
 import { MainLayout } from '@/components/layout'
-import { Badge, Button, EmptyState, Panel, Select, StatCard, Tabs, Tag } from '@/components/ui'
+import { Badge, Button, EmptyState, LoadIndicator, Panel, Select, StatCard, Tabs, Tag } from '@/components/ui'
 import { apiGet, apiPost } from '@/lib/api'
-import { type ApiConflict, type ApiList, conflictTypeLabel, formatDate, riskLabel, riskVariant } from '@/lib/format'
+import { type ApiConflict, type ApiConflictDetail, type ApiList, conflictTypeLabel, formatDate, formatDateTime, numberValue, riskLabel, riskVariant, taskStatusLabel } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
+import { CalendarDays, ExternalLink } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 const filterTabs = [
   { value: 'all', label: '全部' },
@@ -77,6 +78,11 @@ export function ConflictCenterPage() {
   const conflicts = useMemo(() => data?.items ?? [], [data?.items])
   const selectedConflictId = params.get('conflict')
   const activeConflict = conflicts.find((conflict) => conflict.id === selectedConflictId) ?? conflicts[0]
+  const conflictDetailState = useApiData<ApiConflictDetail | null>(
+    async () => activeConflict?.id ? apiGet<ApiConflictDetail>(`/conflicts/${activeConflict.id}`) : null,
+    [activeConflict?.id ?? '']
+  )
+  const activeDetail = (conflictDetailState.data ?? activeConflict) as ApiConflictDetail | undefined
   const stats = useMemo(() => {
     return {
       total: conflicts.length,
@@ -115,6 +121,7 @@ export function ConflictCenterPage() {
     try {
       await apiPost(`/conflicts/${id}/resolve`, { resolution_action: resolutionAction, resolution_comment: comment.trim() })
       await reload()
+      await conflictDetailState.reload()
       closeAction()
     } finally {
       setActing(null)
@@ -130,6 +137,7 @@ export function ConflictCenterPage() {
     try {
       await apiPost(`/conflicts/${id}/force`, { reason: comment.trim() })
       await reload()
+      await conflictDetailState.reload()
       closeAction()
     } finally {
       setActing(null)
@@ -235,38 +243,108 @@ export function ConflictCenterPage() {
             {!loading && conflicts.length === 0 && <EmptyState title="暂无冲突" desc="当前筛选下没有冲突记录。" />}
           </div>
 
-          <Panel className="gap-5" title="风险详情" right={activeConflict && <Tag variant={statusVariant(activeConflict.status)}>{statusLabel(activeConflict.status)}</Tag>}>
+          <Panel className="gap-5" title="风险详情" right={activeDetail && <Tag variant={statusVariant(activeDetail.status)}>{statusLabel(activeDetail.status)}</Tag>}>
             <div className="grid grid-cols-3 gap-2 rounded-lg bg-bg-tertiary p-4">
               <Mini label="全部" value={stats.total} />
               <Mini label="高风险" value={stats.high} />
               <Mini label="待处理" value={stats.open} />
             </div>
-            {activeConflict && (
+            {conflictDetailState.error && <div className="rounded-md bg-color-error-bg px-3 py-2 text-sm text-color-error">{conflictDetailState.error}</div>}
+            {activeDetail && (
               <div className="flex flex-col gap-3 rounded-md border border-border-subtle p-4">
                 <div className="flex items-center gap-2">
-                  <Badge>{conflictTypeLabel(activeConflict.conflict_type)}</Badge>
-                  <Tag variant={riskVariant(activeConflict.risk_level)}>{riskLabel(activeConflict.risk_level)}</Tag>
+                  <Badge>{conflictTypeLabel(activeDetail.conflict_type)}</Badge>
+                  <Tag variant={riskVariant(activeDetail.risk_level)}>{riskLabel(activeDetail.risk_level)}</Tag>
                 </div>
                 <div>
-                  <div className="text-base font-semibold text-text-primary">{conflictTitle(activeConflict)}</div>
+                  <div className="text-base font-semibold text-text-primary">{conflictTitle(activeDetail)}</div>
                   <div className="mt-1 text-sm text-text-muted">
-                    {formatDate(activeConflict.conflict_date_start)} - {formatDate(activeConflict.conflict_date_end)}
+                    {formatDate(activeDetail.conflict_date_start)} - {formatDate(activeDetail.conflict_date_end)}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <MiniInfo label="人员" value={personLabel(activeConflict)} />
-                  <MiniInfo label="超载" value={activeConflict.overload_hours ? `${activeConflict.overload_hours}h` : '无'} />
+                  <MiniInfo label="人员" value={personLabel(activeDetail)} />
+                  <MiniInfo label="超载" value={activeDetail.overload_hours ? `${activeDetail.overload_hours}h` : '无'} />
+                  <MiniInfo label="任务状态" value={taskStatusLabel(activeDetail.task?.status ?? activeDetail.status)} />
+                  <MiniInfo label="创建时间" value={formatDateTime(activeDetail.created_at)} />
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  {activeDetail.task_id && (
+                    <Link className="inline-flex h-9 items-center gap-2 rounded-md bg-bg-tertiary px-3 text-sm text-text-muted hover:bg-hover-bg hover:text-text-primary" to={`/tasks/${activeDetail.task_id}`}>
+                      <ExternalLink className="h-4 w-4" />任务
+                    </Link>
+                  )}
+                  {activeDetail.person_id && (
+                    <Link className="inline-flex h-9 items-center gap-2 rounded-md bg-bg-tertiary px-3 text-sm text-text-muted hover:bg-hover-bg hover:text-text-primary" to={`/people/${activeDetail.person_id}#workload`}>
+                      <ExternalLink className="h-4 w-4" />人员负载
+                    </Link>
+                  )}
+                  <Link className="inline-flex h-9 items-center gap-2 rounded-md bg-bg-tertiary px-3 text-sm text-text-muted hover:bg-hover-bg hover:text-text-primary" to={`/gantt?risk=1${activeDetail.task_id ? `&task_id=${activeDetail.task_id}` : ''}`}>
+                    <CalendarDays className="h-4 w-4" />甘特风险
+                  </Link>
+                </div>
+                <div className="rounded-md bg-bg-tertiary p-3">
+                  <div className="mb-2 text-sm font-semibold text-text-primary">处理建议</div>
+                  <div className="flex flex-col gap-2">
+                    {buildSuggestions(activeDetail).map((suggestion) => (
+                      <div key={suggestion.title} className="rounded-sm bg-bg-secondary px-3 py-2">
+                        <div className="text-sm font-medium text-text-primary">{suggestion.title}</div>
+                        <div className="mt-1 text-xs leading-5 text-text-muted">{suggestion.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {(activeDetail.related_workload?.length ?? 0) > 0 && (
+                  <div>
+                    <div className="mb-2 text-sm font-semibold text-text-primary">相关负载窗口</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {activeDetail.related_workload?.slice(0, 8).map((day) => (
+                        <div key={day.date} className="rounded-md bg-bg-tertiary p-2 text-xs">
+                          <div className="flex items-center justify-between text-text-secondary">
+                            <span>{formatDate(day.date)}</span>
+                            <span>{numberValue(day.committed_hours)}h / {numberValue(day.standard_hours, 8)}h</span>
+                          </div>
+                          <LoadIndicator className="mt-2 w-full" value={Math.round(numberValue(day.load_rate) * 100)} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(activeDetail.events?.length ?? 0) > 0 && (
+                  <div>
+                    <div className="mb-2 text-sm font-semibold text-text-primary">处理时间线</div>
+                    <div className="flex flex-col gap-2">
+                      {activeDetail.events?.map((event) => (
+                        <div key={event.id} className="rounded-md bg-bg-tertiary px-3 py-2 text-xs">
+                          <div className="font-medium text-text-primary">{event.event_type ?? '事件'}</div>
+                          <div className="mt-1 text-text-muted">{event.actor_name ?? '系统'} · {formatDateTime(event.created_at)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {activeDetail.resolution_comment && (
+                  <div className="rounded-md bg-bg-tertiary p-3 text-sm leading-6 text-text-secondary">
+                    <span className="font-medium text-text-primary">处理说明：</span>{activeDetail.resolution_comment}
+                  </div>
+                )}
+                {activeDetail.payload && Object.keys(activeDetail.payload).length > 0 && (
+                  <details className="rounded-md bg-bg-tertiary p-3 text-xs text-text-secondary">
+                    <summary className="cursor-pointer text-sm font-medium text-text-primary">原始冲突数据</summary>
+                    <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap">{JSON.stringify(activeDetail.payload, null, 2)}</pre>
+                  </details>
+                )}
                 <div className="flex items-center gap-2">
-                  <Button variant="primary" className="h-9 px-4 text-sm" disabled={acting === activeConflict.id} onClick={() => openAction('resolve', activeConflict)}>
+                  <Button variant="primary" className="h-9 px-4 text-sm" disabled={acting === activeDetail.id} onClick={() => openAction('resolve', activeDetail)}>
                     处理
                   </Button>
-                  <Button variant="danger" className="h-9 px-4 text-sm" disabled={acting === activeConflict.id} onClick={() => openAction('force', activeConflict)}>
+                  <Button variant="danger" className="h-9 px-4 text-sm" disabled={acting === activeDetail.id} onClick={() => openAction('force', activeDetail)}>
                     强制排期
                   </Button>
                 </div>
               </div>
             )}
+            {!activeDetail && <EmptyState title="选择一条冲突" desc="查看冲突详情、处理建议和相关负载。" />}
             <div className="flex flex-col gap-3">
               <h4 className="text-sm font-semibold text-text-primary">处理说明</h4>
               <p className="text-sm leading-relaxed text-text-secondary">
@@ -342,4 +420,34 @@ function MiniInfo({ label, value }: { label: string; value: string }) {
       <div className="mt-1 truncate text-sm font-medium text-text-primary">{value}</div>
     </div>
   )
+}
+
+function buildSuggestions(conflict: ApiConflictDetail) {
+  const type = conflict.conflict_type
+  const overload = numberValue(conflict.overload_hours)
+  const taskName = conflict.task?.name ?? conflict.task_name ?? '相关任务'
+  if (type === 'full_day_overlap' || type === 'all_day_overlap') {
+    return [
+      { title: '拆分全天占用', desc: `检查 ${taskName} 是否必须全天占用；若不是重点任务，改为每日小时投入。` },
+      { title: '调整日期窗口', desc: '优先移动开始或截止日期，避开同一人员已经全天占用的日期。' },
+      { title: '升级协调', desc: '如果必须保持全天占用，发起部门负责人协调并记录强制排期原因。' },
+    ]
+  }
+  if (type === 'overload') {
+    return [
+      { title: '下调每日投入', desc: overload ? `当前超载约 ${overload} 小时，优先降低每日投入或拆分到多人。` : '优先降低每日投入或拆分到多人。' },
+      { title: '更换执行人员', desc: '查看人员负载页，选择同技能且窗口内有余量的候选人。' },
+      { title: '调整任务排期', desc: '打开甘特图查看相邻任务，延后低优先级任务或缩短重叠窗口。' },
+    ]
+  }
+  if (type === 'unavailable') {
+    return [
+      { title: '确认人员状态', desc: '先确认人员是否出差、请假或已停用。' },
+      { title: '替换人员', desc: '优先选择同项目成员，避免新增跨部门协调成本。' },
+    ]
+  }
+  return [
+    { title: '检查任务时间', desc: '打开任务详情核对开始、截止时间和成员分工。' },
+    { title: '查看甘特风险', desc: '使用甘特图确认冲突是否影响同项目或同人员的其他任务。' },
+  ]
 }

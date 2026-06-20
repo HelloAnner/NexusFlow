@@ -243,7 +243,21 @@ async fn add_project_member(
         "project",
         Some(id),
         user.person_id,
-        payload,
+        payload.clone(),
+    )
+    .await?;
+    emit_event(
+        &state.db,
+        "person.project_membership.changed",
+        "person",
+        Some(person_id),
+        user.person_id,
+        json!({
+            "project_id": id,
+            "project_role": value_str(&payload, "project_role", "member"),
+            "work_desc": value_str(&payload, "work_desc", ""),
+            "active": true
+        }),
     )
     .await?;
     Ok(Json(json!({ "project_id": id, "person_id": person_id })))
@@ -270,7 +284,21 @@ async fn update_project_member(
         "project",
         Some(id),
         user.person_id,
-        payload,
+        payload.clone(),
+    )
+    .await?;
+    emit_event(
+        &state.db,
+        "person.project_membership.changed",
+        "person",
+        Some(person_id),
+        user.person_id,
+        json!({
+            "project_id": id,
+            "project_role": payload.get("project_role").and_then(Value::as_str),
+            "work_desc": payload.get("work_desc").and_then(Value::as_str),
+            "active": payload.get("active").and_then(Value::as_bool)
+        }),
     )
     .await?;
     Ok(Json(json!({ "project_id": id, "person_id": person_id })))
@@ -294,6 +322,15 @@ async fn delete_project_member(
         Some(id),
         user.person_id,
         json!({ "person_id": person_id, "active": false }),
+    )
+    .await?;
+    emit_event(
+        &state.db,
+        "person.project_membership.changed",
+        "person",
+        Some(person_id),
+        user.person_id,
+        json!({ "project_id": id, "active": false }),
     )
     .await?;
     Ok(Json(

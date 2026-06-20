@@ -12,7 +12,7 @@ use redis::aio::MultiplexedConnection;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
-use sqlx::{PgPool, Row, postgres::PgPoolOptions};
+use sqlx::{Column, PgPool, Row, postgres::PgPoolOptions};
 use std::{
     collections::{HashMap, HashSet},
     env,
@@ -31,6 +31,7 @@ include!("domains/auth.rs");
 include!("domains/organization_personnel.rs");
 include!("domains/organization_moves.rs");
 include!("domains/person_memberships.rs");
+include!("domains/person_skills.rs");
 include!("domains/permission.rs");
 include!("domains/data_scope.rs");
 include!("domains/access_helpers.rs");
@@ -38,6 +39,7 @@ include!("domains/detail_workbench.rs");
 include!("domains/task_workbench.rs");
 include!("domains/project.rs");
 include!("domains/task_core.rs");
+include!("domains/delete_lifecycle.rs");
 include!("domains/task_flow.rs");
 include!("domains/task_assignment_review.rs");
 include!("domains/resource_requirement.rs");
@@ -45,6 +47,7 @@ include!("domains/dispatch_approval.rs");
 include!("domains/workload_conflict.rs");
 include!("domains/resource.rs");
 include!("domains/dashboard_config.rs");
+include!("domains/report_scope.rs");
 include!("domains/notification_report_tool.rs");
 include!("domains/gantt_search.rs");
 include!("domains/invitation_admin.rs");

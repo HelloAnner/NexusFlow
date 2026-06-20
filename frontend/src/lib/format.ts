@@ -72,6 +72,14 @@ export interface ApiPerson {
   daily_standard_hours?: number | string
   dispatch_enabled?: boolean
   system_role_ids?: string[]
+  skills?: ApiSkill[]
+  payload?: Record<string, unknown>
+}
+
+export interface ApiSkill {
+  id: string
+  name: string
+  enabled?: boolean
   payload?: Record<string, unknown>
 }
 
@@ -100,9 +108,67 @@ export interface ApiConflict {
   conflict_date_start?: string | null
   conflict_date_end?: string | null
   overload_hours?: number | null
+  handler_id?: string | null
+  resolution_action?: string | null
   resolution_comment?: string | null
+  updated_at?: string
   created_at?: string
   payload?: Record<string, unknown>
+}
+
+export interface ApiConflictDetail extends ApiConflict {
+  person?: {
+    id: string
+    name?: string
+    employee_no?: string | null
+    work_status?: string
+    daily_standard_hours?: number
+    primary_org_name?: string | null
+  } | null
+  task?: {
+    id: string
+    task_no?: string
+    name?: string
+    status?: string
+    priority?: string
+    start_at?: string | null
+    due_at?: string | null
+    progress?: number
+    project_id?: string | null
+    project_name?: string | null
+  } | null
+  assignment?: {
+    id: string
+    title?: string
+    status?: string
+    owner_id?: string
+    start_date?: string | null
+    due_date?: string | null
+    daily_commitment_hours?: number
+    daily_commitment_type?: string
+  } | null
+  related_workload?: {
+    date?: string
+    committed_hours?: number
+    standard_hours?: number
+    load_rate?: number
+    full_day_occupied?: boolean
+    source_task_ids?: string[]
+  }[]
+  events?: {
+    id: string
+    event_type?: string
+    actor_name?: string | null
+    payload?: Record<string, unknown>
+    created_at?: string
+  }[]
+  audits?: {
+    id: string
+    action?: string
+    reason?: string
+    created_at?: string
+    after_payload?: Record<string, unknown>
+  }[]
 }
 
 export interface ApiResource {

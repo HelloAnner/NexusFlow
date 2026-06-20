@@ -51,8 +51,13 @@ async fn list_notifications(
     .bind(query.offset())
     .fetch_all(&state.db)
     .await?;
+    let mut items = Vec::new();
+    for row in rows {
+        let item = json_row(&row, "item")?;
+        items.push(notification_for_user(&state.db, &user, item).await?);
+    }
     Ok(Json(
-        json!({ "items": rows.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()? }),
+        json!({ "items": items }),
     ))
 }
 
@@ -77,7 +82,14 @@ async fn list_reports(
     user: CurrentUser,
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
-    let rows = sqlx::query("SELECT report_type, count(*) AS count, max(generated_at) AS latest FROM report_snapshots GROUP BY report_type ORDER BY report_type")
+    let rows = sqlx::query(
+        "SELECT report_type, count(*) AS count, max(generated_at) AS latest
+         FROM report_snapshots
+         WHERE ($1::bool OR scope_id = $2)
+         GROUP BY report_type ORDER BY report_type",
+    )
+        .bind(user.is_sa())
+        .bind(user.person_id)
         .fetch_all(&state.db)
         .await?;
     let items: Vec<Value> = rows
@@ -99,8 +111,15 @@ async fn get_report(
     user: CurrentUser,
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
-    let item = sqlx::query("SELECT to_jsonb(report_snapshots.*) AS item FROM report_snapshots WHERE report_type = $1 ORDER BY generated_at DESC LIMIT 1")
+    let item = sqlx::query(
+        "SELECT to_jsonb(report_snapshots.*) AS item
+         FROM report_snapshots
+         WHERE report_type = $1 AND ($2::bool OR scope_id = $3)
+         ORDER BY generated_at DESC LIMIT 1",
+    )
         .bind(&report_type)
+        .bind(user.is_sa())
+        .bind(user.person_id)
         .fetch_optional(&state.db)
         .await?
         .map(|r| json_row(&r, "item"))
@@ -117,16 +136,20 @@ async fn export_report(
     Json(payload): Json<Value>,
 ) -> Result<Json<Value>, ApiError> {
     user.require_action("report.export")?;
+    let period_start = parse_date(&payload, "period_start");
+    let period_end = parse_date(&payload, "period_end");
+    let report_payload =
+        build_report_payload(&state.db, &user, &report_type, period_start, period_end).await?;
     let id = sqlx::query_scalar::<_, Uuid>(
         "INSERT INTO report_snapshots(report_type, scope_type, scope_id, period_start, period_end, payload)
          VALUES ($1,$2,$3,$4,$5,$6) RETURNING id",
     )
     .bind(&report_type)
-    .bind(value_str(&payload, "scope_type", "user"))
-    .bind(value_uuid(&payload, "scope_id").or(user.person_id))
-    .bind(parse_date(&payload, "period_start"))
-    .bind(parse_date(&payload, "period_end"))
-    .bind(payload.clone())
+    .bind("user")
+    .bind(user.person_id)
+    .bind(period_start)
+    .bind(period_end)
+    .bind(report_payload.clone())
     .fetch_one(&state.db)
     .await?;
     audit(
@@ -135,13 +158,94 @@ async fn export_report(
         "report_snapshot",
         Some(id),
         "report.export",
-        json!({}),
-        payload,
+        json!({ "requested": payload }),
+        report_payload.clone(),
         "",
         None,
     )
     .await?;
-    Ok(Json(json!({ "id": id, "status": "generated" })))
+    Ok(Json(json!({ "id": id, "status": "generated", "payload": report_payload })))
+}
+
+async fn notification_for_user(
+    db: &PgPool,
+    user: &CurrentUser,
+    mut item: Value,
+) -> Result<Value, ApiError> {
+    let payload = item.get("payload").cloned().unwrap_or_else(|| json!({}));
+    let action_url = payload
+        .get("action_url")
+        .and_then(Value::as_str)
+        .or_else(|| payload.get("url").and_then(Value::as_str))
+        .unwrap_or("")
+        .to_string();
+    let notification_type = payload
+        .get("notification_type")
+        .and_then(Value::as_str)
+        .or_else(|| payload.get("type").and_then(Value::as_str))
+        .unwrap_or("system")
+        .to_string();
+
+    item["notification_type"] = json!(notification_type);
+    item["action_url"] = if action_url.is_empty() {
+        Value::Null
+    } else {
+        json!(action_url)
+    };
+
+    if notification_target_visible(db, user, item["action_url"].as_str()).await? {
+        return Ok(item);
+    }
+
+    item["title"] = json!("权限受限通知");
+    item["content"] = json!("通知关联的数据不在当前账号的数据范围内，已隐藏正文和跳转。");
+    item["action_url"] = Value::Null;
+    item["payload"] = json!({
+        "redacted": true,
+        "reason": "out_of_data_scope",
+        "notification_type": item["notification_type"]
+    });
+    Ok(item)
+}
+
+async fn notification_target_visible(
+    db: &PgPool,
+    user: &CurrentUser,
+    action_url: Option<&str>,
+) -> Result<bool, ApiError> {
+    let Some(action_url) = action_url else {
+        return Ok(true);
+    };
+    let target = [
+        ("/tasks/", "task"),
+        ("/projects/", "project"),
+        ("/resources/", "resource"),
+        ("/people/", "person"),
+    ]
+    .iter()
+    .find_map(|(prefix, object_type)| {
+        action_url
+            .strip_prefix(prefix)
+            .and_then(|rest| rest.split('/').next())
+            .and_then(|id| Uuid::parse_str(id).ok())
+            .map(|id| (*object_type, id))
+    });
+
+    let Some((object_type, id)) = target else {
+        return Ok(true);
+    };
+    let result = match object_type {
+        "task" => ensure_task_visible(db, user, id).await,
+        "project" => ensure_project_visible(db, user, id).await,
+        "resource" => ensure_resource_visible(db, user, id).await,
+        "person" => ensure_person_visible(db, user, id).await,
+        _ => Ok(()),
+    };
+    match result {
+        Ok(()) => Ok(true),
+        Err(ApiError::Forbidden { .. }) | Err(ApiError::NotFound { .. }) => Ok(false),
+        Err(err) => Err(err),
+    }
 }
 
 async fn list_tools(

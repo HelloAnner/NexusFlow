@@ -311,9 +311,102 @@ async fn get_conflict(
     user: CurrentUser,
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
-    Ok(Json(
-        get_json_by_id(&state.db, "conflict_records", id).await?,
-    ))
+    let row = sqlx::query(
+        "SELECT jsonb_build_object(
+          'id', c.id,
+          'conflict_type', c.conflict_type,
+          'risk_level', c.risk_level,
+          'status', c.status,
+          'person_id', c.person_id,
+          'task_id', c.task_id,
+          'assignment_id', c.assignment_id,
+          'conflict_date_start', c.conflict_date_start,
+          'conflict_date_end', c.conflict_date_end,
+          'overload_hours', c.overload_hours::float8,
+          'handler_id', c.handler_id,
+          'resolution_action', c.resolution_action,
+          'resolution_comment', c.resolution_comment,
+          'payload', c.payload,
+          'created_at', c.created_at,
+          'updated_at', c.updated_at,
+          'person', CASE WHEN p.id IS NULL THEN NULL ELSE jsonb_build_object(
+            'id', p.id,
+            'name', p.name,
+            'employee_no', p.employee_no,
+            'work_status', p.work_status,
+            'daily_standard_hours', p.daily_standard_hours::float8,
+            'primary_org_id', p.primary_org_id,
+            'primary_org_name', org.name
+          ) END,
+          'task', CASE WHEN t.id IS NULL THEN NULL ELSE jsonb_build_object(
+            'id', t.id,
+            'task_no', t.task_no,
+            'name', t.name,
+            'status', t.status,
+            'priority', t.priority,
+            'start_at', t.start_at,
+            'due_at', t.due_at,
+            'progress', t.progress::float8,
+            'project_id', t.project_id,
+            'project_name', pr.name
+          ) END,
+          'assignment', CASE WHEN ta.id IS NULL THEN NULL ELSE jsonb_build_object(
+            'id', ta.id,
+            'title', ta.title,
+            'status', ta.status,
+            'owner_id', ta.owner_id,
+            'start_date', ta.start_date,
+            'due_date', ta.due_date,
+            'daily_commitment_hours', ta.daily_commitment_hours::float8,
+            'daily_commitment_type', ta.daily_commitment_type
+          ) END,
+          'related_workload', COALESCE(workload.items, '[]'::jsonb),
+          'events', COALESCE(events.items, '[]'::jsonb),
+          'audits', COALESCE(audits.items, '[]'::jsonb)
+        ) AS item
+        FROM conflict_records c
+        LEFT JOIN persons p ON p.id = c.person_id
+        LEFT JOIN organizations org ON org.id = p.primary_org_id
+        LEFT JOIN tasks t ON t.id = c.task_id
+        LEFT JOIN projects pr ON pr.id = t.project_id
+        LEFT JOIN task_assignments ta ON ta.id = c.assignment_id
+        LEFT JOIN LATERAL (
+          SELECT jsonb_agg(jsonb_build_object(
+            'date', ws.work_date,
+            'committed_hours', ws.committed_hours::float8,
+            'standard_hours', ws.standard_hours::float8,
+            'load_rate', ws.load_rate::float8,
+            'full_day_occupied', ws.full_day_occupied,
+            'source_task_ids', ws.source_task_ids
+          ) ORDER BY ws.work_date) AS items
+          FROM workload_snapshots ws
+          WHERE ws.person_id = c.person_id
+            AND ws.work_date BETWEEN COALESCE(c.conflict_date_start, current_date) - interval '3 days'
+                                AND COALESCE(c.conflict_date_end, current_date) + interval '3 days'
+        ) workload ON true
+        LEFT JOIN LATERAL (
+          SELECT jsonb_agg(
+            to_jsonb(de) || jsonb_build_object('actor_name', actor.name)
+            ORDER BY de.created_at DESC
+          ) AS items
+          FROM domain_events de
+          LEFT JOIN persons actor ON actor.id = de.actor_id
+          WHERE de.object_type = 'conflict_record' AND de.object_id = c.id
+        ) events ON true
+        LEFT JOIN LATERAL (
+          SELECT jsonb_agg(to_jsonb(al) ORDER BY al.created_at DESC) AS items
+          FROM audit_logs al
+          WHERE al.object_type = 'conflict_record' AND al.object_id = c.id
+        ) audits ON true
+        WHERE c.id = $1",
+    )
+    .bind(id)
+    .fetch_optional(&state.db)
+    .await?;
+    let Some(row) = row else {
+        return Err(ApiError::not_found("conflict not found"));
+    };
+    Ok(Json(json_row(&row, "item")?))
 }
 
 async fn resolve_conflict(

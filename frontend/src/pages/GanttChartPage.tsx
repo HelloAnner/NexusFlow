@@ -5,8 +5,8 @@ import { formatDate, numberValue, riskLabel } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
 import { cn } from '@/lib/utils'
 import { ExternalLink, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 interface GanttItem {
   id: string
@@ -152,15 +152,24 @@ async function loadGantt() {
 
 export function GanttChartPage() {
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const [dimension, setDimension] = useState('project')
   const [granularity, setGranularity] = useState('week')
-  const [riskOnly, setRiskOnly] = useState(false)
+  const [riskOnly, setRiskOnly] = useState(() => params.get('risk') === '1')
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null)
-  const [pinnedItemId, setPinnedItemId] = useState<string | null>(null)
+  const [pinnedItemId, setPinnedItemId] = useState<string | null>(params.get('task_id'))
   const { data, loading, error } = useApiData(loadGantt)
   const sourceItems = data?.items ?? []
   const items = buildDimensionItems(sourceItems, dimension).filter((item) => !riskOnly || (item.risk_level && item.risk_level !== 'none'))
   const activeItem = items.find((item) => item.id === (pinnedItemId ?? hoveredItemId))
+
+  useEffect(() => {
+    const taskId = params.get('task_id')
+    if (taskId && sourceItems.some((item) => item.id === taskId)) {
+      setDimension('task')
+      setPinnedItemId(taskId)
+    }
+  }, [params, sourceItems])
 
   const range = useMemo(() => {
     const dates = items.flatMap((item) => [clampDate(item.start), clampDate(item.end)])
