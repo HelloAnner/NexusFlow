@@ -5,6 +5,7 @@ async fn list_tasks(
 ) -> Result<Json<Value>, ApiError> {
     user.require_business_access()?;
     let scope = data_scope_context(&state.db, &user).await?;
+    let status_group = task_status_group_statuses(query.status_group.as_deref());
     let rows = sqlx::query(
         "SELECT (
           to_jsonb(t.*)
@@ -28,6 +29,7 @@ async fn list_tasks(
              OR concat_ws(' ', t.name, t.task_no, t.summary, t.deliverable_requirement, t.status, t.sub_type, owner.name, p.name, org.name) ILIKE '%' || $1 || '%'
            )
            AND ($2::text IS NULL OR t.status = $2)
+           AND ($22::text[] IS NULL OR t.status = ANY($22))
            AND ($8::text IS NULL OR t.sub_type = $8)
            AND ($9::text IS NULL OR t.priority = $9)
            AND ($10::uuid IS NULL OR t.owner_org_id = $10)
@@ -83,6 +85,7 @@ async fn list_tasks(
     .bind(scope.all_projects)
     .bind(&scope.org_ids)
     .bind(&scope.project_ids)
+    .bind(status_group)
     .fetch_all(&state.db)
     .await?;
     let total = rows.first().map(|r| r.get::<i64, _>("total")).unwrap_or(0);
@@ -90,6 +93,22 @@ async fn list_tasks(
         "items": rows.iter().map(|r| json_row(r, "item")).collect::<Result<Vec<_>, _>>()?,
         "total": total
     })))
+}
+
+fn task_status_group_statuses(group: Option<&str>) -> Option<Vec<&'static str>> {
+    match group {
+        Some("active") => Some(vec!["in_progress", "paused"]),
+        Some("confirmation") => Some(vec![
+            "coordination_pending",
+            "pending_confirm",
+            "confirmation_pending",
+        ]),
+        Some("acceptance") => Some(vec!["pending_acceptance", "acceptance_pending"]),
+        Some("risk") => Some(vec!["risk", "acceptance_rejected"]),
+        Some("completed") => Some(vec!["completed", "archived"]),
+        Some("draft") => Some(vec!["draft"]),
+        _ => None,
+    }
 }
 
 async fn get_task(

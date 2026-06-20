@@ -15,8 +15,9 @@ import {
   taskTypeLabel,
   textFromPayload,
 } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { useApiData } from '@/lib/useApiData'
-import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -34,18 +35,6 @@ const columns = [
 ]
 
 const pageSize = 20
-
-const statusOptions = [
-  { value: '', label: '全部状态' },
-  { value: 'draft', label: '草稿' },
-  { value: 'in_progress', label: '进行中' },
-  { value: 'pending_confirm', label: '待确认' },
-  { value: 'confirmation_pending', label: '待确认' },
-  { value: 'pending_acceptance', label: '待验收' },
-  { value: 'acceptance_pending', label: '待验收' },
-  { value: 'paused', label: '已暂停' },
-  { value: 'completed', label: '已完成' },
-]
 
 const typeOptions = [
   { value: '', label: '全部类型' },
@@ -66,6 +55,15 @@ const priorityOptions = [
   { value: 'low', label: '低' },
 ]
 
+const statusGroupOptions = [
+  { value: '', label: '全部' },
+  { value: 'active', label: '进行中' },
+  { value: 'confirmation', label: '待确认' },
+  { value: 'acceptance', label: '待验收' },
+  { value: 'risk', label: '有风险' },
+  { value: 'completed', label: '已完成' },
+]
+
 function pageFromParams(value: string | null) {
   const page = Number(value)
   return Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
@@ -76,9 +74,10 @@ function valueFromParams(params: URLSearchParams, key: string) {
   return value && value.trim() ? value : null
 }
 
-function loadTasks(params: URLSearchParams, page: number) {
-  return apiGet<ApiList<ApiTask>>('/tasks', {
+function taskQuery(params: URLSearchParams, page: number, pageSizeValue = pageSize): Record<string, string | number | null> {
+  return {
     q: valueFromParams(params, 'q'),
+    status_group: valueFromParams(params, 'status_group'),
     status: valueFromParams(params, 'status'),
     sub_type: valueFromParams(params, 'sub_type'),
     priority: valueFromParams(params, 'priority'),
@@ -88,8 +87,12 @@ function loadTasks(params: URLSearchParams, page: number) {
     start_date: valueFromParams(params, 'start_date'),
     end_date: valueFromParams(params, 'end_date'),
     page,
-    page_size: pageSize,
-  })
+    page_size: pageSizeValue,
+  }
+}
+
+function loadTasks(params: URLSearchParams, page: number) {
+  return apiGet<ApiList<ApiTask>>('/tasks', taskQuery(params, page))
 }
 
 async function loadFilterOptions() {
@@ -101,15 +104,44 @@ async function loadFilterOptions() {
   return { people: people.items, projects: projects.items, orgs: orgs.items }
 }
 
+async function loadStatusGroupCounts(params: URLSearchParams) {
+  const base = new URLSearchParams(params)
+  base.delete('page')
+  base.delete('task')
+  base.delete('status_group')
+  base.delete('status')
+  const entries = await Promise.all(
+    statusGroupOptions.map(async (option) => {
+      const next = new URLSearchParams(base)
+      if (option.value) next.set('status_group', option.value)
+      const result = await apiGet<ApiList<ApiTask>>('/tasks', taskQuery(next, 1, 1))
+      return [option.value, result.total ?? 0] as const
+    })
+  )
+  return Object.fromEntries(entries) as Record<string, number>
+}
+
+function countKeyFromParams(params: URLSearchParams) {
+  const next = new URLSearchParams(params)
+  next.delete('page')
+  next.delete('task')
+  next.delete('status_group')
+  next.delete('status')
+  return next.toString()
+}
+
 export function TaskListPage() {
   const [params, setParams] = useSearchParams()
   const q = params.get('q')
   const page = pageFromParams(params.get('page'))
   const selectedTaskId = params.get('task')
   const [searchValue, setSearchValue] = useState(q ?? '')
+  const [filtersOpen, setFiltersOpen] = useState(() => ['sub_type', 'priority', 'owner_id', 'org_id', 'project_id', 'start_date', 'end_date'].some((key) => params.has(key)))
   const filterKey = params.toString()
+  const countKey = countKeyFromParams(params)
   const { data, loading, error } = useApiData(() => loadTasks(params, page), [filterKey, page])
   const optionsState = useApiData(loadFilterOptions, [])
+  const countState = useApiData(() => loadStatusGroupCounts(params), [countKey])
   const tasks = data?.items ?? []
   const people = optionsState.data?.people ?? []
   const projects = optionsState.data?.projects ?? []
@@ -130,6 +162,7 @@ export function TaskListPage() {
     updateParams((next) => {
       if (value) next.set(key, value)
       else next.delete(key)
+      if (key === 'status_group') next.delete('status')
     })
   }
 
@@ -159,16 +192,44 @@ export function TaskListPage() {
 
   function goToPage(nextPage: number) {
     const next = new URLSearchParams(params)
-      next.set('page', String(Math.min(Math.max(nextPage, 1), totalPages)))
+    next.set('page', String(Math.min(Math.max(nextPage, 1), totalPages)))
     setParams(next)
   }
 
   function clearFilters() {
     setSearchValue('')
     setParams(new URLSearchParams())
+    setFiltersOpen(false)
   }
 
-  const hasFilters = ['q', 'status', 'sub_type', 'priority', 'owner_id', 'org_id', 'project_id', 'start_date', 'end_date'].some((key) => params.has(key))
+  function removeFilter(key: string) {
+    if (key === 'q') setSearchValue('')
+    updateParams((next) => {
+      next.delete(key)
+    })
+  }
+
+  const typeOptionItems = typeOptions
+  const priorityOptionItems = priorityOptions
+  const peopleOptions = [{ value: '', label: '全部负责人' }, ...people.map((person) => ({ value: person.id, label: person.name }))]
+  const orgOptions = [{ value: '', label: '全部组织' }, ...orgs.map((org) => ({ value: org.id, label: org.name }))]
+  const projectOptions = [{ value: '', label: '全部项目' }, ...projects.map((project) => ({ value: project.id, label: project.name }))]
+
+  const activeFilterKeys = ['q', 'status_group', 'status', 'sub_type', 'priority', 'owner_id', 'org_id', 'project_id', 'start_date', 'end_date']
+  const hasFilters = activeFilterKeys.some((key) => params.has(key))
+  const advancedFilterCount = ['sub_type', 'priority', 'owner_id', 'org_id', 'project_id', 'start_date', 'end_date'].filter((key) => params.has(key)).length
+  const activeFilterLabels = [
+    params.get('q') && { key: 'q', label: `搜索：${params.get('q')}` },
+    params.get('status_group') && { key: 'status_group', label: `状态：${statusGroupOptions.find((item) => item.value === params.get('status_group'))?.label ?? params.get('status_group')}` },
+    params.get('status') && { key: 'status', label: `状态：${taskStatusLabel(params.get('status') ?? undefined)}` },
+    params.get('sub_type') && { key: 'sub_type', label: `类型：${taskTypeLabel(params.get('sub_type'))}` },
+    params.get('priority') && { key: 'priority', label: `优先级：${priorityLabel(params.get('priority') ?? undefined)}` },
+    params.get('owner_id') && { key: 'owner_id', label: `负责人：${people.find((person) => person.id === params.get('owner_id'))?.name ?? '已选择'}` },
+    params.get('org_id') && { key: 'org_id', label: `组织：${orgs.find((org) => org.id === params.get('org_id'))?.name ?? '已选择'}` },
+    params.get('project_id') && { key: 'project_id', label: `项目：${projects.find((project) => project.id === params.get('project_id'))?.name ?? '已选择'}` },
+    params.get('start_date') && { key: 'start_date', label: `开始不早于：${params.get('start_date')}` },
+    params.get('end_date') && { key: 'end_date', label: `截止不晚于：${params.get('end_date')}` },
+  ].filter(Boolean) as { key: string; label: string }[]
 
   function taskOwner(task: ApiTask) {
     return textFromPayload(task.payload, 'owner_name', task.owner_id ?? '未设置')
@@ -194,71 +255,144 @@ export function TaskListPage() {
       <div className="flex h-full min-h-0 flex-col gap-4">
         {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
 
-        <div className="flex flex-wrap items-end gap-2 rounded-md border border-border-subtle bg-bg-secondary p-3">
-          <form className="flex items-center gap-2" onSubmit={submitSearch}>
-            <div className="relative">
-              <SearchInput
-                placeholder="搜索任务名称、编号、负责人、项目..."
-                className="w-full bg-bg-tertiary sm:w-[320px]"
-                value={searchValue}
-                onChange={(event) => setSearchValue(event.target.value)}
-              />
-              {searchValue && (
+        <div className="rounded-md border border-border-subtle bg-bg-secondary p-3 shadow-[0_1px_0_rgba(255,255,255,0.7)_inset]">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
+              <form className="flex min-w-0 flex-1 items-center gap-2" onSubmit={submitSearch}>
+                <div className="relative min-w-0 flex-1 xl:max-w-[520px]">
+                  <SearchInput
+                    placeholder="搜索任务名称、编号、负责人、项目..."
+                    className="h-10 w-full bg-bg-tertiary pr-10"
+                    value={searchValue}
+                    onChange={(event) => setSearchValue(event.target.value)}
+                  />
+                  {searchValue && (
+                    <button
+                      type="button"
+                      aria-label="清空搜索"
+                      className="absolute right-3 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary"
+                      onClick={clearSearch}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md bg-primary-fill px-4 text-sm font-semibold text-primary-text transition-fast hover:bg-black/85"
+                >
+                  <Search className="h-4 w-4" />
+                  搜索
+                </button>
+              </form>
+
+              <div className="flex items-center justify-between gap-2 xl:justify-end">
                 <button
                   type="button"
-                  aria-label="清空搜索"
-                  className="absolute right-3 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary"
-                  onClick={clearSearch}
+                  className="inline-flex h-10 items-center gap-2 rounded-md border border-border-subtle bg-bg-secondary px-3 text-sm font-semibold text-text-secondary transition-fast hover:bg-hover-bg hover:text-text-primary"
+                  onClick={() => setFiltersOpen((value) => !value)}
+                  aria-expanded={filtersOpen}
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <SlidersHorizontal className="h-4 w-4" />
+                  精细筛选
+                  {advancedFilterCount > 0 && (
+                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary-fill px-1.5 py-0.5 text-xs text-primary-text">
+                      {advancedFilterCount}
+                    </span>
+                  )}
+                  <ChevronDown className={`h-4 w-4 transition-fast ${filtersOpen ? 'rotate-180' : ''}`} />
                 </button>
-              )}
+                {hasFilters && (
+                  <button type="button" className="h-10 rounded-md px-3 text-sm font-medium text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary" onClick={clearFilters}>
+                    重置
+                  </button>
+                )}
+              </div>
             </div>
-            <button
-              type="submit"
-              className="inline-flex h-9 items-center gap-2 rounded-md bg-primary-fill px-3 text-sm font-medium text-primary-text transition-fast hover:bg-black/85"
-            >
-              <Search className="h-4 w-4" />
-              搜索
-            </button>
-          </form>
-          <Select aria-label="状态筛选" className="w-[150px]" value={params.get('status') ?? ''} onChange={(event) => setFilter('status', event.target.value)} options={statusOptions} />
-          <Select aria-label="类型筛选" className="w-[150px]" value={params.get('sub_type') ?? ''} onChange={(event) => setFilter('sub_type', event.target.value)} options={typeOptions} />
-          <Select aria-label="优先级筛选" className="w-[140px]" value={params.get('priority') ?? ''} onChange={(event) => setFilter('priority', event.target.value)} options={priorityOptions} />
-          <Select
-            aria-label="负责人筛选"
-            className="w-[160px]"
-            value={params.get('owner_id') ?? ''}
-            onChange={(event) => setFilter('owner_id', event.target.value)}
-            options={[{ value: '', label: '全部负责人' }, ...people.map((person) => ({ value: person.id, label: person.name }))]}
-          />
-          <Select
-            aria-label="组织筛选"
-            className="w-[170px]"
-            value={params.get('org_id') ?? ''}
-            onChange={(event) => setFilter('org_id', event.target.value)}
-            options={[{ value: '', label: '全部组织' }, ...orgs.map((org) => ({ value: org.id, label: org.name }))]}
-          />
-          <Select
-            aria-label="项目筛选"
-            className="w-[180px]"
-            value={params.get('project_id') ?? ''}
-            onChange={(event) => setFilter('project_id', event.target.value)}
-            options={[{ value: '', label: '全部项目' }, ...projects.map((project) => ({ value: project.id, label: project.name }))]}
-          />
-          <label className="flex flex-col gap-2 text-sm font-medium text-text-muted">
-            开始不早于
-            <input className="h-9 rounded-md border border-border-subtle bg-bg-tertiary px-3 text-sm text-text-primary" type="date" value={params.get('start_date') ?? ''} onChange={(event) => setFilter('start_date', event.target.value)} />
-          </label>
-          <label className="flex flex-col gap-2 text-sm font-medium text-text-muted">
-            截止不晚于
-            <input className="h-9 rounded-md border border-border-subtle bg-bg-tertiary px-3 text-sm text-text-primary" type="date" value={params.get('end_date') ?? ''} onChange={(event) => setFilter('end_date', event.target.value)} />
-          </label>
-          {hasFilters && (
-            <button type="button" className="h-9 rounded-md px-3 text-sm text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary" onClick={clearFilters}>
-              清空筛选
-            </button>
-          )}
+
+            <div className="flex flex-wrap items-center gap-2">
+              {statusGroupOptions.map((option) => {
+                const active = (params.get('status_group') ?? '') === option.value && !params.get('status')
+                const count = countState.loading && !countState.data ? '...' : countState.data?.[option.value] ?? 0
+                return (
+                  <button
+                    key={option.value || 'all'}
+                    type="button"
+                    className={cn(
+                      'inline-flex h-9 items-center gap-2 rounded-md border px-3 text-sm font-semibold transition-fast',
+                      active
+                        ? 'border-primary-fill bg-primary-fill text-primary-text'
+                        : 'border-border-subtle bg-bg-tertiary text-text-secondary hover:bg-hover-bg hover:text-text-primary'
+                    )}
+                    onClick={() => setFilter('status_group', option.value)}
+                  >
+                    <span>{option.label}</span>
+                    <span className={cn('text-xs', active ? 'text-primary-text/80' : 'text-text-muted')}>{count}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {filtersOpen && (
+              <div className="rounded-md border border-border-subtle bg-bg-tertiary p-3">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                  <Select aria-label="类型筛选" label="类型" className="min-w-0" value={params.get('sub_type') ?? ''} onChange={(event) => setFilter('sub_type', event.target.value)} options={typeOptionItems} />
+                  <Select aria-label="优先级筛选" label="优先级" className="min-w-0" value={params.get('priority') ?? ''} onChange={(event) => setFilter('priority', event.target.value)} options={priorityOptionItems} />
+                  <Select
+                    aria-label="负责人筛选"
+                    label="负责人"
+                    className="min-w-0"
+                    value={params.get('owner_id') ?? ''}
+                    onChange={(event) => setFilter('owner_id', event.target.value)}
+                    options={peopleOptions}
+                  />
+                  <Select
+                    aria-label="组织筛选"
+                    label="组织"
+                    className="min-w-0"
+                    value={params.get('org_id') ?? ''}
+                    onChange={(event) => setFilter('org_id', event.target.value)}
+                    options={orgOptions}
+                  />
+                  <Select
+                    aria-label="项目筛选"
+                    label="项目"
+                    className="min-w-0"
+                    value={params.get('project_id') ?? ''}
+                    onChange={(event) => setFilter('project_id', event.target.value)}
+                    options={projectOptions}
+                  />
+                  <div className="grid min-w-0 grid-cols-2 gap-2">
+                    <label className="flex min-w-0 flex-col gap-2 text-sm font-medium text-text-muted">
+                      开始不早于
+                      <input className="h-10 min-w-0 rounded-md border border-border-subtle bg-bg-secondary px-3 text-sm text-text-primary" type="date" value={params.get('start_date') ?? ''} onChange={(event) => setFilter('start_date', event.target.value)} />
+                    </label>
+                    <label className="flex min-w-0 flex-col gap-2 text-sm font-medium text-text-muted">
+                      截止不晚于
+                      <input className="h-10 min-w-0 rounded-md border border-border-subtle bg-bg-secondary px-3 text-sm text-text-primary" type="date" value={params.get('end_date') ?? ''} onChange={(event) => setFilter('end_date', event.target.value)} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeFilterLabels.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 border-t border-border-subtle pt-3">
+                <span className="text-xs font-semibold text-text-muted">已选条件</span>
+                {activeFilterLabels.map((filter) => (
+                  <button
+                    key={filter.key}
+                    type="button"
+                    className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border-subtle bg-bg-tertiary px-2 text-xs font-medium text-text-secondary transition-fast hover:bg-hover-bg hover:text-text-primary"
+                    onClick={() => removeFilter(filter.key)}
+                  >
+                    {filter.label}
+                    <X className="h-3 w-3" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-border-subtle bg-bg-secondary">

@@ -4,7 +4,7 @@ import { apiGet, apiPost } from '@/lib/api'
 import { type ApiList, type ApiTodo, formatDateTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useApiData } from '@/lib/useApiData'
-import { AlertTriangle, Check, CheckCheck, ExternalLink, Inbox, X } from 'lucide-react'
+import { AlertTriangle, Check, CheckCheck, ExternalLink, Inbox, MapPin, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -34,6 +34,37 @@ function normalizeActionUrl(url?: string | null) {
   const taskMatch = url.match(/^\/tasks\/([^/?#]+)/)
   if (taskMatch?.[1]) return `/tasks?task=${encodeURIComponent(taskMatch[1])}`
   return url.startsWith('/') ? url : '/tasks'
+}
+
+function payloadText(todo: ApiTodo, ...keys: string[]) {
+  for (const key of keys) {
+    const value = todo.payload?.[key]
+    if (typeof value === 'string' && value.trim()) return value
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  }
+  return ''
+}
+
+function extractTaskId(todo: ApiTodo) {
+  if (todo.target_type === 'task' && todo.target_id) return todo.target_id
+  const actionUrl = todo.action_url ?? ''
+  const pathMatch = actionUrl.match(/^\/tasks\/([^/?#]+)/)
+  if (pathMatch?.[1]) return pathMatch[1]
+  const queryMatch = actionUrl.match(/[?&]task=([^&#]+)/)
+  if (queryMatch?.[1]) return decodeURIComponent(queryMatch[1])
+  return payloadText(todo, 'task_id', 'target_task_id')
+}
+
+function taskDetailUrl(todo: ApiTodo) {
+  const taskId = extractTaskId(todo)
+  if (taskId) return `/tasks/${encodeURIComponent(taskId)}`
+  return normalizeActionUrl(todo.action_url)
+}
+
+function locationSummary(todo: ApiTodo) {
+  const project = payloadText(todo, 'project_name', 'project_no', 'project_id') || '所属项目未返回'
+  const task = payloadText(todo, 'task_name', 'target_name', 'task_no') || extractTaskId(todo) || todo.target_type || '任务未返回'
+  return `${project} / ${task}`
 }
 
 function loadTodos() {
@@ -110,8 +141,8 @@ export function TodoCenterPage() {
   }, [activeFilter, todos])
 
   const activeTodo = useMemo(
-    () => filteredTodos.find((todo) => todo.id === selectedTodoId) ?? filteredTodos[0] ?? null,
-    [filteredTodos, selectedTodoId]
+    () => selectedTodoId ? todos.find((todo) => todo.id === selectedTodoId) ?? null : null,
+    [selectedTodoId, todos]
   )
   const selectedTodos = useMemo(() => filteredTodos.filter((todo) => selectedIds.includes(todo.id)), [filteredTodos, selectedIds])
   const selectedOpenTodos = selectedTodos.filter((todo) => todo.status !== 'completed')
@@ -122,11 +153,20 @@ export function TodoCenterPage() {
     setActiveFilter(filter)
     setSelectedIds([])
     setMessage(null)
+    const next = new URLSearchParams(params)
+    next.delete('todo')
+    setParams(next)
   }
 
   function selectTodo(id: string) {
     const next = new URLSearchParams(params)
     next.set('todo', id)
+    setParams(next)
+  }
+
+  function closeTodo() {
+    const next = new URLSearchParams(params)
+    next.delete('todo')
     setParams(next)
   }
 
@@ -145,7 +185,7 @@ export function TodoCenterPage() {
   }
 
   function openTodoAction(todo: ApiTodo) {
-    navigate(normalizeActionUrl(todo.action_url))
+    navigate(taskDetailUrl(todo))
   }
 
   function openCompletion(mode: 'single' | 'bulk', ids: string[]) {
@@ -217,7 +257,7 @@ export function TodoCenterPage() {
           <MetricButton active={activeFilter === 'completed'} label="已完成" value={stats.completed} sub="查看处理记录" onClick={() => applyFilter('completed')} />
         </div>
 
-        <div className="grid min-h-0 flex-1 gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="min-h-0 flex-1">
           <Panel
             className="min-h-0 overflow-hidden"
             title="待办处理队列"
@@ -360,11 +400,14 @@ export function TodoCenterPage() {
             </div>
           </Panel>
 
-          <TodoPreview
-            todo={activeTodo}
-            onOpen={openTodoAction}
-            onComplete={(todo) => openCompletion('single', [todo.id])}
-          />
+          {activeTodo && (
+            <TodoSummaryDrawer
+              todo={activeTodo}
+              onClose={closeTodo}
+              onOpen={openTodoAction}
+              onComplete={(todo) => openCompletion('single', [todo.id])}
+            />
+          )}
         </div>
 
         {completionTarget && (
@@ -404,23 +447,75 @@ function TodoIcon({ todo }: { todo: ApiTodo }) {
   )
 }
 
-function TodoPreview({ todo, onOpen, onComplete }: { todo: ApiTodo | null; onOpen: (todo: ApiTodo) => void; onComplete: (todo: ApiTodo) => void }) {
-  if (!todo) {
-    return (
-      <Panel title="待办详情" className="min-h-0">
-        <EmptyState title="选择一个待办" desc="查看上下文、截止状态和处理动作。" />
-      </Panel>
-    )
-  }
+function TodoSummaryDrawer({ todo, onClose, onOpen, onComplete }: { todo: ApiTodo; onClose: () => void; onOpen: (todo: ApiTodo) => void; onComplete: (todo: ApiTodo) => void }) {
   const overdue = isOverdue(todo)
   const reason = completionReason(todo)
   return (
-    <Panel
-      title="待办详情"
-      className="min-h-0"
-      right={<Tag variant={todo.status === 'completed' ? 'success' : overdue ? 'error' : 'warning'}>{todo.status === 'completed' ? '已完成' : overdue ? '逾期' : '待处理'}</Tag>}
-      footer={(
-        <div className="flex justify-end gap-2">
+    <div className="pointer-events-none fixed inset-y-0 right-0 z-40 flex w-full justify-end">
+      <aside className="pointer-events-auto flex h-full w-full max-w-full flex-col border-l border-border-subtle bg-bg-primary shadow-2xl md:w-[440px]">
+        <div className="flex min-h-14 items-center justify-between border-b border-border-subtle px-5">
+          <div className="min-w-0">
+            <div className="text-xs font-semibold text-text-muted">待办概况</div>
+            <div className="mt-0.5 truncate text-base font-semibold text-text-primary">{todo.title}</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Tag variant={todo.status === 'completed' ? 'success' : overdue ? 'error' : 'warning'}>
+              {todo.status === 'completed' ? '已完成' : overdue ? '逾期' : '待处理'}
+            </Tag>
+            <Button variant="ghost" className="h-8 w-8 px-0" onClick={onClose} aria-label="关闭待办概况">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-auto px-5 py-5">
+          <div className="flex items-start gap-3">
+            <TodoIcon todo={todo} />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge>{todoTypeLabel(todo.todo_type)}</Badge>
+                {isDueToday(todo) && todo.status !== 'completed' && <Tag variant="warning">今日到期</Tag>}
+                {overdue && <Tag variant="error">已逾期</Tag>}
+              </div>
+              <p className="mt-3 text-sm leading-6 text-text-secondary">
+                {todo.status === 'completed'
+                  ? '该待办已完成，下面展示完成原因和处理上下文。'
+                  : '这里是待办概况；可在左侧切换其它待办，也可进入对应任务详情继续处理。'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="mt-5 flex w-full items-start gap-3 rounded-md border border-border-subtle bg-bg-secondary p-4 text-left transition-fast hover:bg-hover-bg"
+            onClick={() => onOpen(todo)}
+          >
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-semibold text-text-muted">所属项目任务</span>
+              <span className="mt-1 block break-words text-sm font-semibold leading-5 text-text-primary">{locationSummary(todo)}</span>
+            </span>
+            <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />
+          </button>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <PreviewInfo label="创建时间" value={formatDateTime(todo.created_at)} />
+            <PreviewInfo label="截止时间" value={todo.due_at ? formatDateTime(todo.due_at) : '无截止时间'} />
+            <PreviewInfo label="目标对象" value={`${todo.target_type ?? '未知'}${todo.target_id ? ` / ${todo.target_id}` : ''}`} />
+            <PreviewInfo label="处理入口" value={todo.action_url || '默认任务中心'} />
+          </div>
+
+          <div className={cn('mt-4 rounded-md p-4 text-sm leading-6', reason ? 'bg-color-success-bg text-color-success' : 'bg-bg-tertiary text-text-secondary')}>
+            <span className="font-semibold">完成原因：</span>{reason || '尚未完成或未填写。'}
+          </div>
+
+          <div className="mt-4 rounded-md bg-bg-tertiary p-4">
+            <div className="mb-2 text-sm font-semibold text-text-primary">Payload 摘要</div>
+            <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-sm bg-bg-secondary p-3 text-xs leading-5 text-text-secondary">{payloadSummary(todo)}</pre>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-border-subtle px-5 py-3">
           {todo.status !== 'completed' && (
             <Button onClick={() => onComplete(todo)}>
               <Check className="h-4 w-4" />
@@ -429,44 +524,11 @@ function TodoPreview({ todo, onOpen, onComplete }: { todo: ApiTodo | null; onOpe
           )}
           <Button variant="secondary" onClick={() => onOpen(todo)}>
             <ExternalLink className="h-4 w-4" />
-            打开处理页
+            查看任务详情
           </Button>
         </div>
-      )}
-    >
-      <div className="flex min-h-0 flex-col gap-4 overflow-auto">
-        <div className="flex items-start gap-3">
-          <TodoIcon todo={todo} />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge>{todoTypeLabel(todo.todo_type)}</Badge>
-              {isDueToday(todo) && todo.status !== 'completed' && <Tag variant="warning">今日到期</Tag>}
-              {overdue && <Tag variant="error">已逾期</Tag>}
-            </div>
-            <h3 className="mt-3 text-xl font-semibold leading-tight text-text-primary">{todo.title}</h3>
-            <p className="mt-2 text-sm leading-6 text-text-secondary">
-              {todo.status === 'completed' ? '该待办已完成，下面展示完成原因和原始上下文。' : '处理前请确认关联对象状态；完成待办会把原因写入 payload，便于后续追溯。'}
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <PreviewInfo label="创建时间" value={formatDateTime(todo.created_at)} />
-          <PreviewInfo label="截止时间" value={todo.due_at ? formatDateTime(todo.due_at) : '无截止时间'} />
-          <PreviewInfo label="目标对象" value={`${todo.target_type ?? '未知'}${todo.target_id ? ` / ${todo.target_id}` : ''}`} />
-          <PreviewInfo label="处理入口" value={todo.action_url || '默认任务中心'} />
-        </div>
-
-        <div className={cn('rounded-md p-4 text-sm leading-6', reason ? 'bg-color-success-bg text-color-success' : 'bg-bg-tertiary text-text-secondary')}>
-          <span className="font-semibold">完成原因：</span>{reason || '尚未完成或未填写。'}
-        </div>
-
-        <div className="rounded-md bg-bg-tertiary p-4">
-          <div className="mb-2 text-sm font-semibold text-text-primary">Payload 摘要</div>
-          <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-sm bg-bg-secondary p-3 text-xs leading-5 text-text-secondary">{payloadSummary(todo)}</pre>
-        </div>
-      </div>
-    </Panel>
+      </aside>
+    </div>
   )
 }
 
