@@ -67,6 +67,8 @@ impl AppConfig {
 struct ErrorBody {
     code: String,
     message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    details: Option<Value>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -80,7 +82,7 @@ enum ApiError {
     #[error("{message}")]
     NotFound { message: String },
     #[error("{message}")]
-    Conflict { message: String },
+    Conflict { message: String, details: Option<Value> },
     #[error(transparent)]
     Sqlx(#[from] sqlx::Error),
 }
@@ -104,24 +106,32 @@ impl ApiError {
     fn conflict(message: impl Into<String>) -> Self {
         Self::Conflict {
             message: message.into(),
+            details: None,
+        }
+    }
+    fn conflict_with_details(message: impl Into<String>, details: Value) -> Self {
+        Self::Conflict {
+            message: message.into(),
+            details: Some(details),
         }
     }
 }
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let (status, code, message) = match self {
-            ApiError::BadRequest { message } => (StatusCode::BAD_REQUEST, "bad_request", message),
+        let (status, code, message, details) = match self {
+            ApiError::BadRequest { message } => (StatusCode::BAD_REQUEST, "bad_request", message, None),
             ApiError::Unauthorized { message } => {
-                (StatusCode::UNAUTHORIZED, "unauthorized", message)
+                (StatusCode::UNAUTHORIZED, "unauthorized", message, None)
             }
-            ApiError::Forbidden { message } => (StatusCode::FORBIDDEN, "forbidden", message),
-            ApiError::NotFound { message } => (StatusCode::NOT_FOUND, "not_found", message),
-            ApiError::Conflict { message } => (StatusCode::CONFLICT, "conflict", message),
+            ApiError::Forbidden { message } => (StatusCode::FORBIDDEN, "forbidden", message, None),
+            ApiError::NotFound { message } => (StatusCode::NOT_FOUND, "not_found", message, None),
+            ApiError::Conflict { message, details } => (StatusCode::CONFLICT, "conflict", message, details),
             ApiError::Sqlx(err) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "database_error",
                 err.to_string(),
+                None,
             ),
         };
         (
@@ -129,6 +139,7 @@ impl IntoResponse for ApiError {
             Json(ErrorBody {
                 code: code.to_string(),
                 message,
+                details,
             }),
         )
             .into_response()

@@ -1,21 +1,61 @@
 import { MainLayout } from '@/components/layout'
 import { Badge, Button, EmptyState, Input, ProgressBar, Select, Tag } from '@/components/ui'
 import { apiGet } from '@/lib/api'
-import { type ApiList, type ApiOrg, type ApiPerson, type ApiProject, formatDate, numberValue, riskLabel, taskStatusLabel } from '@/lib/format'
+import {
+  type ApiList,
+  type ApiOrg,
+  type ApiPerson,
+  type ApiProject,
+  formatDate,
+  numberValue,
+  priorityLabel,
+  riskLabel,
+  riskVariant,
+  taskStatusLabel,
+} from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
 import { cn } from '@/lib/utils'
-import { Download, ExternalLink, ShieldCheck, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import {
+  addDays,
+  differenceInDays,
+  endOfMonth,
+  endOfQuarter,
+  endOfWeek,
+  format,
+  isToday,
+  isWeekend,
+  startOfDay,
+  startOfMonth,
+  startOfQuarter,
+  startOfWeek,
+} from 'date-fns'
+import {
+  CalendarDays,
+  ChevronsLeft,
+  ChevronsRight,
+  Download,
+  ExternalLink,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ShieldCheck,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 interface GanttItem {
   id: string
   type?: string
   title: string
+  summary?: string | null
+  task_no?: string | null
   start?: string | null
   end?: string | null
   progress?: number | string | null
   status?: string
+  priority?: string | null
   risk_level?: string
   target_url?: string
   readonly?: boolean
@@ -63,6 +103,7 @@ const riskScore: Record<string, number> = {
 }
 
 const granularityOptions = [
+  { value: 'day', label: '日' },
   { value: 'week', label: '周' },
   { value: 'month', label: '月' },
   { value: 'quarter', label: '季' },
@@ -79,9 +120,14 @@ const statusOptions = [
   { value: 'archived', label: '已归档' },
 ]
 
-function dateDays(date: Date) {
-  return Math.floor(date.getTime() / 86400000)
-}
+const MIN_VIEW_DAYS = 7
+const MAX_VIEW_DAYS = 365
+const ROW_HEIGHT = 48
+const HEADER_HEIGHT = 40
+const BAR_HEIGHT = 24
+const BAR_RADIUS = 4
+const MILESTONE_SIZE = 14
+const LEFT_PANEL_WIDTH = 280
 
 function isoDate(date: Date) {
   return date.toISOString().slice(0, 10)
@@ -93,34 +139,27 @@ function isoDateTime(date: Date) {
 
 function defaultStart() {
   const date = new Date()
-  date.setDate(date.getDate() - 30)
+  date.setDate(date.getDate() - 7)
   return isoDate(date)
 }
 
 function defaultEnd() {
   const date = new Date()
-  date.setDate(date.getDate() + 90)
+  date.setDate(date.getDate() + 30)
   return isoDate(date)
 }
 
 function clampDate(value?: string | null) {
   const date = value ? new Date(value) : new Date()
-  return Number.isNaN(date.getTime()) ? new Date() : date
+  return Number.isNaN(date.getTime()) ? new Date() : startOfDay(date)
 }
 
 function ganttTargetUrl(item: GanttItem) {
   const taskMatch = item.target_url?.match(/^\/tasks\/([^/?#]+)/)
-  if (taskMatch?.[1]) return `/tasks?task=${encodeURIComponent(taskMatch[1])}`
+  if (taskMatch?.[1]) return `/tasks/${encodeURIComponent(taskMatch[1])}`
   if (item.target_url?.startsWith('/')) return item.target_url
-  if (item.type === 'task') return `/tasks?task=${encodeURIComponent(item.id)}`
+  if (item.type === 'task') return `/tasks/${encodeURIComponent(item.id)}`
   return ''
-}
-
-function riskVariant(level?: string) {
-  if (level === 'critical' || level === 'high') return 'error'
-  if (level === 'medium') return 'warning'
-  if (level === 'low') return 'info'
-  return 'success'
 }
 
 function maxRisk(items: GanttItem[]) {
@@ -131,7 +170,7 @@ function maxRisk(items: GanttItem[]) {
   }, 'none')
 }
 
-function buildDimensionItems(items: GanttItem[], dimension: string) {
+function buildDimensionItems(items: GanttItem[], dimension: string): GanttItem[] {
   if (dimension === 'task') return items
 
   const groups = new Map<string, { title: string; type: string; items: GanttItem[] }>()
@@ -222,8 +261,43 @@ function downloadJson(fileName: string, payload: unknown) {
   URL.revokeObjectURL(url)
 }
 
+function headerCells(viewStart: Date, viewEnd: Date, granularity: string) {
+  const cells: { date: Date; label: string; endDate: Date; isMajor: boolean }[] = []
+  let cursor = startOfDay(viewStart)
+  const last = startOfDay(viewEnd)
+
+  while (cursor.getTime() <= last.getTime()) {
+    let end: Date
+    let label: string
+    let isMajor = false
+    if (granularity === 'day') {
+      end = cursor
+      label = format(cursor, 'MM-dd')
+      isMajor = isToday(cursor) || cursor.getDay() === 1
+    } else if (granularity === 'week') {
+      const weekStart = startOfWeek(cursor, { weekStartsOn: 1 })
+      end = endOfWeek(weekStart, { weekStartsOn: 1 })
+      label = format(weekStart, 'MM-dd')
+      isMajor = true
+    } else if (granularity === 'month') {
+      const monthStart = startOfMonth(cursor)
+      end = endOfMonth(monthStart)
+      label = format(monthStart, 'yyyy-MM')
+      isMajor = true
+    } else {
+      const quarterStart = startOfQuarter(cursor)
+      end = endOfQuarter(quarterStart)
+      label = `${quarterStart.getFullYear()} Q${Math.floor(quarterStart.getMonth() / 3) + 1}`
+      isMajor = true
+    }
+    if (end.getTime() > last.getTime()) end = last
+    cells.push({ date: cursor, label, endDate: end, isMajor })
+    cursor = addDays(end, 1)
+  }
+  return cells
+}
+
 export function GanttChartPage() {
-  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const filterKey = params.toString()
   const requestedTaskId = params.get('task_id')
@@ -232,36 +306,72 @@ export function GanttChartPage() {
   const riskOnly = params.get('risk') === '1'
   const startDate = queryValue(params, 'start') || defaultStart()
   const endDate = queryValue(params, 'end') || defaultEnd()
+
+  const [leftPanelOpen, setLeftPanelOpen] = useState(false)
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(requestedTaskId)
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null)
-  const [pinnedItemId, setPinnedItemId] = useState<string | null>(requestedTaskId)
   const [message, setMessage] = useState<string | null>(null)
+
+  const queryStart = useMemo(() => clampDate(startDate), [startDate])
+  const queryEnd = useMemo(() => clampDate(endDate), [endDate])
+  const [viewStart, setViewStart] = useState<Date>(queryStart)
+  const [viewEnd, setViewEnd] = useState<Date>(queryEnd)
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
+  const [isPanning, setIsPanning] = useState(false)
+  const panStartX = useRef(0)
+  const panStartViewStart = useRef<Date>(queryStart)
+
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const panRef = useRef<HTMLDivElement>(null)
+
   const { data, loading, error } = useApiData(() => loadGantt(params), [filterKey])
   const optionState = useApiData(loadFilterOptions, [])
   const people = optionState.data?.people ?? []
   const projects = optionState.data?.projects ?? []
   const orgs = optionState.data?.orgs ?? []
   const sourceItems = data?.items ?? []
-  const items = buildDimensionItems(sourceItems, dimension).filter((item) => !riskOnly || (item.risk_level && item.risk_level !== 'none'))
-  const activeItem = items.find((item) => item.id === (pinnedItemId ?? hoveredItemId))
+  const items = buildDimensionItems(sourceItems, dimension).filter(
+    (item) => !riskOnly || (item.risk_level && item.risk_level !== 'none')
+  )
+  const selectedItem = items.find((item) => item.id === selectedItemId) ?? null
+  const activeItem = selectedItem
   const dataScopeApplied = data?.data_scope_applied === true && data.summary?.data_scope_applied === true
 
-  const range = useMemo(() => {
-    const dates = items.flatMap((item) => [clampDate(item.start), clampDate(item.end)])
-    const min = dates.length ? new Date(Math.min(...dates.map((d) => d.getTime()))) : new Date(`${startDate}T00:00:00`)
-    const max = dates.length ? new Date(Math.max(...dates.map((d) => d.getTime()))) : new Date(`${endDate}T00:00:00`)
-    min.setDate(min.getDate() - 7)
-    max.setDate(max.getDate() + 14)
-    return { min, max, days: Math.max(1, dateDays(max) - dateDays(min)) }
-  }, [endDate, items, startDate])
+  useEffect(() => {
+    setViewStart(queryStart)
+    setViewEnd(queryEnd)
+  }, [queryStart, queryEnd])
 
-  const ticks = useMemo(() => {
-    const count = granularity === 'quarter' ? 4 : granularity === 'month' ? 6 : 12
-    return Array.from({ length: count }).map((_, index) => {
-      const date = new Date(range.min)
-      date.setDate(range.min.getDate() + Math.round((range.days / count) * index))
-      return formatDate(date.toISOString())
-    })
-  }, [granularity, range])
+  useEffect(() => {
+    function updateSize() {
+      const el = bodyRef.current
+      if (!el) return
+      setContainerSize({ width: el.clientWidth, height: el.clientHeight })
+    }
+    updateSize()
+    window.addEventListener('resize', updateSize)
+    return () => window.removeEventListener('resize', updateSize)
+  }, [leftPanelOpen])
+
+  useEffect(() => {
+    if (requestedTaskId && items.length && !selectedItemId) {
+      setSelectedItemId(requestedTaskId)
+    }
+  }, [requestedTaskId, items.length, selectedItemId])
+
+  const viewDays = useMemo(() => Math.max(1, differenceInDays(viewEnd, viewStart) + 1), [viewEnd, viewStart])
+  const colWidth = useMemo(
+    () => (containerSize.width > 0 ? containerSize.width / viewDays : 0),
+    [containerSize.width, viewDays]
+  )
+
+  const cells = useMemo(() => headerCells(viewStart, viewEnd, granularity), [viewStart, viewEnd, granularity])
+
+  const leftWidth = leftPanelOpen ? LEFT_PANEL_WIDTH : 0
+  const svgWidth = containerSize.width > 0 ? containerSize.width : 0
+  const bodyWidth = leftWidth + svgWidth
+  const rowsHeight = items.length * ROW_HEIGHT
+  const trackHeight = Math.max(rowsHeight, containerSize.height - HEADER_HEIGHT)
 
   function updateParams(update: (next: URLSearchParams) => void, clearPin = true) {
     const next = new URLSearchParams(params)
@@ -276,7 +386,7 @@ export function GanttChartPage() {
       else next.delete(key)
     })
     setMessage(null)
-    setPinnedItemId(null)
+    setSelectedItemId(null)
     setHoveredItemId(null)
   }
 
@@ -285,12 +395,12 @@ export function GanttChartPage() {
   }
 
   function showItem(item: GanttItem) {
-    setPinnedItemId(item.id)
+    setSelectedItemId(item.id)
   }
 
-  function openItem(item: GanttItem) {
+  function openItemNewTab(item: GanttItem) {
     const target = ganttTargetUrl(item)
-    if (target) navigate(target)
+    if (target) window.open(target, '_blank')
   }
 
   function exportCurrentView() {
@@ -316,11 +426,106 @@ export function GanttChartPage() {
     setMessage(`已导出 ${fileName}`)
   }
 
+  function shiftRange(days: number) {
+    const nextStart = addDays(viewStart, days)
+    const nextEnd = addDays(viewEnd, days)
+    setViewStart(nextStart)
+    setViewEnd(nextEnd)
+  }
+
+  function zoom(factor: number) {
+    const currentDays = differenceInDays(viewEnd, viewStart) + 1
+    const nextDays = Math.max(MIN_VIEW_DAYS, Math.min(MAX_VIEW_DAYS, Math.round(currentDays * factor)))
+    const center = addDays(viewStart, Math.floor(currentDays / 2))
+    const nextStart = addDays(center, -Math.floor(nextDays / 2))
+    const nextEnd = addDays(nextStart, nextDays - 1)
+    setViewStart(nextStart)
+    setViewEnd(nextEnd)
+  }
+
+  function jumpToToday() {
+    const today = startOfDay(new Date())
+    const half = Math.floor(viewDays / 2)
+    const nextStart = addDays(today, -half)
+    const nextEnd = addDays(today, viewDays - half - 1)
+    setViewStart(nextStart)
+    setViewEnd(nextEnd)
+  }
+
+  function handlePointerDown(event: React.PointerEvent) {
+    const target = event.target as HTMLElement
+    if (target.closest('[data-gantt-bar], [data-left-cell]')) return
+    setIsPanning(true)
+    panStartX.current = event.clientX
+    panStartViewStart.current = viewStart
+    const el = panRef.current
+    if (el) {
+      el.setPointerCapture(event.pointerId)
+      el.style.cursor = 'grabbing'
+    }
+  }
+
+  function handlePointerMove(event: React.PointerEvent) {
+    if (!isPanning || colWidth <= 0) return
+    const dx = event.clientX - panStartX.current
+    const daysShift = Math.round(-dx / colWidth)
+    if (daysShift !== 0) {
+      setViewStart(addDays(panStartViewStart.current, daysShift))
+      setViewEnd(addDays(panStartViewStart.current, daysShift + viewDays - 1))
+    }
+  }
+
+  function handlePointerUp(event: React.PointerEvent) {
+    if (!isPanning) return
+    setIsPanning(false)
+    const el = panRef.current
+    if (el) {
+      try {
+        el.releasePointerCapture(event.pointerId)
+      } catch {
+        // ignore
+      }
+      el.style.cursor = 'grab'
+    }
+  }
+
+  function handleWheel(event: React.WheelEvent) {
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault()
+      zoom(event.deltaY > 0 ? 1.15 : 0.87)
+    } else if (Math.abs(event.deltaX) > 0) {
+      event.preventDefault()
+      shiftRange(event.deltaX > 0 ? -3 : 3)
+    }
+  }
+
+  function itemPosition(item: GanttItem) {
+    const start = clampDate(item.start)
+    const end = clampDate(item.end)
+    const offsetDays = differenceInDays(start, viewStart)
+    const durationDays = Math.max(0, differenceInDays(end, start) + 1)
+    const x = offsetDays * colWidth
+    const width = Math.max(colWidth * 0.4, durationDays * colWidth)
+    return { x, width, start, end }
+  }
+
+  function isMilestone(item: GanttItem) {
+    const start = clampDate(item.start)
+    const end = clampDate(item.end)
+    return differenceInDays(end, start) === 0 && numberValue(item.progress) >= 100
+  }
+
   return (
-    <MainLayout title="排程" subtitle="项目与任务时间线">
+    <MainLayout title="排期" subtitle="项目与任务时间线">
       <div className="flex h-full min-h-0 flex-col gap-4">
         {(error || message) && (
-          <div className={error ? 'rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error' : 'rounded-md bg-color-success-bg px-4 py-3 text-sm text-color-success'}>
+          <div
+            className={
+              error
+                ? 'rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error'
+                : 'rounded-md bg-color-success-bg px-4 py-3 text-sm text-color-success'
+            }
+          >
             {error || message}
           </div>
         )}
@@ -350,11 +555,7 @@ export function GanttChartPage() {
             <Select label="状态" value={queryValue(params, 'status')} onChange={(event) => setFilter('status', event.target.value)} options={statusOptions} />
           </div>
           <div className="flex flex-wrap items-end justify-end gap-2">
-            <Button
-              variant={riskOnly ? 'danger' : 'secondary'}
-              className="h-10 px-3"
-              onClick={() => setFilter('risk', riskOnly ? '' : '1')}
-            >
+            <Button variant={riskOnly ? 'danger' : 'secondary'} className="h-10 px-3" onClick={() => setFilter('risk', riskOnly ? '' : '1')}>
               只看风险
             </Button>
             <Button variant="secondary" className="h-10 px-3" onClick={() => setParams(new URLSearchParams())}>
@@ -381,7 +582,10 @@ export function GanttChartPage() {
                 <button
                   key={tab.value}
                   onClick={() => changeDimension(tab.value)}
-                  className={cn('rounded-sm px-4 py-1.5 text-sm transition-fast', dimension === tab.value ? 'bg-primary-fill font-semibold text-primary-text' : 'text-text-muted hover:bg-hover-bg')}
+                  className={cn(
+                    'rounded-sm px-4 py-1.5 text-sm transition-fast',
+                    dimension === tab.value ? 'bg-primary-fill font-semibold text-primary-text' : 'text-text-muted hover:bg-hover-bg'
+                  )}
                 >
                   {tab.label}
                 </button>
@@ -392,132 +596,311 @@ export function GanttChartPage() {
                 <button
                   key={option.value}
                   onClick={() => setFilter('granularity', option.value)}
-                  className={cn('rounded-sm px-3 py-1.5 text-sm transition-fast', granularity === option.value ? 'bg-primary-fill font-semibold text-primary-text' : 'text-text-muted hover:bg-hover-bg')}
+                  className={cn(
+                    'rounded-sm px-3 py-1.5 text-sm transition-fast',
+                    granularity === option.value ? 'bg-primary-fill font-semibold text-primary-text' : 'text-text-muted hover:bg-hover-bg'
+                  )}
                 >
                   {option.label}
                 </button>
               ))}
             </div>
+            <Button variant="ghost" className="h-9 px-2" onClick={() => setLeftPanelOpen((v) => !v)} title={leftPanelOpen ? '收起左侧列表' : '展开左侧列表'}>
+              {leftPanelOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+              <span className="ml-1 hidden sm:inline">{leftPanelOpen ? '收起' : '列表'}</span>
+            </Button>
           </div>
-          <div className="flex items-center gap-2 rounded-md bg-bg-secondary px-3 py-2 text-sm text-text-muted">
-            <ShieldCheck className={cn('h-4 w-4', dataScopeApplied ? 'text-color-success' : 'text-color-warning')} />
-            {dataScopeApplied ? '服务器已应用当前账号数据范围' : '等待服务器权限口径'}
-            <Badge>{loading ? '加载中' : `${items.length} 条`}</Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center rounded-md bg-bg-secondary p-1">
+              <Button variant="ghost" className="h-8 w-8 px-0" onClick={() => shiftRange(-Math.max(1, Math.floor(viewDays / 4)))} title="向左平移">
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" className="h-8 w-8 px-0" onClick={() => zoom(0.87)} title="放大">
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" className="h-8 w-8 px-0" onClick={() => zoom(1.15)} title="缩小">
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" className="h-8 w-8 px-0" onClick={() => shiftRange(Math.max(1, Math.floor(viewDays / 4)))} title="向右平移">
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button variant="secondary" className="h-9 px-3" onClick={jumpToToday}>
+              <CalendarDays className="h-4 w-4" />
+              回到今天
+            </Button>
+            <div className="flex items-center gap-2 rounded-md bg-bg-secondary px-3 py-2 text-sm text-text-muted">
+              <ShieldCheck className={cn('h-4 w-4', dataScopeApplied ? 'text-color-success' : 'text-color-warning')} />
+              {dataScopeApplied ? '服务器已应用当前账号数据范围' : '等待服务器权限口径'}
+              <Badge>{loading ? '加载中' : `${items.length} 条`}</Badge>
+            </div>
           </div>
         </div>
 
         <div className="relative flex min-h-0 flex-1 overflow-hidden rounded-md border border-border-subtle bg-bg-secondary">
-          <div className="flex w-[320px] shrink-0 flex-col border-r border-border-subtle bg-bg-tertiary">
-            <div className="grid h-10 grid-cols-[1fr_64px_64px_48px] items-center border-b border-border-subtle bg-bg-tertiary px-3 text-xs text-text-muted">
-              <span>{dimensionLabels[dimension] ?? '任务名称'}</span><span>开始</span><span>截止</span><span>风险</span>
-            </div>
-            <div className="flex flex-col overflow-y-auto">
-              {items.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={cn(
-                    'grid h-12 grid-cols-[1fr_64px_64px_48px] items-center border-b border-border-subtle px-3 text-left text-sm transition-fast last:border-b-0 hover:bg-hover-bg',
-                    activeItem?.id === item.id && 'bg-hover-bg'
-                  )}
-                  onClick={() => showItem(item)}
-                  onMouseEnter={() => setHoveredItemId(item.id)}
-                  onMouseLeave={() => setHoveredItemId(null)}
-                >
-                  <span className="truncate font-medium text-text-primary">{item.title}</span>
-                  <span className="truncate text-xs text-text-secondary">{formatDate(item.start)}</span>
-                  <span className="truncate text-xs text-text-secondary">{formatDate(item.end)}</span>
-                  <span className="truncate text-xs text-text-muted">{riskLabel(item.risk_level)}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <div
+            ref={bodyRef}
+            className="relative flex-1 cursor-grab overflow-auto active:cursor-grabbing"
+            onWheel={handleWheel}
+          >
+            <div className="relative flex flex-col" style={{ width: Math.max(bodyWidth, 1), minHeight: '100%' }}>
+              {/* Header */}
+              <div className="sticky top-0 z-30 flex h-10 shrink-0 bg-bg-tertiary" style={{ width: Math.max(bodyWidth, 1) }}>
+                {leftPanelOpen && (
+                  <div
+                    className="sticky left-0 z-30 flex shrink-0 items-center border-b border-r border-border-subtle bg-bg-tertiary px-3 text-xs text-text-muted"
+                    style={{ width: LEFT_PANEL_WIDTH }}
+                  >
+                    <span>{dimensionLabels[dimension] ?? '名称'}</span>
+                  </div>
+                )}
+                <div className="relative shrink-0" style={{ width: Math.max(svgWidth, 1) }}>
+                  {cells.map((cell, index) => {
+                    const days = differenceInDays(cell.endDate, cell.date) + 1
+                    const width = days * colWidth
+                    const left = differenceInDays(cell.date, viewStart) * colWidth
+                    return (
+                      <div
+                        key={index}
+                        className={cn(
+                          'absolute top-0 flex h-10 items-center justify-center border-b border-r border-border-subtle text-xs',
+                          cell.isMajor ? 'font-semibold text-text-secondary' : 'text-text-muted'
+                        )}
+                        style={{ left, width }}
+                      >
+                        {cell.label}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
 
-          <div className="flex min-w-0 flex-1 flex-col overflow-auto">
-            <div className="grid h-10 shrink-0 border-b border-border-subtle bg-bg-tertiary" style={{ gridTemplateColumns: `repeat(${ticks.length}, minmax(90px, 1fr))` }}>
-              {ticks.map((tick) => (
-                <div key={tick} className="flex items-center justify-center border-r border-border-subtle text-xs text-text-muted last:border-r-0">{tick}</div>
-              ))}
-            </div>
-            <div className="relative flex flex-col">
-              {items.map((item) => {
-                const start = clampDate(item.start)
-                const end = clampDate(item.end)
-                const left = ((dateDays(start) - dateDays(range.min)) / range.days) * 100
-                const width = Math.max(((dateDays(end) - dateDays(start)) / range.days) * 100, 1)
-                const progress = numberValue(item.progress)
-                return (
-                  <div key={item.id} className="relative h-12 border-b border-border-subtle last:border-b-0">
-                    <button
-                      type="button"
-                      aria-label={`查看 ${item.title}`}
-                      className="absolute top-1/2 h-5 -translate-y-1/2 rounded-full outline-none ring-primary-fill transition-fast hover:ring-2 focus:ring-2"
-                      style={{ left: `${Math.max(0, Math.min(98, left))}%`, width: `${Math.max(1, Math.min(100, width))}%` }}
-                      onClick={() => showItem(item)}
-                      onMouseEnter={() => setHoveredItemId(item.id)}
-                      onMouseLeave={() => setHoveredItemId(null)}
-                    >
-                      <span className="block h-3 w-full rounded-full bg-bg-tertiary" />
-                      <span className="absolute left-0 top-1 h-3 rounded-full bg-primary-fill" style={{ width: `${Math.min(100, progress)}%` }} />
-                    </button>
-                    {item.risk_level && item.risk_level !== 'none' && (
+              {/* Timeline track (grid, bars, today line) */}
+              <div
+                className="absolute"
+                style={{ left: leftWidth, top: HEADER_HEIGHT, width: Math.max(svgWidth, 1), height: Math.max(trackHeight, 1) }}
+              >
+                {/* Pan capture */}
+                <div
+                  ref={panRef}
+                  className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerLeave={handlePointerUp}
+                />
+
+                <svg className="absolute left-0 top-0 z-10 h-full w-full" width={Math.max(svgWidth, 1)} height={Math.max(trackHeight, 1)}>
+                  <defs>
+                    <pattern id="gantt-grid" width={Math.max(colWidth, 1)} height={ROW_HEIGHT} patternUnits="userSpaceOnUse">
+                      <rect width={Math.max(colWidth, 1)} height={ROW_HEIGHT} fill="transparent" />
+                      <line
+                        x1={Math.max(colWidth, 1)}
+                        y1={0}
+                        x2={Math.max(colWidth, 1)}
+                        y2={ROW_HEIGHT}
+                        stroke="rgba(0,0,0,0.04)"
+                        strokeWidth={1}
+                      />
+                      <line x1={0} y1={ROW_HEIGHT} x2={Math.max(colWidth, 1)} y2={ROW_HEIGHT} stroke="rgba(0,0,0,0.04)" strokeWidth={1} />
+                    </pattern>
+                  </defs>
+                  <rect x={0} y={0} width={Math.max(svgWidth, 1)} height={rowsHeight} fill="url(#gantt-grid)" />
+
+                  {Array.from({ length: viewDays }).map((_, index) => {
+                    const date = addDays(viewStart, index)
+                    const x = index * colWidth
+                    const isWeekendDay = isWeekend(date)
+                    return (
+                      <rect
+                        key={date.toISOString()}
+                        x={x}
+                        y={0}
+                        width={Math.max(colWidth, 1)}
+                        height={rowsHeight}
+                        fill={isWeekendDay ? 'rgba(0,0,0,0.025)' : 'transparent'}
+                      />
+                    )
+                  })}
+
+                  {(() => {
+                    const today = startOfDay(new Date())
+                    const offset = differenceInDays(today, viewStart)
+                    if (offset < 0 || offset > viewDays) return null
+                    const x = offset * colWidth + colWidth / 2
+                    return (
+                      <line
+                        x1={x}
+                        y1={0}
+                        x2={x}
+                        y2={rowsHeight}
+                        stroke="#3B82F6"
+                        strokeWidth={2}
+                        strokeDasharray="4 4"
+                      />
+                    )
+                  })()}
+
+                  {items.map((item, index) => {
+                    const y = index * ROW_HEIGHT + ROW_HEIGHT / 2
+                    const { x, width } = itemPosition(item)
+                    const progress = numberValue(item.progress)
+                    const risk = item.risk_level && item.risk_level !== 'none'
+                    const milestone = isMilestone(item)
+                    const isHovered = hoveredItemId === item.id || selectedItemId === item.id
+
+                    if (milestone) {
+                      return (
+                        <g key={item.id} transform={`translate(${x + colWidth / 2}, ${y})`} data-gantt-bar>
+                          <polygon
+                            points={`0,-${MILESTONE_SIZE / 2} ${MILESTONE_SIZE / 2},0 0,${MILESTONE_SIZE / 2} -${MILESTONE_SIZE / 2},0`}
+                            fill="#1A1A1A"
+                            stroke={risk ? '#EF4444' : 'transparent'}
+                            strokeWidth={2}
+                            className="cursor-pointer transition-all"
+                            opacity={isHovered ? 1 : 0.9}
+                            onClick={() => showItem(item)}
+                            onMouseEnter={() => setHoveredItemId(item.id)}
+                            onMouseLeave={() => setHoveredItemId(null)}
+                          />
+                        </g>
+                      )
+                    }
+
+                    return (
+                      <g key={item.id} transform={`translate(${x}, ${y - BAR_HEIGHT / 2})`} data-gantt-bar>
+                        <rect
+                          x={0}
+                          y={0}
+                          width={width}
+                          height={BAR_HEIGHT}
+                          rx={BAR_RADIUS}
+                          fill="rgba(26,26,26,0.16)"
+                          stroke={risk ? '#EF4444' : 'transparent'}
+                          strokeWidth={risk ? 2 : 0}
+                          className="cursor-pointer transition-all"
+                          opacity={isHovered ? 1 : 0.85}
+                          onClick={() => showItem(item)}
+                          onMouseEnter={() => setHoveredItemId(item.id)}
+                          onMouseLeave={() => setHoveredItemId(null)}
+                        />
+                        <rect
+                          x={0}
+                          y={0}
+                          width={Math.max(2, (width * Math.min(100, progress)) / 100)}
+                          height={BAR_HEIGHT}
+                          rx={BAR_RADIUS}
+                          fill="#1A1A1A"
+                          className="pointer-events-none"
+                        />
+                        {risk && (
+                          <circle cx={width + 6} cy={BAR_HEIGHT / 2} r={4} fill="#EF4444" className="pointer-events-none" />
+                        )}
+                      </g>
+                    )
+                  })}
+                </svg>
+
+                {!loading && items.length === 0 && (
+                  <div className="absolute inset-0 z-20 flex items-center justify-center">
+                    <EmptyState title="暂无甘特数据" desc="当前筛选下没有任务。" />
+                  </div>
+                )}
+              </div>
+
+              {/* Rows (left cells + transparent right placeholders for alignment) */}
+              <div className="pointer-events-none relative z-20 flex flex-col" style={{ width: Math.max(bodyWidth, 1) }}>
+                {items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="pointer-events-none flex h-12 border-b border-border-subtle"
+                    style={{ width: Math.max(bodyWidth, 1), height: ROW_HEIGHT }}
+                  >
+                    {leftPanelOpen && (
                       <button
                         type="button"
-                        aria-label={`查看 ${item.title} 风险`}
-                        className="absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-color-error ring-2 ring-bg-secondary transition-fast hover:scale-110 focus:outline-none focus:ring-primary-fill"
-                        style={{ left: `${Math.min(Math.max(left + width, 0), 98)}%` }}
+                        data-left-cell
+                        className={cn(
+                          'sticky left-0 z-20 flex shrink-0 flex-col justify-center border-r border-border-subtle bg-bg-tertiary px-3 text-left transition-fast hover:bg-hover-bg',
+                          activeItem?.id === item.id && 'bg-selected-bg'
+                        )}
+                        style={{ width: LEFT_PANEL_WIDTH }}
                         onClick={() => showItem(item)}
                         onMouseEnter={() => setHoveredItemId(item.id)}
                         onMouseLeave={() => setHoveredItemId(null)}
-                      />
+                      >
+                        <span className="truncate text-sm font-medium text-text-primary">{item.title}</span>
+                        <span className="truncate text-xs text-text-muted">
+                          {formatDate(item.start)} · {item.type === 'task' ? taskStatusLabel(item.status) : item.status ?? '—'} · {riskLabel(item.risk_level)}
+                        </span>
+                      </button>
                     )}
+                    <div className="shrink-0" style={{ width: Math.max(svgWidth, 1) }} />
                   </div>
-                )
-              })}
-              {!loading && items.length === 0 && <EmptyState title="暂无甘特数据" desc="当前筛选下没有任务。" />}
+                ))}
+              </div>
             </div>
           </div>
+
           {activeItem && (
-            <div
-              className="absolute right-4 top-14 z-20 w-[340px] rounded-lg border border-border-subtle bg-bg-primary p-4 shadow-2xl"
-              onMouseEnter={() => setHoveredItemId(activeItem.id)}
-              onMouseLeave={() => setHoveredItemId(null)}
-            >
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="mb-2 flex items-center gap-2">
-                    <Badge>{dimensionTabs.find((tab) => tab.value === activeItem.type)?.label ?? '任务'}</Badge>
-                    <Tag variant={riskVariant(activeItem.risk_level)}>{riskLabel(activeItem.risk_level)}</Tag>
-                  </div>
-                  <h3 className="truncate text-base font-semibold text-text-primary">{activeItem.title}</h3>
+            <div className="absolute inset-y-0 right-0 z-40 flex w-[360px] flex-col border-l border-border-subtle bg-bg-primary shadow-modal">
+              <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Badge>{dimensionTabs.find((tab) => tab.value === activeItem.type)?.label ?? '任务'}</Badge>
+                  <Tag variant={riskVariant(activeItem.risk_level)}>{riskLabel(activeItem.risk_level)}</Tag>
                 </div>
                 <button
                   type="button"
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary"
-                  aria-label="关闭悬浮详情"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary"
+                  aria-label="关闭详情"
                   onClick={() => {
-                    setPinnedItemId(null)
+                    setSelectedItemId(null)
                     setHoveredItemId(null)
                   }}
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <GanttInfo label="开始" value={formatDate(activeItem.start)} />
-                <GanttInfo label="截止" value={formatDate(activeItem.end)} />
-                <GanttInfo label="状态" value={activeItem.type === 'task' ? taskStatusLabel(activeItem.status) : activeItem.status ?? '未知'} />
-                <GanttInfo label={activeItem.type === 'task' ? '只读' : '任务数'} value={activeItem.type === 'task' ? (activeItem.readonly ? '是' : '否') : `${activeItem.task_count ?? 0} 个`} />
-              </div>
-              <div className="mt-4 flex flex-col gap-2">
-                <div className="flex items-center justify-between text-sm text-text-muted">
-                  <span>进度</span>
-                  <span>{Math.round(numberValue(activeItem.progress))}%</span>
+
+              <div className="flex-1 overflow-y-auto p-4">
+                <h3 className="mb-1 text-base font-semibold text-text-primary">{activeItem.title}</h3>
+                {activeItem.task_no && <div className="mb-3 text-xs text-text-muted">编号：{activeItem.task_no}</div>}
+                {activeItem.summary && (
+                  <div className="mb-4 rounded-md bg-bg-tertiary p-3 text-sm text-text-secondary">{activeItem.summary}</div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <GanttInfo label="开始" value={formatDate(activeItem.start)} />
+                  <GanttInfo label="截止" value={formatDate(activeItem.end)} />
+                  <GanttInfo
+                    label="状态"
+                    value={activeItem.type === 'task' ? taskStatusLabel(activeItem.status) : activeItem.status ?? '未知'}
+                  />
+                  <GanttInfo label="负责人" value={activeItem.owner_name ?? '未设置'} />
+                  <GanttInfo label="归属项目" value={activeItem.project_name ?? '未关联项目'} />
+                  <GanttInfo label="优先级" value={priorityLabel(activeItem.priority ?? undefined)} />
+                  <GanttInfo
+                    label={activeItem.type === 'task' ? '只读' : '任务数'}
+                    value={activeItem.type === 'task' ? (activeItem.readonly ? '是' : '否') : `${activeItem.task_count ?? 0} 个`}
+                  />
+                  <GanttInfo label="风险" value={riskLabel(activeItem.risk_level)} />
                 </div>
-                <ProgressBar value={numberValue(activeItem.progress)} className="h-1.5" />
+
+                <div className="mt-4 flex flex-col gap-2">
+                  <div className="flex items-center justify-between text-sm text-text-muted">
+                    <span>进度</span>
+                    <span>{Math.round(numberValue(activeItem.progress))}%</span>
+                  </div>
+                  <ProgressBar value={numberValue(activeItem.progress)} className="h-1.5" />
+                </div>
               </div>
-              <div className="mt-4 flex justify-end">
-                <Button className="h-9 px-3 py-0 text-sm" disabled={!ganttTargetUrl(activeItem)} onClick={() => openItem(activeItem)}>
+
+              <div className="border-t border-border-subtle p-4">
+                <Button
+                  className="h-9 w-full px-3 py-0 text-sm"
+                  disabled={!ganttTargetUrl(activeItem)}
+                  onClick={() => openItemNewTab(activeItem)}
+                >
                   <ExternalLink className="h-4 w-4" />
                   打开详情
                 </Button>

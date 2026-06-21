@@ -9,7 +9,7 @@ Memory injection starts on your second session in a project.
 
 `/learn-codebase` is available if the user wants to front-load the entire repo into memory in a single pass (~5 minutes on a typical repo, optional). Otherwise memory builds passively as work happens.
 
-Live activity: http://localhost:37701
+Live activity: http://101.200.138.250:8089/
 How it works: `/how-it-works`
 
 This message disappears once the first observation lands.

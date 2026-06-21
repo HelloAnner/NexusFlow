@@ -1,14 +1,4 @@
-async fn delete_org(
-    State(state): State<Arc<AppState>>,
-    Path(id): Path<Uuid>,
-    user: CurrentUser,
-    Json(payload): Json<Value>,
-) -> Result<Json<Value>, ApiError> {
-    user.require_action("org.manage")?;
-    let before = get_json_by_id(&state.db, "organizations", id).await?;
-    if before.get("deleted_at").is_some_and(|v| !v.is_null()) {
-        return Err(ApiError::not_found("organization not found"));
-    }
+async fn org_delete_blockers(db: &PgPool, id: Uuid) -> Result<Value, ApiError> {
     let row = sqlx::query(
         "SELECT
           (SELECT count(*) FROM organizations WHERE parent_id = $1 AND deleted_at IS NULL) AS child_count,
@@ -22,21 +12,75 @@ async fn delete_org(
           (SELECT count(*) FROM tasks WHERE owner_org_id = $1 AND deleted_at IS NULL) AS task_count",
     )
     .bind(id)
-    .fetch_one(&state.db)
+    .fetch_one(db)
     .await?;
-    let blockers = json!({
+    Ok(json!({
         "child_count": row.get::<i64, _>("child_count"),
         "person_count": row.get::<i64, _>("person_count"),
         "project_count": row.get::<i64, _>("project_count"),
         "task_count": row.get::<i64, _>("task_count")
-    });
-    if blockers
+    }))
+}
+
+async fn check_org_deletable(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    user: CurrentUser,
+) -> Result<Json<Value>, ApiError> {
+    user.require_action("org.manage")?;
+    let before = get_json_by_id(&state.db, "organizations", id).await?;
+    if before.get("deleted_at").is_some_and(|v| !v.is_null()) {
+        return Err(ApiError::not_found("organization not found"));
+    }
+    let blockers = org_delete_blockers(&state.db, id).await?;
+    Ok(Json(json!({ "deletable": !has_active_blockers(&blockers), "blockers": blockers })))
+}
+
+fn has_active_blockers(blockers: &Value) -> bool {
+    blockers
         .as_object()
         .is_some_and(|items| items.values().any(|value| value.as_i64().unwrap_or(0) > 0))
-    {
-        return Err(ApiError::conflict(format!(
-            "organization cannot be deleted while it has active references: {blockers}"
-        )));
+}
+
+async fn delete_org(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<Uuid>,
+    user: CurrentUser,
+    Json(payload): Json<Value>,
+) -> Result<Json<Value>, ApiError> {
+    user.require_action("org.manage")?;
+    let before = get_json_by_id(&state.db, "organizations", id).await?;
+    if before.get("deleted_at").is_some_and(|v| !v.is_null()) {
+        return Err(ApiError::not_found("organization not found"));
+    }
+    let blockers = org_delete_blockers(&state.db, id).await?;
+    if has_active_blockers(&blockers) {
+        let child_count = blockers["child_count"].as_i64().unwrap_or(0);
+        let person_count = blockers["person_count"].as_i64().unwrap_or(0);
+        let project_count = blockers["project_count"].as_i64().unwrap_or(0);
+        let task_count = blockers["task_count"].as_i64().unwrap_or(0);
+        let mut parts: Vec<String> = Vec::new();
+        if child_count > 0 {
+            parts.push(format!("{child_count} 个子部门"));
+        }
+        if person_count > 0 {
+            parts.push(format!("{person_count} 名人员"));
+        }
+        if project_count > 0 {
+            parts.push(format!("{project_count} 个项目"));
+        }
+        if task_count > 0 {
+            parts.push(format!("{task_count} 个任务"));
+        }
+        let detail = if parts.is_empty() {
+            "存在关联数据".to_string()
+        } else {
+            parts.join("、")
+        };
+        return Err(ApiError::conflict_with_details(
+            format!("该组织存在关联数据，无法删除：{detail}。"),
+            blockers,
+        ));
     }
     sqlx::query(
         "UPDATE organizations

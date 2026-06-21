@@ -7,6 +7,7 @@ fn api_routes() -> Router<Arc<AppState>> {
         .route("/orgs/tree", get(org_tree))
         .route("/orgs", get(list_orgs).post(create_org))
         .route("/orgs/{id}", patch(update_org).delete(delete_org))
+        .route("/orgs/{id}/delete-check", get(check_org_deletable))
         .route("/orgs/{id}/disable", post(disable_org))
         .route("/orgs/{id}/move", post(move_org))
         .route("/users", get(list_users).post(create_user))

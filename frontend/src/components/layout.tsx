@@ -45,7 +45,7 @@ const mainNav = [
   { path: '/projects', label: '项目', icon: Folder, actions: ['project.create', 'project.manage', 'project.manage_member'] },
   { path: '/people', label: '团队', icon: Users, actions: ['person.manage'] },
   { path: '/orgs', label: '组织', icon: Building2, actions: ['org.manage', 'person.manage'] },
-  { path: '/gantt', label: '排程', icon: CalendarDays, businessOnly: true },
+  { path: '/gantt', label: '排期', icon: CalendarDays, businessOnly: true },
   { path: '/conflicts', label: '冲突', icon: AlertCircle, actions: ['task.dispatch', 'task.approve'] },
   { path: '/resources', label: '资料', icon: FileText, actions: ['resource.upload', 'resource.download'] },
   { path: '/reports', label: '报表', icon: BarChart3, actions: ['report.export'] },

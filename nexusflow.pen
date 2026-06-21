@@ -30741,7 +30741,8 @@
                       "fill": "#666666",
                       "content": "首页",
                       "fontFamily": "Geist",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -30767,7 +30768,8 @@
                       "fill": "#666666",
                       "content": "我的任务",
                       "fontFamily": "Geist",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -30820,7 +30822,8 @@
                       "fill": "#666666",
                       "content": "冲突",
                       "fontFamily": "Geist",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -30846,7 +30849,8 @@
                       "fill": "#666666",
                       "content": "资料",
                       "fontFamily": "Geist",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -30872,7 +30876,8 @@
                       "fill": "#666666",
                       "content": "报表",
                       "fontFamily": "Geist",
-                      "fontSize": 14
+                      "fontSize": 14,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -31265,7 +31270,8 @@
                                   "fill": "#666666",
                                   "content": "全部",
                                   "fontFamily": "Geist",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -31316,7 +31322,8 @@
                                   "fill": "#666666",
                                   "content": "已读",
                                   "fontFamily": "Geist",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -31341,7 +31348,8 @@
                                   "fill": "#666666",
                                   "content": "权限受限",
                                   "fontFamily": "Geist",
-                                  "fontSize": 13
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -32573,7 +32581,8 @@
                   "fill": "#B9B4AA",
                   "content": "首页",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -32609,7 +32618,8 @@
                   "fill": "#B9B4AA",
                   "content": "任务",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -32645,7 +32655,8 @@
                   "fill": "#B9B4AA",
                   "content": "项目",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -32681,7 +32692,8 @@
                   "fill": "#B9B4AA",
                   "content": "团队",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -32717,7 +32729,8 @@
                   "fill": "#B9B4AA",
                   "content": "排程",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -32790,7 +32803,8 @@
                   "fill": "#B9B4AA",
                   "content": "配置",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             }
@@ -32847,7 +32861,8 @@
                       "fill": "#6E6A63",
                       "content": "服务器快照 Dashboard · 当前权限重新聚合",
                       "fontFamily": "Geist",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -33019,7 +33034,8 @@
                           "width": 230,
                           "content": "当前选中",
                           "fontFamily": "Geist",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -33030,7 +33046,8 @@
                           "width": 230,
                           "content": "最新 2026-06-20 15:42",
                           "fontFamily": "Geist",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -33102,7 +33119,8 @@
                           "width": 230,
                           "content": "平均负载率",
                           "fontFamily": "Geist",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -33113,7 +33131,8 @@
                           "width": 230,
                           "content": "最新 2026-06-20 15:42",
                           "fontFamily": "Geist",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -33185,7 +33204,8 @@
                           "width": 230,
                           "content": "完整率口径",
                           "fontFamily": "Geist",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -33196,7 +33216,8 @@
                           "width": 230,
                           "content": "最新 2026-06-20 15:42",
                           "fontFamily": "Geist",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -33429,7 +33450,8 @@
                               "fill": "#77736B",
                               "content": "visible tasks",
                               "fontFamily": "Geist",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -33474,7 +33496,8 @@
                               "fill": "#77736B",
                               "content": "50% of visible",
                               "fontFamily": "Geist",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -33519,7 +33542,8 @@
                               "fill": "#77736B",
                               "content": "review / acceptance",
                               "fontFamily": "Geist",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -33564,7 +33588,8 @@
                               "fill": "#77736B",
                               "content": "needs schedule review",
                               "fontFamily": "Geist",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -34729,7 +34754,8 @@
                   "fill": "#B9B4AA",
                   "content": "今日",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -34765,7 +34791,8 @@
                   "fill": "#B9B4AA",
                   "content": "任务",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -34801,7 +34828,8 @@
                   "fill": "#B9B4AA",
                   "content": "项目",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -34837,7 +34865,8 @@
                   "fill": "#B9B4AA",
                   "content": "团队",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -34910,7 +34939,8 @@
                   "fill": "#B9B4AA",
                   "content": "冲突",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -34946,7 +34976,8 @@
                   "fill": "#B9B4AA",
                   "content": "报表",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -34982,7 +35013,8 @@
                   "fill": "#B9B4AA",
                   "content": "配置",
                   "fontFamily": "Geist",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             }
@@ -35039,7 +35071,8 @@
                       "fill": "#6E6A63",
                       "content": "筛选甘特 · 服务器权限范围过滤 · JSON 导出",
                       "fontFamily": "Geist",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -35152,7 +35185,8 @@
                           "width": 230,
                           "content": "筛选值写入 URL，并由 /api/gantt 在服务端重新过滤。",
                           "fontFamily": "Geist",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -35482,7 +35516,8 @@
                           "width": 240,
                           "content": "隐藏任务以脱敏标题展示",
                           "fontFamily": "Geist",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -35493,7 +35528,8 @@
                           "width": 240,
                           "content": "summary 与列表同一数据范围",
                           "fontFamily": "Geist",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -35504,7 +35540,8 @@
                           "width": 240,
                           "content": "导出只包含当前筛选结果",
                           "fontFamily": "Geist",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -35568,7 +35605,8 @@
                               "fill": "#77736B",
                               "content": "server summary",
                               "fontFamily": "Geist",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -35613,7 +35651,8 @@
                               "fill": "#77736B",
                               "content": "acceptance pending",
                               "fontFamily": "Geist",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -35658,7 +35697,8 @@
                               "fill": "#77736B",
                               "content": "open conflict tasks",
                               "fontFamily": "Geist",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -35703,7 +35743,8 @@
                               "fill": "#77736B",
                               "content": "readonly bars",
                               "fontFamily": "Geist",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -37279,7 +37320,8 @@
                       "width": 180,
                       "content": "Cmd + K 搜索或跳转...",
                       "fontFamily": "$font-family",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -37310,7 +37352,8 @@
               "width": 520,
               "content": "发布前确认新增、移除和高风险权限；所有变更写入权限审计。",
               "fontFamily": "$font-family",
-              "fontSize": 13
+              "fontSize": 13,
+              "fontWeight": "normal"
             },
             {
               "type": "frame",
@@ -37378,7 +37421,8 @@
                   "width": 150,
                   "content": "sa",
                   "fontFamily": "$font-family",
-                  "fontSize": 11
+                  "fontSize": 11,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "frame",
@@ -37447,7 +37491,8 @@
                   "width": 150,
                   "content": "center_director",
                   "fontFamily": "$font-family",
-                  "fontSize": 11
+                  "fontSize": 11,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "frame",
@@ -37515,7 +37560,8 @@
                   "width": 150,
                   "content": "role_2",
                   "fontFamily": "$font-family",
-                  "fontSize": 11
+                  "fontSize": 11,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "frame",
@@ -37583,7 +37629,8 @@
                   "width": 150,
                   "content": "role_3",
                   "fontFamily": "$font-family",
-                  "fontSize": 11
+                  "fontSize": 11,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "frame",
@@ -37651,7 +37698,8 @@
                   "width": 150,
                   "content": "role_4",
                   "fontFamily": "$font-family",
-                  "fontSize": 11
+                  "fontSize": 11,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "frame",
@@ -38096,7 +38144,8 @@
                       "width": 300,
                       "content": "派发任务并触发负载校验",
                       "fontFamily": "$font-family",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -38179,7 +38228,8 @@
                       "width": 300,
                       "content": "通过任务验收",
                       "fontFamily": "$font-family",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -38262,7 +38312,8 @@
                       "width": 300,
                       "content": "管理项目设置与成员",
                       "fontFamily": "$font-family",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -38345,7 +38396,8 @@
                       "width": 300,
                       "content": "下载可见资料原件",
                       "fontFamily": "$font-family",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -38428,7 +38480,8 @@
                       "width": 300,
                       "content": "发布系统配置",
                       "fontFamily": "$font-family",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -38511,7 +38564,8 @@
                       "width": 300,
                       "content": "导出报表快照",
                       "fontFamily": "$font-family",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -38594,7 +38648,8 @@
                       "width": 300,
                       "content": "维护邀请模板",
                       "fontFamily": "$font-family",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -38665,7 +38720,8 @@
                       "width": 520,
                       "content": "中心主任临时承担跨部门项目治理，需要项目管理和报表导出；移除配置发布以降低系统级风险。",
                       "fontFamily": "$font-family",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -38680,7 +38736,8 @@
                   "width": 520,
                   "content": "保存失败时保留矩阵状态；成功后刷新权限缓存并写入审计。",
                   "fontFamily": "$font-family",
-                  "fontSize": 12
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -39101,7 +39158,8 @@
                   "width": 134,
                   "content": "before: 7 actions\nafter: 9 actions\nreason: 跨部门治理授权\nactor: Anner",
                   "fontFamily": "$font-family",
-                  "fontSize": 11
+                  "fontSize": 11,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "frame",
@@ -42260,6 +42318,2156 @@
                       ]
                     }
                   ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "MdEqy",
+      "x": 0,
+      "y": 0,
+      "fill": "#000000",
+      "content": "936485",
+      "fontFamily": "Inter",
+      "fontSize": 12,
+      "fontWeight": "normal"
+    },
+    {
+      "type": "frame",
+      "id": "bmkv6",
+      "x": 45580,
+      "y": 0,
+      "name": "Organization Page",
+      "clip": true,
+      "width": 1440,
+      "height": 1024,
+      "fill": "$bg-primary",
+      "children": [
+        {
+          "id": "bmh9l",
+          "type": "ref",
+          "ref": "TgPaz",
+          "name": "Sidebar",
+          "height": "fill_container"
+        },
+        {
+          "type": "frame",
+          "id": "pZglk",
+          "name": "Content Area",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": "$spacing-6",
+          "padding": "$spacing-7",
+          "children": [
+            {
+              "id": "dJb5R",
+              "type": "ref",
+              "ref": "a5L9Js",
+              "name": "TopBar",
+              "width": "fill_container"
+            },
+            {
+              "type": "frame",
+              "id": "j7wSsl",
+              "name": "Page Body",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": "$spacing-6",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "JS2P9",
+                  "name": "Page Header",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": "$spacing-2",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "G24d4f",
+                      "name": "Title",
+                      "fill": "$text-primary",
+                      "content": "组织",
+                      "fontFamily": "$font-family",
+                      "fontSize": "$text-3xl",
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "WwLIz",
+                      "name": "Subtitle",
+                      "fill": "$text-muted",
+                      "content": "组织树、部门治理、人员归属和审批关系",
+                      "fontFamily": "$font-family",
+                      "fontSize": "$text-sm",
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "z4tsWc",
+                  "name": "Metrics Row",
+                  "width": "fill_container",
+                  "gap": "$spacing-5",
+                  "children": [
+                    {
+                      "id": "vdjyo",
+                      "type": "ref",
+                      "ref": "AuZjF",
+                      "name": "组织总数",
+                      "width": "fill_container",
+                      "descendants": {
+                        "knEFt": {
+                          "content": "组织总数"
+                        },
+                        "jiXSJ": {
+                          "content": "21"
+                        },
+                        "fG690": {
+                          "enabled": false
+                        }
+                      }
+                    },
+                    {
+                      "id": "N6PMDS",
+                      "type": "ref",
+                      "ref": "AuZjF",
+                      "name": "启用组织",
+                      "width": "fill_container",
+                      "descendants": {
+                        "knEFt": {
+                          "content": "启用组织"
+                        },
+                        "jiXSJ": {
+                          "content": "21"
+                        },
+                        "fG690": {
+                          "enabled": false
+                        }
+                      }
+                    },
+                    {
+                      "id": "QdH0T",
+                      "type": "ref",
+                      "ref": "AuZjF",
+                      "name": "组织层级",
+                      "width": "fill_container",
+                      "descendants": {
+                        "knEFt": {
+                          "content": "组织层级"
+                        },
+                        "jiXSJ": {
+                          "content": "4"
+                        },
+                        "fG690": {
+                          "enabled": false
+                        }
+                      }
+                    },
+                    {
+                      "id": "nAXJ2",
+                      "type": "ref",
+                      "ref": "AuZjF",
+                      "name": "当前成员",
+                      "width": "fill_container",
+                      "descendants": {
+                        "knEFt": {
+                          "content": "当前成员"
+                        },
+                        "jiXSJ": {
+                          "content": "2"
+                        },
+                        "fG690": {
+                          "enabled": false
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ilbKn",
+                  "name": "Main Content",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "gap": "$spacing-6",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "J9vq1q",
+                      "name": "Org Tree Panel",
+                      "width": 420,
+                      "height": "fill_container",
+                      "fill": "$bg-secondary",
+                      "cornerRadius": "$radius-md",
+                      "stroke": "$border-subtle",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "r4rNN",
+                          "name": "Tree Header",
+                          "width": "fill_container",
+                          "height": 56,
+                          "stroke": "$border-subtle",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "padding": [
+                            0,
+                            "$spacing-5"
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "ALzeB",
+                              "name": "Tree Title Group",
+                              "layout": "vertical",
+                              "gap": "$spacing-1",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "t8uy7h",
+                                  "name": "Tree Title",
+                                  "fill": "$text-primary",
+                                  "content": "部门树",
+                                  "fontFamily": "$font-family",
+                                  "fontSize": "$text-base",
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "uDtMj",
+                                  "name": "Tree Hint",
+                                  "fill": "$text-muted",
+                                  "content": "点击节点选中部门，悬停显示操作",
+                                  "fontFamily": "$font-family",
+                                  "fontSize": "$text-xs",
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "QWA1o",
+                              "type": "ref",
+                              "ref": "YKGme",
+                              "name": "New Root Org",
+                              "descendants": {
+                                "fMhRU": {
+                                  "content": "新建根组织"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "XMt1F",
+                          "name": "Tree Body",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "layout": "vertical",
+                          "gap": "$spacing-1",
+                          "padding": "$spacing-4",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "sSCjB",
+                              "name": "Tree Node NexusFlow",
+                              "width": "fill_container",
+                              "height": 40,
+                              "fill": "#00000000",
+                              "cornerRadius": "$radius-md",
+                              "gap": "$spacing-2",
+                              "padding": [
+                                0,
+                                "$spacing-3"
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "lb1uw",
+                                  "name": "Chevron NexusFlow",
+                                  "rotation": 90,
+                                  "width": 16,
+                                  "height": 16,
+                                  "icon": "chevron-right",
+                                  "library": "lucide",
+                                  "fill": "$text-muted"
+                                },
+                                {
+                                  "type": "icon",
+                                  "id": "fHqjx",
+                                  "name": "Building Icon NexusFlow",
+                                  "width": 16,
+                                  "height": 16,
+                                  "icon": "building-2",
+                                  "library": "lucide",
+                                  "fill": "$text-muted"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "SJ5s7",
+                                  "name": "Node Name NexusFlow",
+                                  "fill": "$text-secondary",
+                                  "content": "NexusFlow",
+                                  "fontFamily": "$font-family",
+                                  "fontSize": "$text-base",
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "id": "a2TEI",
+                                  "type": "ref",
+                                  "ref": "mvz9p",
+                                  "name": "Type Badge NexusFlow",
+                                  "descendants": {
+                                    "gThBq": {
+                                      "content": "公司"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "fwHaB",
+                                  "name": "Spacer NexusFlow",
+                                  "width": "fill_container",
+                                  "height": 1
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "r3FAis",
+                              "name": "Tree Node 研发中心",
+                              "width": "fill_container",
+                              "height": 40,
+                              "fill": "#00000000",
+                              "cornerRadius": "$radius-md",
+                              "gap": "$spacing-2",
+                              "padding": [
+                                0,
+                                "$spacing-3"
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "uIRUK",
+                                  "name": "Indent",
+                                  "width": 22,
+                                  "height": 1
+                                },
+                                {
+                                  "type": "icon",
+                                  "id": "lgBU5",
+                                  "name": "Chevron 研发中心",
+                                  "rotation": 90,
+                                  "width": 16,
+                                  "height": 16,
+                                  "icon": "chevron-right",
+                                  "library": "lucide",
+                                  "fill": "$text-muted"
+                                },
+                                {
+                                  "type": "icon",
+                                  "id": "Wzxg9",
+                                  "name": "Building Icon 研发中心",
+                                  "width": 16,
+                                  "height": 16,
+                                  "icon": "building-2",
+                                  "library": "lucide",
+                                  "fill": "$text-muted"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "PzYY8",
+                                  "name": "Node Name 研发中心",
+                                  "fill": "$text-secondary",
+                                  "content": "研发中心",
+                                  "fontFamily": "$font-family",
+                                  "fontSize": "$text-base",
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "id": "ZGlF6",
+                                  "type": "ref",
+                                  "ref": "mvz9p",
+                                  "name": "Type Badge 研发中心",
+                                  "descendants": {
+                                    "gThBq": {
+                                      "content": "中心"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "IW1jE",
+                                  "name": "Spacer 研发中心",
+                                  "width": "fill_container",
+                                  "height": 1
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ofc2g",
+                              "name": "Tree Node 前端部",
+                              "width": "fill_container",
+                              "height": 40,
+                              "fill": "$selected-bg",
+                              "cornerRadius": "$radius-md",
+                              "gap": "$spacing-2",
+                              "padding": [
+                                0,
+                                "$spacing-3"
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "KUsGH",
+                                  "name": "Indent",
+                                  "width": 44,
+                                  "height": 1
+                                },
+                                {
+                                  "type": "icon",
+                                  "id": "ew5Hm",
+                                  "name": "Chevron 前端部",
+                                  "width": 16,
+                                  "height": 16,
+                                  "icon": "chevron-right",
+                                  "library": "lucide",
+                                  "fill": "$text-muted"
+                                },
+                                {
+                                  "type": "icon",
+                                  "id": "ZdyK4",
+                                  "name": "Building Icon 前端部",
+                                  "width": 16,
+                                  "height": 16,
+                                  "icon": "building-2",
+                                  "library": "lucide",
+                                  "fill": "$text-muted"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "pZ9tx",
+                                  "name": "Node Name 前端部",
+                                  "fill": "$text-primary",
+                                  "content": "前端部",
+                                  "fontFamily": "$font-family",
+                                  "fontSize": "$text-base",
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "id": "VgRJt",
+                                  "type": "ref",
+                                  "ref": "mvz9p",
+                                  "name": "Type Badge 前端部",
+                                  "descendants": {
+                                    "gThBq": {
+                                      "content": "部门"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "P5Wida",
+                                  "name": "Spacer 前端部",
+                                  "width": "fill_container",
+                                  "height": 1
+                                },
+                                {
+                                  "id": "UyJpN",
+                                  "type": "ref",
+                                  "ref": "WSS6F",
+                                  "name": "Detail Button 前端部",
+                                  "descendants": {
+                                    "GQO1y": {
+                                      "content": "详情"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "GhsSC",
+                                  "type": "ref",
+                                  "ref": "WSS6F",
+                                  "name": "Add Child Button 前端部",
+                                  "descendants": {
+                                    "GQO1y": {
+                                      "content": "+ 下级"
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Tx1XR",
+                              "name": "Tree Node 后端部",
+                              "width": "fill_container",
+                              "height": 40,
+                              "fill": "#00000000",
+                              "cornerRadius": "$radius-md",
+                              "gap": "$spacing-2",
+                              "padding": [
+                                0,
+                                "$spacing-3"
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "OCQKT",
+                                  "name": "Indent",
+                                  "width": 44,
+                                  "height": 1
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "GIuoL",
+                                  "name": "Chevron Placeholder 后端部",
+                                  "width": 16,
+                                  "height": 1
+                                },
+                                {
+                                  "type": "icon",
+                                  "id": "RkGb7",
+                                  "name": "Building Icon 后端部",
+                                  "width": 16,
+                                  "height": 16,
+                                  "icon": "building-2",
+                                  "library": "lucide",
+                                  "fill": "$text-muted"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "rwLy6",
+                                  "name": "Node Name 后端部",
+                                  "fill": "$text-secondary",
+                                  "content": "后端部",
+                                  "fontFamily": "$font-family",
+                                  "fontSize": "$text-base",
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "id": "ubl0L",
+                                  "type": "ref",
+                                  "ref": "mvz9p",
+                                  "name": "Type Badge 后端部",
+                                  "descendants": {
+                                    "gThBq": {
+                                      "content": "部门"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "wb4Uw",
+                                  "name": "Spacer 后端部",
+                                  "width": "fill_container",
+                                  "height": 1
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "VUJ3Y",
+                              "name": "Tree Node 测试工作室",
+                              "width": "fill_container",
+                              "height": 40,
+                              "fill": "#00000000",
+                              "cornerRadius": "$radius-md",
+                              "gap": "$spacing-2",
+                              "padding": [
+                                0,
+                                "$spacing-3"
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "q8sFi",
+                                  "name": "Indent",
+                                  "width": 44,
+                                  "height": 1
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "Nlavw",
+                                  "name": "Chevron Placeholder 测试工作室",
+                                  "width": 16,
+                                  "height": 1
+                                },
+                                {
+                                  "type": "icon",
+                                  "id": "BOj12",
+                                  "name": "Building Icon 测试工作室",
+                                  "width": 16,
+                                  "height": 16,
+                                  "icon": "building-2",
+                                  "library": "lucide",
+                                  "fill": "$text-muted"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "iuE7P",
+                                  "name": "Node Name 测试工作室",
+                                  "fill": "$text-secondary",
+                                  "content": "测试工作室",
+                                  "fontFamily": "$font-family",
+                                  "fontSize": "$text-base",
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "id": "LQS6W",
+                                  "type": "ref",
+                                  "ref": "mvz9p",
+                                  "name": "Type Badge 测试工作室",
+                                  "descendants": {
+                                    "gThBq": {
+                                      "content": "工作室"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "QUmec",
+                                  "name": "Spacer 测试工作室",
+                                  "width": "fill_container",
+                                  "height": 1
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "f059d",
+                      "name": "Personnel Panel",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "fill": "$bg-secondary",
+                      "cornerRadius": "$radius-md",
+                      "stroke": "$border-subtle",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "a7zGiH",
+                          "name": "Personnel Header",
+                          "width": "fill_container",
+                          "height": 56,
+                          "stroke": "$border-subtle",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "padding": [
+                            0,
+                            "$spacing-5"
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "WfkTP",
+                              "name": "Personnel Title Group",
+                              "layout": "vertical",
+                              "gap": "$spacing-1",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "OuT4r",
+                                  "name": "Personnel Title",
+                                  "fill": "$text-primary",
+                                  "content": "部门人员",
+                                  "fontFamily": "$font-family",
+                                  "fontSize": "$text-base",
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "rqWDb",
+                                  "name": "Personnel Count",
+                                  "fill": "$text-muted",
+                                  "content": "2 人",
+                                  "fontFamily": "$font-family",
+                                  "fontSize": "$text-xs",
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "id": "tKKh2",
+                              "type": "ref",
+                              "ref": "YKGme",
+                              "name": "New Person Button",
+                              "descendants": {
+                                "fMhRU": {
+                                  "content": "新建人员"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "sqwTT",
+                          "name": "Table Header",
+                          "width": "fill_container",
+                          "height": 44,
+                          "fill": "$bg-tertiary",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "gap": "$spacing-4",
+                          "padding": [
+                            0,
+                            "$spacing-5"
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "hprnu",
+                              "name": "TH 人员",
+                              "fill": "$text-muted",
+                              "content": "人员",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "REIKw",
+                              "name": "TH 工号",
+                              "fill": "$text-muted",
+                              "content": "工号",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "wbdsr",
+                              "name": "TH 关系",
+                              "fill": "$text-muted",
+                              "content": "关系",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "owF2U",
+                              "name": "TH 工时",
+                              "fill": "$text-muted",
+                              "content": "工时",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "LABey",
+                              "name": "TH 工作状态",
+                              "fill": "$text-muted",
+                              "content": "工作状态",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "VsHm6",
+                              "name": "TH 账号状态",
+                              "fill": "$text-muted",
+                              "content": "账号状态",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "T1FLJ",
+                              "name": "TH ",
+                              "fill": "$text-muted",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "HkhbO",
+                          "name": "Person Row 张三",
+                          "width": "fill_container",
+                          "height": 56,
+                          "gap": "$spacing-4",
+                          "padding": [
+                            0,
+                            "$spacing-5"
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "YTcN6",
+                              "name": "Person Cell 张三",
+                              "width": "fill_container",
+                              "height": "fill_container",
+                              "gap": "$spacing-3",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "id": "A2toq7",
+                                  "type": "ref",
+                                  "ref": "T61uMI",
+                                  "name": "Avatar 张三",
+                                  "descendants": {
+                                    "sXNMf": {
+                                      "content": "张"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "phJGF",
+                                  "name": "Name Group 张三",
+                                  "layout": "vertical",
+                                  "gap": 2,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "iPE3x",
+                                      "name": "Person Name 张三",
+                                      "fill": "$text-primary",
+                                      "content": "张三",
+                                      "fontFamily": "$font-family",
+                                      "fontSize": "$text-base",
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "sO0G3",
+                                      "name": "Person Id 张三",
+                                      "fill": "$text-muted",
+                                      "content": "uuid-placeholder",
+                                      "fontFamily": "$font-family",
+                                      "fontSize": "$text-xs",
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "heZup",
+                              "name": "Employee No 张三",
+                              "fill": "$text-secondary",
+                              "content": "EMP001",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "hRrXK",
+                              "name": "Relation 张三",
+                              "fill": "$text-secondary",
+                              "content": "主组织",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "J1sTi",
+                              "name": "Hours 张三",
+                              "fill": "$text-secondary",
+                              "content": "8h",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "id": "KOcut",
+                              "type": "ref",
+                              "ref": "uOzz5",
+                              "name": "Work Status 张三",
+                              "descendants": {
+                                "nly2x": {
+                                  "content": "在岗"
+                                }
+                              }
+                            },
+                            {
+                              "id": "V8l91",
+                              "type": "ref",
+                              "ref": "uOzz5",
+                              "name": "Account Status 张三",
+                              "descendants": {
+                                "nly2x": {
+                                  "content": "启用"
+                                }
+                              }
+                            },
+                            {
+                              "id": "rE93C",
+                              "type": "ref",
+                              "ref": "WSS6F",
+                              "name": "Row Detail Button 张三",
+                              "descendants": {
+                                "GQO1y": {
+                                  "content": "详情"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gtSF7",
+                          "name": "Person Row 李四",
+                          "width": "fill_container",
+                          "height": 56,
+                          "gap": "$spacing-4",
+                          "padding": [
+                            0,
+                            "$spacing-5"
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "ux3U8",
+                              "name": "Person Cell 李四",
+                              "width": "fill_container",
+                              "height": "fill_container",
+                              "gap": "$spacing-3",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "id": "X6ZQF4",
+                                  "type": "ref",
+                                  "ref": "T61uMI",
+                                  "name": "Avatar 李四",
+                                  "descendants": {
+                                    "sXNMf": {
+                                      "content": "李"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "Z6HPy",
+                                  "name": "Name Group 李四",
+                                  "layout": "vertical",
+                                  "gap": 2,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "npHQF",
+                                      "name": "Person Name 李四",
+                                      "fill": "$text-primary",
+                                      "content": "李四",
+                                      "fontFamily": "$font-family",
+                                      "fontSize": "$text-base",
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "WZHIf",
+                                      "name": "Person Id 李四",
+                                      "fill": "$text-muted",
+                                      "content": "uuid-placeholder",
+                                      "fontFamily": "$font-family",
+                                      "fontSize": "$text-xs",
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "p5WBCq",
+                              "name": "Employee No 李四",
+                              "fill": "$text-secondary",
+                              "content": "EMP002",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "naeMg",
+                              "name": "Relation 李四",
+                              "fill": "$text-secondary",
+                              "content": "主组织",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "PGSqi",
+                              "name": "Hours 李四",
+                              "fill": "$text-secondary",
+                              "content": "8h",
+                              "fontFamily": "$font-family",
+                              "fontSize": "$text-sm",
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "id": "PNJWa",
+                              "type": "ref",
+                              "ref": "bSbeM",
+                              "name": "Work Status 李四",
+                              "descendants": {
+                                "UZpud": {
+                                  "content": "出差"
+                                }
+                              }
+                            },
+                            {
+                              "id": "dbLyj",
+                              "type": "ref",
+                              "ref": "uOzz5",
+                              "name": "Account Status 李四",
+                              "descendants": {
+                                "nly2x": {
+                                  "content": "启用"
+                                }
+                              }
+                            },
+                            {
+                              "id": "OoI3v",
+                              "type": "ref",
+                              "ref": "WSS6F",
+                              "name": "Row Detail Button 李四",
+                              "descendants": {
+                                "GQO1y": {
+                                  "content": "详情"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "tyzmM",
+      "x": 1700,
+      "y": 0,
+      "name": "Org Detail Drawer Panel",
+      "clip": true,
+      "width": 420,
+      "height": 1024,
+      "fill": "$bg-secondary",
+      "stroke": "$border-subtle",
+      "strokeWidth": {
+        "left": 1
+      },
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "mbIjS",
+          "name": "Org Drawer Header",
+          "width": "fill_container",
+          "height": 64,
+          "stroke": "$border-subtle",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "padding": [
+            0,
+            "$spacing-5"
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "vzqy4",
+              "name": "Org Drawer Title Group",
+              "layout": "vertical",
+              "gap": "$spacing-1",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "P0OrPY",
+                  "name": "Org Drawer Title",
+                  "fill": "$text-primary",
+                  "content": "前端部",
+                  "fontFamily": "$font-family",
+                  "fontSize": "$text-lg",
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "xMWSF",
+                  "name": "Org Drawer Subtitle",
+                  "fill": "$text-muted",
+                  "content": "部门 · 启用",
+                  "fontFamily": "$font-family",
+                  "fontSize": "$text-xs",
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "icon",
+              "id": "d9VAu",
+              "name": "Close Org Drawer",
+              "width": 20,
+              "height": 20,
+              "icon": "x",
+              "library": "lucide",
+              "fill": "$text-muted"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "pt5gQ",
+          "name": "Org Drawer Body",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": "$spacing-6",
+          "padding": "$spacing-5",
+          "children": [
+            {
+              "type": "frame",
+              "id": "J91XY",
+              "name": "Org Basic Section",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": "$spacing-3",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "id3Ez",
+                  "name": "Org Basic Title",
+                  "fill": "$text-muted",
+                  "content": "基本信息",
+                  "fontFamily": "$font-family",
+                  "fontSize": "$text-sm",
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "B9G5JQ",
+                  "name": "Org Basic Grid",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": "$spacing-3",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "tAk0O",
+                      "name": "Field 组织名称",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "OuGuU",
+                          "name": "Label 组织名称",
+                          "fill": "$text-muted",
+                          "content": "组织名称",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "M2TdM0",
+                          "name": "Input Box 组织名称",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "p71lt2",
+                      "name": "Field 组织编码",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "rILlb",
+                          "name": "Label 组织编码",
+                          "fill": "$text-muted",
+                          "content": "组织编码",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "DHDS8",
+                          "name": "Input Box 组织编码",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "s1gIX4",
+                      "name": "Field 组织类型",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Mr6Ne",
+                          "name": "Label 组织类型",
+                          "fill": "$text-muted",
+                          "content": "组织类型",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "I7E3d",
+                          "name": "Input Box 组织类型",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "RWrHD",
+                      "name": "Field 启用状态",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "M4s3Jc",
+                          "name": "Label 启用状态",
+                          "fill": "$text-muted",
+                          "content": "启用状态",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "TjdBK",
+                          "name": "Input Box 启用状态",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "uCHcD",
+              "name": "Org Manage Section",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": "$spacing-3",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "s3QpP",
+                  "name": "Org Manage Title",
+                  "fill": "$text-muted",
+                  "content": "管理信息",
+                  "fontFamily": "$font-family",
+                  "fontSize": "$text-sm",
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "M0CAUp",
+                  "name": "Org Manage Grid",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": "$spacing-3",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "hZ7f6",
+                      "name": "Manage Field 负责人 ID",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "FoK9Z",
+                          "name": "Manage Label 负责人 ID",
+                          "fill": "$text-muted",
+                          "content": "负责人 ID",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "S08Km",
+                          "name": "Manage Input 负责人 ID",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MIvbw",
+                      "name": "Manage Field 默认审批人 ID",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "PHgn7",
+                          "name": "Manage Label 默认审批人 ID",
+                          "fill": "$text-muted",
+                          "content": "默认审批人 ID",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "j5b9vX",
+                          "name": "Manage Input 默认审批人 ID",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "HFHw6",
+                      "name": "Manage Field 业务负责人",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "k8lyVG",
+                          "name": "Manage Label 业务负责人",
+                          "fill": "$text-muted",
+                          "content": "业务负责人",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "kZmAL",
+                          "name": "Manage Input 业务负责人",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "zXrsB",
+                      "name": "Manage Field 办公地点",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "KCwgu",
+                          "name": "Manage Label 办公地点",
+                          "fill": "$text-muted",
+                          "content": "办公地点",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "bX8WL",
+                          "name": "Manage Input 办公地点",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AJZLi",
+                      "name": "Manage Field 成本中心",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ySMVE",
+                          "name": "Manage Label 成本中心",
+                          "fill": "$text-muted",
+                          "content": "成本中心",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "AI2W3",
+                          "name": "Manage Input 成本中心",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "L7kRsW",
+                      "name": "Desc Field",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "j7Uulo",
+                          "name": "Desc Label",
+                          "fill": "$text-muted",
+                          "content": "组织说明",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "p9aUXc",
+                          "name": "Desc Input",
+                          "width": "fill_container",
+                          "height": 80,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": "$spacing-3"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "h3pEWK",
+              "name": "Move Section",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": "$spacing-3",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "fwF26",
+                  "name": "Move Title",
+                  "fill": "$text-muted",
+                  "content": "移动到上级组织",
+                  "fontFamily": "$font-family",
+                  "fontSize": "$text-sm",
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "f1WHR",
+                  "name": "Move Row",
+                  "width": "fill_container",
+                  "gap": "$spacing-3",
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "kpKSt",
+                      "name": "Move Select",
+                      "width": "fill_container",
+                      "height": 40,
+                      "fill": "$bg-tertiary",
+                      "cornerRadius": "$radius-md",
+                      "stroke": "$border-subtle",
+                      "strokeWidth": 1,
+                      "padding": [
+                        0,
+                        "$spacing-3"
+                      ],
+                      "alignItems": "center"
+                    },
+                    {
+                      "id": "aGewl",
+                      "type": "ref",
+                      "ref": "jqEJe",
+                      "name": "Move Button",
+                      "descendants": {
+                        "MKcQ1": {
+                          "content": "移动"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "uj9P8",
+              "name": "Org Actions",
+              "width": "fill_container",
+              "gap": "$spacing-3",
+              "justifyContent": "end",
+              "children": [
+                {
+                  "id": "z7sFP",
+                  "type": "ref",
+                  "ref": "MzL7j",
+                  "name": "Delete Org Button",
+                  "descendants": {
+                    "KQB1H": {
+                      "content": "删除"
+                    }
+                  }
+                },
+                {
+                  "id": "MG06I",
+                  "type": "ref",
+                  "ref": "YKGme",
+                  "name": "Add Suborg Button",
+                  "descendants": {
+                    "fMhRU": {
+                      "content": "新建下级"
+                    }
+                  }
+                },
+                {
+                  "id": "kkIKE",
+                  "type": "ref",
+                  "ref": "YKGme",
+                  "name": "Save Org Button",
+                  "descendants": {
+                    "fMhRU": {
+                      "content": "保存"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "T5pG9v",
+      "x": 2150,
+      "y": 0,
+      "name": "Person Detail Drawer Panel",
+      "clip": true,
+      "width": 420,
+      "height": 1024,
+      "fill": "$bg-secondary",
+      "stroke": "$border-subtle",
+      "strokeWidth": {
+        "left": 1
+      },
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "B8AWU",
+          "name": "Person Drawer Header",
+          "width": "fill_container",
+          "height": 64,
+          "stroke": "$border-subtle",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "padding": [
+            0,
+            "$spacing-5"
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "ailjl",
+              "name": "Person Drawer Title Group",
+              "layout": "vertical",
+              "gap": "$spacing-1",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "anCto",
+                  "name": "Person Drawer Title",
+                  "fill": "$text-primary",
+                  "content": "张三",
+                  "fontFamily": "$font-family",
+                  "fontSize": "$text-lg",
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "aKjvB",
+                  "name": "Person Drawer Subtitle",
+                  "fill": "$text-muted",
+                  "content": "EMP001 · 主组织",
+                  "fontFamily": "$font-family",
+                  "fontSize": "$text-xs",
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "icon",
+              "id": "Tq9Qb",
+              "name": "Close Person Drawer",
+              "width": 20,
+              "height": 20,
+              "icon": "x",
+              "library": "lucide",
+              "fill": "$text-muted"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "F4ILf",
+          "name": "Person Drawer Body",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": "$spacing-6",
+          "padding": "$spacing-5",
+          "children": [
+            {
+              "type": "frame",
+              "id": "uRDsy",
+              "name": "Person Avatar Row",
+              "width": "fill_container",
+              "gap": "$spacing-4",
+              "alignItems": "center",
+              "children": [
+                {
+                  "id": "c8AtCp",
+                  "type": "ref",
+                  "ref": "T61uMI",
+                  "name": "Person Drawer Avatar",
+                  "descendants": {
+                    "sXNMf": {
+                      "content": "张"
+                    }
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "YYu6T",
+                  "name": "Person Name Col",
+                  "layout": "vertical",
+                  "gap": "$spacing-1",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ICCiG",
+                      "name": "Person Drawer Name",
+                      "fill": "$text-primary",
+                      "content": "张三",
+                      "fontFamily": "$font-family",
+                      "fontSize": "$text-lg",
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "rAzXR",
+                      "name": "Person Drawer Id",
+                      "fill": "$text-muted",
+                      "content": "uuid-placeholder",
+                      "fontFamily": "$font-family",
+                      "fontSize": "$text-xs",
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Q8uGtw",
+              "name": "Person Edit Section",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": "$spacing-3",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "HzzHh",
+                  "name": "Person Edit Title",
+                  "fill": "$text-muted",
+                  "content": "部署信息",
+                  "fontFamily": "$font-family",
+                  "fontSize": "$text-sm",
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "jP5mI",
+                  "name": "Person Edit Grid",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": "$spacing-3",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "bmhSn",
+                      "name": "Person Field 姓名",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "lkfzb",
+                          "name": "Person Label 姓名",
+                          "fill": "$text-muted",
+                          "content": "姓名",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "RhFW3",
+                          "name": "Person Input 姓名",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "w7U8m",
+                      "name": "Person Field 主组织",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "E0tecp",
+                          "name": "Person Label 主组织",
+                          "fill": "$text-muted",
+                          "content": "主组织",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "t4hJvV",
+                          "name": "Person Input 主组织",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "COmyX",
+                      "name": "Person Field 工号",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iYa3l",
+                          "name": "Person Label 工号",
+                          "fill": "$text-muted",
+                          "content": "工号",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gDmsM",
+                          "name": "Person Input 工号",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "DVP8K",
+                      "name": "Person Field 工作状态",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "qdoO1",
+                          "name": "Person Label 工作状态",
+                          "fill": "$text-muted",
+                          "content": "工作状态",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "SGmVh",
+                          "name": "Person Input 工作状态",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "EHrur",
+                      "name": "Person Field 每日标准工时",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Xn3T3",
+                          "name": "Person Label 每日标准工时",
+                          "fill": "$text-muted",
+                          "content": "每日标准工时",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "iPbAB",
+                          "name": "Person Input 每日标准工时",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ledQj",
+                      "name": "Person Field 账号状态",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "KcVyH",
+                          "name": "Person Label 账号状态",
+                          "fill": "$text-muted",
+                          "content": "账号状态",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Xn1Om",
+                          "name": "Person Input 账号状态",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PScXw",
+                      "name": "Person Field 系统角色",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "zxACT",
+                          "name": "Person Label 系统角色",
+                          "fill": "$text-muted",
+                          "content": "系统角色",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "BqGey",
+                          "name": "Person Input 系统角色",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "V8aIWT",
+                      "name": "Person Field 审计备注",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$spacing-1",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "rW24Q",
+                          "name": "Person Label 审计备注",
+                          "fill": "$text-muted",
+                          "content": "审计备注",
+                          "fontFamily": "$font-family",
+                          "fontSize": "$text-xs",
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "v1ZIv",
+                          "name": "Person Input 审计备注",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$bg-tertiary",
+                          "cornerRadius": "$radius-md",
+                          "stroke": "$border-subtle",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            "$spacing-3"
+                          ],
+                          "alignItems": "center"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "GzWiZ",
+              "name": "Person Drawer Actions",
+              "width": "fill_container",
+              "gap": "$spacing-3",
+              "justifyContent": "end",
+              "children": [
+                {
+                  "id": "IKAsU",
+                  "type": "ref",
+                  "ref": "jqEJe",
+                  "name": "Cancel Person Button",
+                  "descendants": {
+                    "MKcQ1": {
+                      "content": "取消"
+                    }
+                  }
+                },
+                {
+                  "id": "tdIVq",
+                  "type": "ref",
+                  "ref": "YKGme",
+                  "name": "Save Person Button",
+                  "descendants": {
+                    "fMhRU": {
+                      "content": "保存"
+                    }
+                  }
                 }
               ]
             }
