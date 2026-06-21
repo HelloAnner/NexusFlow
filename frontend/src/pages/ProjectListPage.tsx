@@ -1,12 +1,14 @@
 import { MainLayout } from '@/components/layout'
 import { Avatar, Badge, Button, EmptyState, Input, ProgressBar, SearchInput, Select } from '@/components/ui'
 import { apiGet, apiPost } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import { type ApiList, type ApiOrg, type ApiPerson, type ApiProject, formatDate, numberValue, projectStatusLabel, projectTypeLabel, textFromPayload, visibilityLabel } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
 import { Check, Search, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSearchParams } from 'react-router-dom'
+import { ProjectDetailContent } from '@/pages/ProjectDetailPage'
 
 const initialForm = {
   project_no: '',
@@ -70,6 +72,29 @@ function loadProjects(params: URLSearchParams) {
   })
 }
 
+function projectOwner(project: ApiProject) {
+  return textFromPayload(project.payload, 'leader_name', project.payload?.owner_name as string | undefined)
+}
+
+function projectOrg(project: ApiProject) {
+  return textFromPayload(project.payload, 'owner_org_name', textFromPayload(project.payload, 'org_name', '未设置'))
+}
+
+function projectPeriod(project: ApiProject) {
+  const start = formatDate(project.start_date)
+  const end = formatDate(project.end_date)
+  if (start === '未设置' && end === '未设置') return '未设置'
+  return `${start} - ${end}`
+}
+
+function statusClass(status?: string) {
+  if (status === 'active') return 'bg-color-info-bg text-color-info'
+  if (status === 'completed') return 'bg-color-success-bg text-color-success'
+  if (status === 'paused') return 'bg-color-warning-bg text-color-warning'
+  if (status === 'archived') return 'bg-hover-bg text-text-muted'
+  return 'bg-hover-bg text-text-muted'
+}
+
 export function ProjectListPage() {
   const [params, setParams] = useSearchParams()
   const [form, setForm] = useState(initialForm)
@@ -77,12 +102,16 @@ export function ProjectListPage() {
   const [creating, setCreating] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const showCreate = params.get('create') === '1'
+  const selectedProjectId = params.get('project')
   const filterKey = params.toString()
   const { data, loading, error, reload } = useApiData(() => loadProjects(params), [filterKey])
   const optionsState = useApiData(loadOptions, [])
   const projects = data?.items ?? []
   const people = optionsState.data?.people ?? []
   const orgs = optionsState.data?.orgs ?? []
+  const createParams = new URLSearchParams(params)
+  createParams.set('create', '1')
+  const createHref = `/projects?${createParams.toString()}`
 
   function closeCreate() {
     const next = new URLSearchParams(params)
@@ -99,6 +128,18 @@ export function ProjectListPage() {
     const next = new URLSearchParams(params)
     if (value) next.set(key, value)
     else next.delete(key)
+    setParams(next)
+  }
+
+  function openProject(projectId: string) {
+    const next = new URLSearchParams(params)
+    next.set('project', projectId)
+    setParams(next)
+  }
+
+  function closeProject() {
+    const next = new URLSearchParams(params)
+    next.delete('project')
     setParams(next)
   }
 
@@ -147,18 +188,7 @@ export function ProjectListPage() {
       <div className="flex flex-col gap-4">
         {error && <div className="rounded-md bg-color-error-bg px-4 py-3 text-sm text-color-error">{error}</div>}
 
-        <div className="-mt-[58px] flex flex-wrap items-center justify-end gap-2">
-          {['视图', '筛选', '排序'].map((label) => (
-            <button key={label} type="button" className="h-9 rounded-md border border-border-subtle bg-bg-secondary px-3 text-sm text-text-secondary hover:bg-hover-bg">
-              {label}
-            </button>
-          ))}
-          <Link to="/projects?create=1">
-            <Button className="h-9 px-3">新建项目</Button>
-          </Link>
-        </div>
-
-        <div className="flex flex-col gap-4">
+        <section className="flex flex-col gap-3 rounded-md border border-border-subtle bg-bg-secondary p-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="inline-flex rounded-md bg-bg-secondary p-1">
               {['列表', '表格', '看板', '画廊', '时间线'].map((tab, index) => (
@@ -182,6 +212,11 @@ export function ProjectListPage() {
                 <Search className="h-4 w-4" />
                 搜索
               </Button>
+              <Link to={createHref}>
+                <Button className="h-9 px-3" type="button">
+                  新建项目
+                </Button>
+              </Link>
             </form>
           </div>
 
@@ -209,42 +244,85 @@ export function ProjectListPage() {
               </button>
             )}
           </div>
+        </section>
 
-          <div className="grid min-h-[calc(100vh-232px)] gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {projects.map((project) => {
-              const progress = numberValue(project.payload?.progress, project.status === 'completed' ? 100 : 0)
-              const owner = textFromPayload(project.payload, 'leader_name', project.payload?.owner_name as string | undefined)
-              return (
-                <Link
-                  key={project.id}
-                  to={`/projects/${project.id}`}
-                  className="flex min-h-[320px] flex-col rounded-md border border-border-subtle bg-bg-secondary p-3 transition-fast hover:-translate-y-0.5 hover:shadow-dropdown"
-                >
-                  <div className="h-20 rounded-md bg-bg-tertiary" />
-                  <div className="mt-4 flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className="truncate text-lg font-bold text-text-primary">{project.name}</h2>
-                      <p className="mt-1 line-clamp-2 text-sm text-text-muted">{project.summary || project.project_no || '暂无项目摘要'}</p>
+        <div className="min-h-[calc(100vh-260px)] overflow-hidden rounded-md border border-border-subtle bg-bg-secondary">
+          <div className="overflow-x-auto">
+            <div className="min-w-[980px]">
+              <div className="grid h-11 grid-cols-[minmax(260px,2fr)_96px_96px_150px_minmax(180px,1.2fr)_170px_120px] items-center border-b border-border-subtle bg-bg-tertiary text-xs font-semibold text-text-muted">
+                <div className="px-4">项目</div>
+                <div className="px-4">状态</div>
+                <div className="px-4">类型</div>
+                <div className="px-4">负责人</div>
+                <div className="px-4">组织 / 可见性</div>
+                <div className="px-4">周期</div>
+                <div className="px-4">进度</div>
+              </div>
+              {projects.map((project) => {
+                const progress = numberValue(project.payload?.progress, project.status === 'completed' ? 100 : 0)
+                const owner = projectOwner(project)
+                return (
+                  <button
+                    key={project.id}
+                    type="button"
+                    className={cn(
+                      'grid min-h-[72px] grid-cols-[minmax(260px,2fr)_96px_96px_150px_minmax(180px,1.2fr)_170px_120px] items-center border-b border-border-subtle text-left text-sm transition-fast last:border-b-0 hover:bg-bg-tertiary',
+                      selectedProjectId === project.id && 'bg-hover-bg'
+                    )}
+                    onClick={() => openProject(project.id)}
+                  >
+                    <div className="min-w-0 px-4">
+                      <div className="truncate font-semibold text-text-primary">{project.name}</div>
+                      <div className="mt-1 truncate text-sm text-text-muted">{project.summary || project.project_no || '暂无项目摘要'}</div>
                     </div>
-                    <Badge>{projectStatusLabel(project.status)}</Badge>
-                  </div>
-                  <ProgressBar value={progress} className="mt-4 h-1.5" />
-                  <div className="mt-3 text-sm text-text-muted">{progress}%</div>
-                  <div className="mt-auto grid grid-cols-2 gap-3 pt-6 text-sm text-text-secondary">
-                    <span>{projectTypeLabel(project.project_type)}</span>
-                    <span>{visibilityLabel(project.visibility)}</span>
-                    <span className="flex min-w-0 items-center gap-2">
-                      <Avatar name={owner} className="h-6 w-6 text-xs" />
+                    <div className="px-4">
+                      <Badge className={cn('whitespace-nowrap', statusClass(project.status))}>{projectStatusLabel(project.status)}</Badge>
+                    </div>
+                    <div className="truncate px-4 text-text-secondary">{projectTypeLabel(project.project_type)}</div>
+                    <div className="flex min-w-0 items-center gap-2 px-4 text-text-secondary">
+                      <Avatar name={owner} className="h-6 w-6 shrink-0 text-xs" />
                       <span className="truncate">{owner}</span>
-                    </span>
-                    <span>{formatDate(project.end_date)}</span>
-                  </div>
-                </Link>
-              )
-            })}
+                    </div>
+                    <div className="min-w-0 px-4">
+                      <div className="truncate text-text-secondary">{projectOrg(project)}</div>
+                      <div className="mt-1 truncate text-xs text-text-muted">{visibilityLabel(project.visibility)}</div>
+                    </div>
+                    <div className="truncate px-4 text-text-muted">{projectPeriod(project)}</div>
+                    <div className="px-4">
+                      <ProgressBar value={progress} className="h-1.5" />
+                      <div className="mt-1 text-xs text-text-muted">{progress}%</div>
+                    </div>
+                  </button>
+                )
+              })}
+              {loading && <div className="px-4 py-10 text-center text-sm text-text-muted">正在加载项目...</div>}
+            </div>
           </div>
           {!loading && projects.length === 0 && <EmptyState title="暂无项目" desc="当前可见范围内没有项目。" />}
         </div>
+
+        {selectedProjectId && (
+          <div className="pointer-events-none fixed inset-y-0 right-0 z-40 flex w-full justify-end">
+            <aside className="pointer-events-auto h-full w-full max-w-full border-l border-border-subtle bg-bg-primary shadow-2xl md:w-[64vw] md:max-w-[1080px]">
+              <div className="h-full overflow-auto px-5 py-4">
+                <ProjectDetailContent
+                  id={selectedProjectId}
+                  compact
+                  onClose={closeProject}
+                  projectSwitcher={
+                    <Select
+                      aria-label="切换项目"
+                      className="w-full"
+                      value={selectedProjectId}
+                      onChange={(event) => openProject(event.target.value)}
+                      options={projects.map((project) => ({ value: project.id, label: project.name }))}
+                    />
+                  }
+                />
+              </div>
+            </aside>
+          </div>
+        )}
 
         {showCreate && (
           <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/20 px-6 py-5">

@@ -215,9 +215,8 @@ export function TopHeader({ className, onMenuClick, onOpenCommand }: TopHeaderPr
   const headerAction =
     location.pathname.startsWith('/tasks') && location.pathname !== '/tasks/new' && (isSa || user?.actions.includes('task.create'))
       ? { to: '/tasks/new', label: '新建任务' }
-      : location.pathname.startsWith('/projects') && (isSa || user?.actions.includes('project.create'))
-        ? { to: '/projects?create=1', label: '新建项目' }
-        : null
+      : null
+  const showDefaultCreate = !location.pathname.startsWith('/projects')
 
   function saveProfile() {
     const nextName = displayName.trim() || user?.login_name || '用户'
@@ -284,7 +283,7 @@ export function TopHeader({ className, onMenuClick, onOpenCommand }: TopHeaderPr
             </Button>
           </Link>
         )}
-        {!headerAction && (
+        {!headerAction && showDefaultCreate && (
           <Link to="/tasks/new">
             <Button className="h-8 px-3">
               <Plus className="h-4 w-4" />

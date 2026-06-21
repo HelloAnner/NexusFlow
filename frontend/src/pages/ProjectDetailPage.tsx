@@ -22,8 +22,8 @@ import {
   visibilityLabel,
 } from '@/lib/format'
 import { useApiData } from '@/lib/useApiData'
-import { AlertTriangle, Archive, CalendarClock, ExternalLink, FileUp, Plus, Shield, Users } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { AlertTriangle, Archive, CalendarClock, ExternalLink, FileUp, Plus, Shield, Users, X } from 'lucide-react'
+import { type ReactNode, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 interface ProjectMember {
@@ -130,6 +130,24 @@ function formatSize(value: unknown) {
 
 export function ProjectDetailPage() {
   const { id = '' } = useParams()
+  return (
+    <MainLayout title="项目详情" subtitle="项目工作台">
+      <ProjectDetailContent id={id} />
+    </MainLayout>
+  )
+}
+
+export function ProjectDetailContent({
+  id,
+  compact = false,
+  onClose,
+  projectSwitcher,
+}: {
+  id: string
+  compact?: boolean
+  onClose?: () => void
+  projectSwitcher?: ReactNode
+}) {
   const [activeTab, setActiveTab] = useState('overview')
   const [message, setMessage] = useState<string | null>(null)
   const [memberId, setMemberId] = useState('')
@@ -308,8 +326,26 @@ export function ProjectDetailPage() {
   }
 
   return (
-    <MainLayout title="项目详情" subtitle={project ? `${project.project_no ?? '未编号'} · ${project.name}` : '项目工作台'}>
       <div className="flex h-full min-h-0 flex-col gap-4">
+        {compact && (
+          <div className="sticky top-0 z-10 -mx-1 flex flex-col gap-3 border-b border-border-subtle bg-bg-primary/95 px-1 pb-3 backdrop-blur">
+            <div className="flex min-h-11 items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-text-primary">项目详情</div>
+                <div className="truncate text-xs text-text-muted">{project ? `${project.project_no ?? '未编号'} · ${project.name}` : '加载中'}</div>
+              </div>
+              <button
+                type="button"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-text-muted transition-fast hover:bg-hover-bg hover:text-text-primary"
+                aria-label="关闭项目详情"
+                onClick={onClose}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {projectSwitcher}
+          </div>
+        )}
         {(detailState.error || message) && (
           <div className={`rounded-md px-4 py-3 text-sm ${detailState.error ? 'bg-color-error-bg text-color-error' : 'bg-color-info-bg text-color-info'}`}>
             {detailState.error ?? message}
@@ -574,7 +610,6 @@ export function ProjectDetailPage() {
           </>
         )}
       </div>
-    </MainLayout>
   )
 }
 
