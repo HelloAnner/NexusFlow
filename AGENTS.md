@@ -25,6 +25,14 @@ This message disappears once the first observation lands.
 - 每次开始集成前必须先 `git fetch origin`，确认主工作区没有未提交改动，再以 fast-forward-only 方式把本地 `main` 同步到最新 `origin/main`。不得用强制切换、强制重置或强制推送覆盖本地或远端改动。
 - 只有已经提交、合并并推送到 `origin/main` 的内容才算进入主分支交付历史；仅存在于工作区、stash、未合并分支或其他 worktree 的改动不算已经进入 `main`。
 
+### 自动 Commit 与 Push
+
+- 每个功能完成后，Codex 必须自动完成提交、主分支集成和远端推送，不需要等待用户再次要求或确认 `commit`、合并、`push`。除非出现无法安全处理的冲突、认证失败、远端拒绝、服务器验收失败等真实阻塞，否则不得把这些收尾步骤留给用户。
+- 自动化顺序固定为：在功能 worktree 提交功能改动 → 串行集成到最新 `main` → 从 `main` 推送 `origin/main` → 从干净且最新的 `main` 部署 → 在服务器验证。不得直接推送功能分支，也不得把未提交改动部署到服务器。
+- 服务器验证中发现问题时，必须继续在对应功能 worktree 中修复，并再次自动执行“提交 → 集成 `main` → 推送 `origin/main` → 部署 → 服务器验证”的完整循环，直到通过；不能只在服务器临时修改而不回写仓库。
+- 宣布功能完成前必须做最终核对：功能及验收修复没有未提交改动，对应提交已包含在本地 `main` 和 `origin/main` 中，两者指向一致，并且该提交对应的服务器版本已经通过验证。
+- 自动提交只包含当前功能明确范围内的文件；用户已有的无关改动不得擅自提交、暂存、丢弃或混入功能提交。
+
 ### 一个较大功能对应一个 Worktree
 
 - 每个较大的独立功能必须从最新 `main` 创建独立的临时本地分支和独立 worktree，做到一个功能、一个分支、一个 worktree；不同功能不得共用工作区或混合提交。
@@ -41,13 +49,13 @@ This message disappears once the first observation lands.
 
 ### 单个功能的交付闭环
 
-1. 在该功能的 worktree 内完成修改，检查变更范围，只提交本功能相关文件，并确保 worktree 干净。
+1. 在该功能的 worktree 内完成修改，检查变更范围，自动提交本功能相关文件，并确保 worktree 干净；不等待用户另行要求提交。
 2. 进入串行集成队列；重新 fetch 远端，并把功能分支 rebase 到最新、干净且与 `origin/main` 同步的本地 `main`。
 3. 在主工作区使用 `git merge --ff-only <功能分支>` 集成，禁止产生无意的 merge commit；无法 fast-forward 时返回功能 worktree 重新 rebase。
-4. 只从主工作区执行 `git push origin main`。如果远端新增提交导致推送失败，重新 fetch、同步、rebase 和验证，禁止 force push。
+4. 自动从主工作区执行 `git push origin main`，不等待用户另行要求推送。如果远端新增提交导致推送失败，重新 fetch、同步、rebase 和验证，禁止 force push。
 5. 确认本地主工作区干净且 `HEAD` 与 `origin/main` 一致后，从主工作区执行 `make deploy`，将这个功能单独部署到 `ssh nexusflow`。
 6. 在服务器环境和默认端口 `8089` 完成功能检查与健康检查；本地运行结果不得作为验收结论。
-7. 只有在提交已进入 `origin/main` 且服务器部署与功能验收均成功后，该功能才算结束。随后安全移除对应 worktree，并删除已经完全合并的临时本地分支。
+7. 只有在全部功能改动和验收修复都已提交、进入 `origin/main`，且服务器部署与功能验收均成功后，该功能才算结束。随后安全移除对应 worktree，并删除已经完全合并的临时本地分支。
 8. 如果同步、rebase、推送、部署或服务器验收失败，保留该功能的 worktree 和分支，修复后重新排队；不得跳过失败步骤、不得带着脏工作区部署，也不得先清理未完成的 worktree。
 
 ## 项目部署与测试约定
