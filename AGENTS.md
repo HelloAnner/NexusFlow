@@ -15,11 +15,46 @@ How it works: `/how-it-works`
 This message disappears once the first observation lands.
 </claude-mem-context>
 
+## Git、Worktree 与并行开发规范
+
+### 主分支职责
+
+- 本仓库的交付主分支是 `main`；执行任何集成前仍需用 `origin/HEAD` 核对远端默认分支，避免默认分支变更后继续按旧配置操作。
+- `main` 是唯一允许推送到 `origin` 的分支。功能分支只作为本地 worktree 的临时载体，不得直接推送功能分支，也不得从功能 worktree 向远端提交代码。
+- `main` 只负责串行集成、推送、部署和服务器验收，不用于较大功能的日常开发；主工作区应始终停留在 `main` 并尽量保持干净。
+- 每次开始集成前必须先 `git fetch origin`，确认主工作区没有未提交改动，再以 fast-forward-only 方式把本地 `main` 同步到最新 `origin/main`。不得用强制切换、强制重置或强制推送覆盖本地或远端改动。
+- 只有已经提交、合并并推送到 `origin/main` 的内容才算进入主分支交付历史；仅存在于工作区、stash、未合并分支或其他 worktree 的改动不算已经进入 `main`。
+
+### 一个较大功能对应一个 Worktree
+
+- 每个较大的独立功能必须从最新 `main` 创建独立的临时本地分支和独立 worktree，做到一个功能、一个分支、一个 worktree；不同功能不得共用工作区或混合提交。
+- 多个互不依赖的功能可以在各自 worktree 中并行开发，但各自只修改、暂存和提交本功能相关文件，不得带入用户已有改动或其他功能改动。
+- 功能 worktree 内完成代码和必要文档后，应创建内容明确的本地 commit，并保持 worktree 干净，然后进入主分支集成队列。
+- 小型且不改变运行功能的纯文档/流程维护可以直接在 `main` 上完成，但必须只暂存和提交本次相关文件；如果主工作区已有无关改动，优先改用独立 worktree，不能把无关改动混入同一提交。
+
+### 依赖、冲突与串行队列
+
+- 功能开发可以并行，但“同步最新 `main` → 合并 → 推送 → 部署 → 服务器验收”必须全局串行；任何时刻只能有一个功能占用主分支集成和部署通道。
+- 如果功能 B `Depends On` 功能 A，B 必须等待 A 已合并到 `main`、成功推送、部署并通过服务器验收后，再把 B rebase 到最新 `main`，继续开发或进入集成队列。
+- 如果多个功能修改同一区域、存在顺序要求或出现冲突，将它们加入同一串行队列。后续功能必须基于前一个功能已经验收的最新 `main` 重新 rebase，并在自己的 worktree 中理解双方意图后解决冲突；禁止机械使用 `ours`、`theirs` 或覆盖文件。
+- 无法安全判断依赖关系或冲突解决方式时，停止该功能的集成并向用户说明；队列中不依赖它且不会扩大风险的其他功能可以继续。
+
+### 单个功能的交付闭环
+
+1. 在该功能的 worktree 内完成修改，检查变更范围，只提交本功能相关文件，并确保 worktree 干净。
+2. 进入串行集成队列；重新 fetch 远端，并把功能分支 rebase 到最新、干净且与 `origin/main` 同步的本地 `main`。
+3. 在主工作区使用 `git merge --ff-only <功能分支>` 集成，禁止产生无意的 merge commit；无法 fast-forward 时返回功能 worktree 重新 rebase。
+4. 只从主工作区执行 `git push origin main`。如果远端新增提交导致推送失败，重新 fetch、同步、rebase 和验证，禁止 force push。
+5. 确认本地主工作区干净且 `HEAD` 与 `origin/main` 一致后，从主工作区执行 `make deploy`，将这个功能单独部署到 `ssh nexusflow`。
+6. 在服务器环境和默认端口 `8089` 完成功能检查与健康检查；本地运行结果不得作为验收结论。
+7. 只有在提交已进入 `origin/main` 且服务器部署与功能验收均成功后，该功能才算结束。随后安全移除对应 worktree，并删除已经完全合并的临时本地分支。
+8. 如果同步、rebase、推送、部署或服务器验收失败，保留该功能的 worktree 和分支，修复后重新排队；不得跳过失败步骤、不得带着脏工作区部署，也不得先清理未完成的 worktree。
+
 ## 项目部署与测试约定
 
 - 系统默认部署环境是服务器 `ssh nexusflow`。
 - 默认服务端口是 `8089`。
-- 不在本地做部署；组件、依赖安装和运行环境都以服务器为准。
+- 本地不单独执行构建、测试、启动服务或功能验收命令；本地只负责编辑代码、Git/worktree 操作，以及从干净且最新的 `main` 发起 `make deploy`。`make deploy` 内部已有的必要步骤属于统一部署流程，不得拆出来手工运行或据此做本地验收。
 - 部署默认直接运行仓库根目录的 `make deploy`，不要手工拆解成 rsync、cargo build、systemctl restart 等零散步骤。
 - `make deploy` 当前已验证可用：本地构建前端、刷新 Rust vendor、同步到 `ssh nexusflow:/opt/nexusflow/src`、在服务器容器/Podman 环境中构建单文件二进制、重启 `nexusflow.service`，最后执行健康检查。
 - 服务器运行入口是 `/opt/nexusflow/nexusflow`，systemd 服务为 `nexusflow.service`，源码同步目录是 `/opt/nexusflow/src`。
