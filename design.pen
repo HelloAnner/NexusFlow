@@ -6170,7 +6170,7 @@
                     {
                       "type": "frame",
                       "id": "xxWsE",
-                      "x": 1226.5,
+                      "x": 1176,
                       "y": 14,
                       "name": "dh-150",
                       "layout": "vertical",
@@ -6726,7 +6726,7 @@
                     {
                       "type": "text",
                       "id": "h3BdbZ",
-                      "x": 1226.5,
+                      "x": 1090,
                       "y": 534,
                       "name": "bl",
                       "fill": "$red",
@@ -16917,30 +16917,6 @@
                               "children": [
                                 {
                                   "type": "frame",
-                                  "id": "MXxtY",
-                                  "name": "chip-后端",
-                                  "fill": "#EAF1FE",
-                                  "cornerRadius": 6,
-                                  "padding": [
-                                    2,
-                                    7
-                                  ],
-                                  "alignItems": "center",
-                                  "children": [
-                                    {
-                                      "type": "text",
-                                      "id": "qy0zF",
-                                      "name": "t",
-                                      "fill": "#2F6FED",
-                                      "content": "后端",
-                                      "fontFamily": "Inter",
-                                      "fontSize": 10.5,
-                                      "fontWeight": "500"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "type": "frame",
                                   "id": "M7YJJ",
                                   "name": "chip-Python",
                                   "fill": "#EAF1FE",
@@ -26282,7 +26258,7 @@
                                   "name": "ic",
                                   "width": 19,
                                   "height": 19,
-                                  "icon": "bar-chart-3",
+                                  "icon": "chart-column",
                                   "library": "lucide",
                                   "fill": "#0EA5A5"
                                 }
@@ -26346,6 +26322,1841 @@
                               "fontFamily": "Inter",
                               "fontSize": 11.5,
                               "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "kIqzz",
+      "x": 3928,
+      "y": 1140,
+      "name": "P10 收件箱",
+      "clip": true,
+      "width": 1600,
+      "height": 1000,
+      "fill": "#FFFFFF",
+      "children": [
+        {
+          "id": "yoz72",
+          "type": "ref",
+          "ref": "i0GAL",
+          "name": "Shell",
+          "height": "fill_container"
+        },
+        {
+          "type": "frame",
+          "id": "vlbj7",
+          "name": "Content",
+          "width": "fill_container",
+          "height": "fill_container",
+          "fill": "#FAFAF9",
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "ALc22",
+              "name": "Header",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "stroke": "$line",
+              "strokeWidth": {
+                "bottom": 1
+              },
+              "padding": [
+                18,
+                28
+              ],
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "GUVKg",
+                  "name": "l",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mTcpo",
+                      "name": "t",
+                      "fill": "$ink",
+                      "content": "收件箱",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "650"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "M7jxCE",
+                      "name": "chip-17 未读",
+                      "fill": "#FDEDEC",
+                      "cornerRadius": 6,
+                      "padding": [
+                        2,
+                        7
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "WJyuU",
+                          "name": "t",
+                          "fill": "#EE4B43",
+                          "content": "17 未读",
+                          "fontFamily": "Inter",
+                          "fontSize": 10.5,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "BPl1u",
+                  "name": "r",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "pYnS9",
+                      "name": "t",
+                      "fill": "#2F6FED",
+                      "content": "全部标为已读",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "500"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mFfrE",
+              "name": "Main",
+              "width": "fill_container",
+              "height": "fill_container",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "j6qSp",
+                  "name": "List",
+                  "width": 520,
+                  "height": "fill_container",
+                  "fill": "#FFFFFF",
+                  "stroke": "$line",
+                  "strokeWidth": {
+                    "right": 1
+                  },
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "z3f99",
+                      "name": "filters",
+                      "width": "fill_container",
+                      "stroke": "$line",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
+                      "gap": 6,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "USSqJ",
+                          "name": "f-全部",
+                          "fill": "$ink",
+                          "cornerRadius": 99,
+                          "padding": [
+                            5,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "jpl6P",
+                              "name": "t",
+                              "fill": "#FFFFFF",
+                              "content": "全部",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Q9H6a",
+                          "name": "f-审批",
+                          "fill": "#FFFFFF",
+                          "cornerRadius": 99,
+                          "stroke": "$line",
+                          "strokeWidth": 1,
+                          "padding": [
+                            5,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "E6enO",
+                              "name": "t",
+                              "fill": "$g600",
+                              "content": "审批",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "sP5ms",
+                          "name": "f-指派",
+                          "fill": "#FFFFFF",
+                          "cornerRadius": 99,
+                          "stroke": "$line",
+                          "strokeWidth": 1,
+                          "padding": [
+                            5,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "HEwX7",
+                              "name": "t",
+                              "fill": "$g600",
+                              "content": "指派",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "t5lgGc",
+                          "name": "f-@ 提及",
+                          "fill": "#FFFFFF",
+                          "cornerRadius": 99,
+                          "stroke": "$line",
+                          "strokeWidth": 1,
+                          "padding": [
+                            5,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "k0kwv",
+                              "name": "t",
+                              "fill": "$g600",
+                              "content": "@ 提及",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "r71al",
+                          "name": "f-系统",
+                          "fill": "#FFFFFF",
+                          "cornerRadius": 99,
+                          "stroke": "$line",
+                          "strokeWidth": 1,
+                          "padding": [
+                            5,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Dob7I",
+                              "name": "t",
+                              "fill": "$g600",
+                              "content": "系统",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "E7phyn",
+                      "name": "msg-北线调度优化",
+                      "width": "fill_container",
+                      "fill": "#F7FAFF",
+                      "stroke": "$line",
+                      "strokeWidth": {
+                        "bottom": 1,
+                        "left": 3
+                      },
+                      "gap": 11,
+                      "padding": [
+                        13,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Rh5h4",
+                          "name": "av-王建国",
+                          "width": 34,
+                          "height": 34,
+                          "fill": "#2F6FED",
+                          "cornerRadius": 99,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "jbnXY",
+                              "name": "t",
+                              "fill": "#FFFFFF",
+                              "content": "王",
+                              "fontFamily": "Inter",
+                              "fontSize": 14.28,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "abb7R",
+                          "name": "m",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "B76sF",
+                              "name": "r1",
+                              "width": "fill_container",
+                              "gap": 7,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "X7XbF",
+                                  "name": "chip-审批",
+                                  "fill": "#FDEDEC",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    2,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "cc3cr",
+                                      "name": "t",
+                                      "fill": "#EE4B43",
+                                      "content": "审批",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10.5,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "NceA3",
+                                  "name": "t",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "北线调度优化 · 立项书终审",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "rjF2s",
+                              "name": "d",
+                              "fill": "$g500",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "已逾期 2 天，请尽快处理",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Yd7HW",
+                              "name": "mt",
+                              "fill": "$g400",
+                              "content": "王建国 · 10 分钟前",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nKtHl",
+                      "name": "msg-数据中台迁移",
+                      "width": "fill_container",
+                      "stroke": "$line",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
+                      "gap": 11,
+                      "padding": [
+                        13,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "UvOTu",
+                          "name": "av-张伟",
+                          "width": 34,
+                          "height": 34,
+                          "fill": "#2FB365",
+                          "cornerRadius": 99,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "W5ne6A",
+                              "name": "t",
+                              "fill": "#FFFFFF",
+                              "content": "张",
+                              "fontFamily": "Inter",
+                              "fontSize": 14.28,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "z6S6s",
+                          "name": "m",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "cPBNg",
+                              "name": "r1",
+                              "width": "fill_container",
+                              "gap": 7,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "l0JR6G",
+                                  "name": "chip-指派",
+                                  "fill": "#EAF1FE",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    2,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "ZQ4EZ",
+                                      "name": "t",
+                                      "fill": "#2F6FED",
+                                      "content": "指派",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10.5,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "oe8tK",
+                                  "name": "t",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "数据中台迁移演练 · 你被指定为成员",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "ZCUB4",
+                              "name": "d",
+                              "fill": "$g500",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "6/30 - 7/2 · 每日 4h · 后端接口",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "JQ8SV",
+                              "name": "mt",
+                              "fill": "$g400",
+                              "content": "张伟 · 32 分钟前",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PA6N5",
+                      "name": "msg-陈思远 负载",
+                      "width": "fill_container",
+                      "stroke": "$line",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
+                      "gap": 11,
+                      "padding": [
+                        13,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "F99sIu",
+                          "name": "av-系统",
+                          "width": 34,
+                          "height": 34,
+                          "fill": "#9AA0A6",
+                          "cornerRadius": 99,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "VzN4J",
+                              "name": "t",
+                              "fill": "#FFFFFF",
+                              "content": "系",
+                              "fontFamily": "Inter",
+                              "fontSize": 14.28,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "YB7cc",
+                          "name": "m",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "nn0KL",
+                              "name": "r1",
+                              "width": "fill_container",
+                              "gap": 7,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "dFuwA",
+                                  "name": "chip-冲突",
+                                  "fill": "#FDF1DE",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    2,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "TATbs",
+                                      "name": "t",
+                                      "fill": "#F2970A",
+                                      "content": "冲突",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10.5,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "l3auB",
+                                  "name": "t",
+                                  "fill": "$ink",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "陈思远 负载超限预警",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "fFGB4",
+                              "name": "d",
+                              "fill": "$g500",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "迁移演练 与 巡检机器人用例 冲突",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "gIMNT",
+                              "name": "mt",
+                              "fill": "$g400",
+                              "content": "系统 · 1 小时前",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "P1r36L",
+                      "name": "msg-在「联调用例",
+                      "width": "fill_container",
+                      "stroke": "$line",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
+                      "gap": 11,
+                      "padding": [
+                        13,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "dvAxU",
+                          "name": "av-刘洋",
+                          "width": 34,
+                          "height": 34,
+                          "fill": "#9B59F5",
+                          "cornerRadius": 99,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "p5jSSd",
+                              "name": "t",
+                              "fill": "#FFFFFF",
+                              "content": "刘",
+                              "fontFamily": "Inter",
+                              "fontSize": 14.28,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Q5k6k",
+                          "name": "m",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "i03PF",
+                              "name": "r1",
+                              "width": "fill_container",
+                              "gap": 7,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "RCl5g",
+                                  "name": "chip-@ 提及",
+                                  "fill": "#F3EAFE",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    2,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "B5NEm",
+                                      "name": "t",
+                                      "fill": "#9B59F5",
+                                      "content": "@ 提及",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10.5,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "u5eRp",
+                                  "name": "t",
+                                  "fill": "$g600",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "在「联调用例评审」中提到你",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "yEK5O",
+                              "name": "d",
+                              "fill": "$g500",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "“接口边界部分需要你再确认下…”",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "IZwzz",
+                              "name": "mt",
+                              "fill": "$g400",
+                              "content": "刘洋 · 3 小时前",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "W9PPct",
+                      "name": "msg-结对共建总结",
+                      "width": "fill_container",
+                      "stroke": "$line",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
+                      "gap": 11,
+                      "padding": [
+                        13,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "d8k5y",
+                          "name": "av-赵敏",
+                          "width": 34,
+                          "height": 34,
+                          "fill": "#EC4899",
+                          "cornerRadius": 99,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Xuxtj",
+                              "name": "t",
+                              "fill": "#FFFFFF",
+                              "content": "赵",
+                              "fontFamily": "Inter",
+                              "fontSize": 14.28,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "LItrQ",
+                          "name": "m",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "QK6Hn",
+                              "name": "r1",
+                              "width": "fill_container",
+                              "gap": 7,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "DE10W",
+                                  "name": "chip-审批",
+                                  "fill": "#FDEDEC",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    2,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "u5OJc",
+                                      "name": "t",
+                                      "fill": "#EE4B43",
+                                      "content": "审批",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10.5,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "n8pJ9",
+                                  "name": "t",
+                                  "fill": "$g600",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "结对共建总结 · 成果确认申请",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "alxdb",
+                              "name": "d",
+                              "fill": "$g500",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "等待你的确认",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "f9s8q",
+                              "name": "mt",
+                              "fill": "$g400",
+                              "content": "赵敏 · 昨天",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qkQON",
+                      "name": "msg-你的周报已自",
+                      "width": "fill_container",
+                      "stroke": "$line",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
+                      "gap": 11,
+                      "padding": [
+                        13,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "n7AYA6",
+                          "name": "av-系统",
+                          "width": 34,
+                          "height": 34,
+                          "fill": "#9AA0A6",
+                          "cornerRadius": 99,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "nr1Kj",
+                              "name": "t",
+                              "fill": "#FFFFFF",
+                              "content": "系",
+                              "fontFamily": "Inter",
+                              "fontSize": 14.28,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "DQZha",
+                          "name": "m",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "FbZYR",
+                              "name": "r1",
+                              "width": "fill_container",
+                              "gap": 7,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "Z3ZxUm",
+                                  "name": "chip-系统",
+                                  "fill": "#F4F4F2",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    2,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "gl1fg",
+                                      "name": "t",
+                                      "fill": "#5F666D",
+                                      "content": "系统",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10.5,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "RVW5J",
+                                  "name": "t",
+                                  "fill": "$g600",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "你的周报已自动生成",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "ErjzJ",
+                              "name": "d",
+                              "fill": "$g500",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "汇总了 4 项任务进展，点击查看",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "aOawm",
+                              "name": "mt",
+                              "fill": "$g400",
+                              "content": "系统 · 昨天",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vhFE6",
+                      "name": "msg-需求调研访谈",
+                      "width": "fill_container",
+                      "stroke": "$line",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
+                      "gap": 11,
+                      "padding": [
+                        13,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "U10FG2",
+                          "name": "av-李文静",
+                          "width": 34,
+                          "height": 34,
+                          "fill": "#9B59F5",
+                          "cornerRadius": 99,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "n879R",
+                              "name": "t",
+                              "fill": "#FFFFFF",
+                              "content": "李",
+                              "fontFamily": "Inter",
+                              "fontSize": 14.28,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "L2oHA",
+                          "name": "m",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "q1cbx",
+                              "name": "r1",
+                              "width": "fill_container",
+                              "gap": 7,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "QCMhk",
+                                  "name": "chip-指派",
+                                  "fill": "#EAF1FE",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    2,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "Ii8qT",
+                                      "name": "t",
+                                      "fill": "#2F6FED",
+                                      "content": "指派",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10.5,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "IwHCN",
+                                  "name": "t",
+                                  "fill": "$g600",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "需求调研访谈 · 你被指定为参会人",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "vkh8w",
+                              "name": "d",
+                              "fill": "$g500",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "7/8 14:00 · 三号会议室",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "nr3CJ",
+                              "name": "mt",
+                              "fill": "$g400",
+                              "content": "李文静 · 2 天前",
+                              "fontFamily": "Inter",
+                              "fontSize": 10.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "RqoxK",
+                  "name": "Detail",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": [
+                    22,
+                    28
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "uGojK",
+                      "name": "Card",
+                      "width": "fill_container",
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 14,
+                      "stroke": "$line",
+                      "strokeWidth": 1,
+                      "effect": {
+                        "type": "shadow",
+                        "shadowType": "outer",
+                        "color": "#1F23290D",
+                        "offset": {
+                          "x": 0,
+                          "y": 4
+                        },
+                        "blur": 16
+                      },
+                      "layout": "vertical",
+                      "gap": 14,
+                      "padding": [
+                        20,
+                        22
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "FyEuQ",
+                          "name": "h",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Lojqv",
+                              "name": "l",
+                              "gap": 10,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "QD6Uw",
+                                  "name": "chip-审批",
+                                  "fill": "#FDEDEC",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    2,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "JxbNy",
+                                      "name": "t",
+                                      "fill": "#EE4B43",
+                                      "content": "审批",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10.5,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "O4wct",
+                                  "name": "t",
+                                  "fill": "$ink",
+                                  "content": "北线调度优化 · 立项书终审",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 16,
+                                  "fontWeight": "650"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "VLHc2",
+                                  "name": "chip-已逾期 2 天",
+                                  "fill": "#FDEDEC",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    2,
+                                    7
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "xzOI9",
+                                      "name": "t",
+                                      "fill": "#EE4B43",
+                                      "content": "已逾期 2 天",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 10.5,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "xIz9k",
+                              "name": "t",
+                              "fill": "$g400",
+                              "content": "发起人 王建国 · 提交于 6/18 16:20",
+                              "fontFamily": "Inter",
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "f8NuqM",
+                          "name": "desc",
+                          "fill": "$g600",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "项目概述：面向北线 3 个站场的调度优化，覆盖排产算法、车辆路径与人员排班。计划周期 6/01 - 8/15，涉及市场与研发两个部门协同。立项书包含预算、人员计划与风险评估，详细内容见附件…",
+                          "lineHeight": 1.7,
+                          "fontFamily": "Inter",
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "fUgf7",
+                          "name": "meta",
+                          "width": "fill_container",
+                          "gap": 12,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "k2sc1",
+                              "name": "m-项目级别",
+                              "width": "fill_container",
+                              "fill": "$panel",
+                              "cornerRadius": 9,
+                              "layout": "vertical",
+                              "gap": 3,
+                              "padding": [
+                                9,
+                                12
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Y9672",
+                                  "name": "t",
+                                  "fill": "$g400",
+                                  "content": "项目级别",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "V5fEzm",
+                                  "name": "t",
+                                  "fill": "$ink",
+                                  "content": "市场 · 公司级",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "e1JJn",
+                              "name": "m-计划周期",
+                              "width": "fill_container",
+                              "fill": "$panel",
+                              "cornerRadius": 9,
+                              "layout": "vertical",
+                              "gap": 3,
+                              "padding": [
+                                9,
+                                12
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "EOiMr",
+                                  "name": "t",
+                                  "fill": "$g400",
+                                  "content": "计划周期",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "tXUpY",
+                                  "name": "t",
+                                  "fill": "$ink",
+                                  "content": "6/01 - 8/15",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Oq7eO",
+                              "name": "m-投入人员",
+                              "width": "fill_container",
+                              "fill": "$panel",
+                              "cornerRadius": 9,
+                              "layout": "vertical",
+                              "gap": 3,
+                              "padding": [
+                                9,
+                                12
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "a2aayN",
+                                  "name": "t",
+                                  "fill": "$g400",
+                                  "content": "投入人员",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "j2pT0y",
+                                  "name": "t",
+                                  "fill": "$ink",
+                                  "content": "6 人 · 2 个部门",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "vpGhc",
+                              "name": "m-预算",
+                              "width": "fill_container",
+                              "fill": "$panel",
+                              "cornerRadius": 9,
+                              "layout": "vertical",
+                              "gap": 3,
+                              "padding": [
+                                9,
+                                12
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "pJszJ",
+                                  "name": "t",
+                                  "fill": "$g400",
+                                  "content": "预算",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "wkACp",
+                                  "name": "t",
+                                  "fill": "$ink",
+                                  "content": "48 万",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "LKmS0",
+                          "name": "att",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "M1t9lj",
+                              "name": "t",
+                              "fill": "$g400",
+                              "content": "附件",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "e6keX",
+                              "name": "a-立项书 v2.pdf",
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 7,
+                              "stroke": "$line",
+                              "strokeWidth": 1,
+                              "gap": 6,
+                              "padding": [
+                                5,
+                                9
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "NbeM5",
+                                  "name": "ic",
+                                  "width": 11,
+                                  "height": 11,
+                                  "icon": "paperclip",
+                                  "library": "lucide",
+                                  "fill": "$g500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "rwY2d",
+                                  "name": "t",
+                                  "fill": "$g600",
+                                  "content": "立项书 v2.pdf",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "kYuvh",
+                              "name": "a-预算明细.xlsx",
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 7,
+                              "stroke": "$line",
+                              "strokeWidth": 1,
+                              "gap": 6,
+                              "padding": [
+                                5,
+                                9
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "iG06a",
+                                  "name": "ic",
+                                  "width": 11,
+                                  "height": 11,
+                                  "icon": "paperclip",
+                                  "library": "lucide",
+                                  "fill": "$g500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "P7F5fg",
+                                  "name": "t",
+                                  "fill": "$g600",
+                                  "content": "预算明细.xlsx",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "sgEt6",
+                          "name": "opl",
+                          "fill": "$g500",
+                          "content": "审批意见",
+                          "fontFamily": "Inter",
+                          "fontSize": 11.5,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ORCkF",
+                          "name": "op",
+                          "width": "fill_container",
+                          "fill": "$panel",
+                          "cornerRadius": 10,
+                          "padding": [
+                            11,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "b78xOW",
+                              "name": "t",
+                              "fill": "$g400",
+                              "content": "填写审批意见（可选）…",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "jMWNy",
+                          "name": "ab",
+                          "gap": 10,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "BKJJC",
+                              "name": "b1",
+                              "fill": "#2FB365",
+                              "cornerRadius": 8,
+                              "gap": 6,
+                              "padding": [
+                                9,
+                                18
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "c2wGk",
+                                  "name": "ic",
+                                  "width": 13,
+                                  "height": 13,
+                                  "icon": "check",
+                                  "library": "lucide",
+                                  "fill": "#FFFFFF"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "lAHZF",
+                                  "name": "t",
+                                  "fill": "#FFFFFF",
+                                  "content": "通过",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "EzJ4d",
+                              "name": "b2",
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 8,
+                              "stroke": "#F3B8B4",
+                              "strokeWidth": 1,
+                              "padding": [
+                                9,
+                                18
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "T7Jo1B",
+                                  "name": "t",
+                                  "fill": "#EE4B43",
+                                  "content": "驳回",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "uYuHj",
+                              "name": "b3",
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 8,
+                              "stroke": "$line",
+                              "strokeWidth": 1,
+                              "padding": [
+                                9,
+                                18
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "jqyLL",
+                                  "name": "t",
+                                  "fill": "$g600",
+                                  "content": "转交他人",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12.5,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "q8hHE",
+                      "name": "Hist",
+                      "width": "fill_container",
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 14,
+                      "stroke": "$line",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 10,
+                      "padding": [
+                        15,
+                        18
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Oi6mE",
+                          "name": "h",
+                          "fill": "$ink",
+                          "content": "流转记录",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "qLY4f",
+                          "name": "h-王建国",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "ZhajQ",
+                              "name": "av-王建国",
+                              "width": 24,
+                              "height": 24,
+                              "fill": "#2F6FED",
+                              "cornerRadius": 99,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "JujAe",
+                                  "name": "t",
+                                  "fill": "#FFFFFF",
+                                  "content": "王",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10.08,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "pOiUH",
+                              "name": "t",
+                              "fill": "$ink",
+                              "content": "王建国",
+                              "fontFamily": "Inter",
+                              "fontSize": 12.5,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Ji4Y6",
+                              "name": "a",
+                              "fill": "$g600",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "发起立项审批",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Ininf",
+                              "name": "t",
+                              "fill": "$g400",
+                              "content": "6/18 16:20",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "lSF6r",
+                          "name": "h-李文静",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "CUNa0",
+                              "name": "av-李文静",
+                              "width": 24,
+                              "height": 24,
+                              "fill": "#9B59F5",
+                              "cornerRadius": 99,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "J5UId",
+                                  "name": "t",
+                                  "fill": "#FFFFFF",
+                                  "content": "李",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10.08,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "vIPVA",
+                              "name": "t",
+                              "fill": "$ink",
+                              "content": "李文静",
+                              "fontFamily": "Inter",
+                              "fontSize": 12.5,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "TjWiw",
+                              "name": "a",
+                              "fill": "$g600",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "技术总监 · 已同意",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Q7prp",
+                              "name": "t",
+                              "fill": "$g400",
+                              "content": "6/19 09:12",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "eqb1n",
+                          "name": "h-张伟",
+                          "width": "fill_container",
+                          "gap": 10,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "dt9C2",
+                              "name": "av-张伟",
+                              "width": 24,
+                              "height": 24,
+                              "fill": "#2FB365",
+                              "cornerRadius": 99,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Crk0c",
+                                  "name": "t",
+                                  "fill": "#FFFFFF",
+                                  "content": "张",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10.08,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "wUWyS",
+                              "name": "t",
+                              "fill": "$ink",
+                              "content": "张伟",
+                              "fontFamily": "Inter",
+                              "fontSize": 12.5,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "cks5h",
+                              "name": "a",
+                              "fill": "$g600",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "部门主任 · 已同意",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "gzIm7",
+                              "name": "t",
+                              "fill": "$g400",
+                              "content": "6/19 15:40",
+                              "fontFamily": "Inter",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
