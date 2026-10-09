@@ -110,6 +110,7 @@ fn api_routes() -> Router<Arc<AppState>> {
             get(resource_check_requirements),
         )
         .route("/dashboard", get(dashboard))
+        .route("/dashboard/home-summary", get(dashboard_home_summary))
         .route("/dashboard/widgets", get(dashboard_widgets))
         .route("/dashboard/role-entry", get(dashboard_role_entry))
         .route("/dashboard/role-view", post(dashboard_role_view))

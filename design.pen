@@ -18,7 +18,7 @@
           "id": "Q9MoRP",
           "name": "Rail",
           "width": 64,
-          "height": "fill_container",
+          "height": 1000,
           "stroke": "$line",
           "strokeWidth": {
             "right": 1
@@ -408,7 +408,7 @@
           "id": "GjUZe",
           "name": "Sidebar",
           "width": 244,
-          "height": "fill_container",
+          "height": 1000,
           "stroke": "$line",
           "strokeWidth": {
             "right": 1

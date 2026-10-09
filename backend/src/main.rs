@@ -47,6 +47,8 @@ include!("domains/dispatch_approval.rs");
 include!("domains/workload_conflict.rs");
 include!("domains/resource.rs");
 include!("domains/dashboard_config.rs");
+include!("domains/dashboard_home_focus.rs");
+include!("domains/dashboard_home.rs");
 include!("domains/report_scope.rs");
 include!("domains/notification_report_tool.rs");
 include!("domains/gantt_search.rs");
