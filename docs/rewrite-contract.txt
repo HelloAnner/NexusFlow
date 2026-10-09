@@ -1,0 +1,110 @@
+NexusFlow 全量重写契约（worker / reviewer / final reviewer 共同事实来源）
+==========================================================================
+
+0. 一句话目标
+-------------
+废弃现有 Rust 后端（backend/）与旧前端（frontend/），全部用 TypeScript 重写：
+后端 Bun + Hono，前端 Next.js 静态导出，本地交叉编译单二进制，scp 部署。
+用户系统、Portal SSO、make deploy 流程与 Northline / Documind 完全一致。
+
+参考实现（直接照抄结构/约定，不要另起炉灶）：
+  /Users/anner/cnpc/Northline   ← 主参考（Bun+Hono API、Next web、deploy、portal auth）
+  /Users/anner/cnpc/Documind    ← 次参考（base path、deploy 脚本）
+业务需求来源（优先级从高到低）：
+  1. docs/rewrite-contract.txt（本文件）
+  2. design-exports/*.png（UI 1:1 复刻目标，00-shell.png 是共享侧边栏）
+  3. docs/origin-prd.md（原始需求）、docs/pages/*.md（页面功能）、docs/00-overview 等
+
+1. 仓库结构（重写后）
+--------------------
+```
+NexusFlow/
+  apps/
+    api/            # Bun + Hono + postgres.js + ioredis + jose + bcryptjs + zod
+      src/...       # 结构对照 Northline/apps/api/src（config.ts / db.ts / auth / router / 各领域文件）
+      package.json
+    web/            # Next.js 15 静态导出（output:'export', basePath 见 §5），React19+Tailwind4+TanStack Query+zustand+lucide-react
+      package.json
+  packages/shared/  # 前后端共享类型/常量（API DTO、枚举）
+  cli/              # Bun TS CLI（参考 Documind/cli 的 TS 结构），覆盖系统全部功能
+  scripts/build-linux.sh   # bun build --compile，对照 Northline/scripts/build-linux.sh
+  scripts/deploy.sh        # 本地编译 -> scp -> systemctl restart -> healthz/readyz
+  Makefile                 # target 命名与 Northline 一致：build / deploy-build / deploy / status / health / logs
+  docs/ design-exports/ design.pen
+```
+删除：backend/（Rust）、frontend/（旧 Vite 工程）、scripts/build_release.sh、scripts/provision_server.sh 中 Rust 相关内容。
+
+2. 设计复刻（前端）
+------------------
+- design-exports/01..10 是 10 个页面，00-shell.png 是全局框架（64px 图标栏 + 244px 上下文边栏）。
+- 每个页面的第二列边栏内容不同（按页面上下文），图标栏高亮当前模块。逐页对照 PNG 1:1。
+- 设计 token（以此为准，替代旧 DESIGN.md 的暖灰体系）：
+  画布 #FAFAF9 / 面板 #FFFFFF / 侧栏 #FFFFFF / 填充 #F4F4F2 / 边框 #E9E9E7
+  文字 #1F2329 / #5F666D / #878C94 / #AEB4BB
+  主色 accent #2F6FED（soft #EAF1FE）
+  语义色：绿 #2FB365 紫 #9B59F5 橙 #F2970A 蓝 #3B82F6 粉 #EC4899 红 #EE4B43
+  字体 Inter + 系统中文字体回退；图标 lucide-react；圆角 6/8/10/12/14。
+- 页面路由（/nexusflow base path 下）：
+  / （首页指挥台 01） /projects（02） /projects/:id/plan（03 甘特）
+  /my-work（04） /dispatch/new（05） /team（06） /load（07）
+  /files（08） /tools（09） /inbox（10） + /login
+- 甘特图自研 SVG（布局逻辑照搬 03-gantt.png：Day 0-150 刻度、今天蓝线、done/prog/plan/mixed 四种条、逾期红标签、行选中高亮、任务弹层）。
+
+3. 后端领域（API 全部 /api 前缀）
+---------------------------------
+数据模型与功能以 docs/origin-prd.md + docs/00-overview/domain-model.md 为准，至少覆盖：
+- auth：本地登录（bcryptjs + jose 会话 cookie）+ Portal ticket（见 §4）+ /healthz /readyz
+- org：公司/二级/三级单位/部门/创新工作室 树；人员（职称等级、技能标签、项目身份）
+- projects / tasks：任务类型（科研·公司级/处级/中心级、市场、出差、文职、党建、学习、休假）、
+  负责人/成员分工/每日投入/起止时间/概述版本留痕、资料关联
+- dispatch：标准流程 + 后补流程（发起人确认）；跨部门派发需授权；审批流（部门主任→中心主任）
+- schedule/load：按人按日负载计算（每日投入 vs 可用 8h），全天任务锁定（置灰），冲突检测与报警
+- files：MinIO 上传下载，属性分类（个人报告/整体报告/汇报PPT/申报报告/数据集/会议纪要）
+- inbox：审批/指派/@提及/冲突预警/系统通知
+- home：今日焦点/统计带/7日时间线/风险雷达/团队负载热力图 的聚合接口
+- tools：工具台条目（静态注册表即可，AI 工具只做入口跳转占位）
+- reports / config / admin：按 docs/pages 中 12-reports、14-settings、15-admin 的最小可用实现
+- seed：内置演示数据脚本，内容与设计图一致（智慧油田数据平台、张伟/陈思远/李文静/王强/赵敏/刘洋/孙倩/周杰/吴迪/王建国 等）
+PostgreSQL 为主存储（schema=nexusflow 或用 search_path），Redis 做会话/缓存，MinIO 存文件。
+服务端鉴权：按角色裁剪（中心主任全量 / 副主任分管 / 部门主任本部门 / 负责人本项目 / 成员个人+本项目）。
+
+4. Portal SSO（与 Northline/Documind 完全一致）
+----------------------------------------------
+环境变量同名：PORTAL_MANAGED / PORTAL_AUTH_ENABLED / AUTH_LOGIN_MODE(local|portal) /
+PORTAL_BASE_URL / PORTAL_EXCHANGE_ENDPOINT（默认 /api/auth/exchange-ticket）。
+流程：
+  Portal 前端跳转 -> GET  /auth/portal/callback?code=<id>:<secret>
+  后端 POST {PORTAL_BASE_URL}{PORTAL_EXCHANGE_ENDPOINT}
+    body: { system_code: "nexusflow", code }
+  返回: { user_id, username, display_name, email, tenant_id, tenant_code, tenant_name,
+          system_code, portal_roles: ["user"|"tenant_admin"|"tenant_owner"],
+          system_roles, permissions: string[], expires_at }
+  -> 本地按 username 建/更新用户 -> 发本地会话 -> 302 到 /
+portal role 映射：tenant_owner/tenant_admin -> 中心主任权限；user -> 项目成员。
+（Portal 服务端 systems 表新增 nexusflow 由协调者负责，worker 不动 Portal 仓库。）
+
+5. 部署（与另外两个系统同逻辑）
+------------------------------
+服务器：ssh nexusflow（101.200.138.250），已运行 PG(5432)/Redis(6379)/MinIO(9000) 容器
+与 systemd 服务 nexusflow，端口 8089，base path /nexusflow，env 在 /opt/nexusflow/.env。
+流程（照 Northline/scripts/）：
+  make deploy-build  = 本地 web 静态导出 + bun build --compile --target=bun-linux-x64
+                       产出 dist/linux-x86_64/nexusflow（web 静态资源内嵌）
+  make deploy        = scp 二进制 + 保留远端 .env -> systemctl restart nexusflow
+                       -> curl healthz/readyz 校验 -> 打印 http://101.200.138.250:8089/
+本地不做任何服务启动/测试（项目铁律），本地只写码 + typecheck + 单测。
+
+6. CLI
+------
+cli/ 用 Bun TS 实现（参考 Documind/cli 结构），命令覆盖：auth login、org、people、
+projects、tasks、dispatch、approvals、load/conflicts、files、inbox、reports、tools、
+config、admin、seed、health。交付前必须用 CLI 对服务器真实循环测试全部功能。
+
+7. 验收标准（final gate）
+------------------------
+1. apps/api、apps/web、cli 全部 tsc --noEmit 通过；bun test 通过。
+2. make deploy 成功，healthz/readyz 200。
+3. CLI 在服务器上真实跑通全部领域（登录、建项目、派发、冲突检测、上传、审批、报表）。
+4. 10 个页面与 design-exports 视觉 1:1（密度、配色、组件、侧边栏逐页对应）。
+5. Portal SSO：portal 进入 nexusflow 票据换 session 成功（协调者验证）。
+6. 本地登录 admin 账号可用（SUPER_ADMIN_USERNAME/SUPER_ADMIN_PASSWORD 环境变量，同 Northline）。
