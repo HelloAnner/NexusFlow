@@ -1,0 +1,1 @@
+{"name":"@nexusflow/api","private":true,"type":"module","scripts":{"typecheck":"tsc --noEmit","test":"bun test","start":"bun run src/index.ts"},"dependencies":{"bcryptjs":"^3.0.2","hono":"^4.7.2","ioredis":"^5.4.2","jose":"^6.0.8","postgres":"^3.4.5","zod":"^3.24.2"},"devDependencies":{"@types/bun":"^1.2.5","typescript":"^5.8.2"}}
