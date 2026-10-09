@@ -135,7 +135,8 @@ export default function HomePage() {
   const toolsQ = useQuery({ queryKey: ["home-tools"], queryFn: () => api<{ items?: ToolRow[] }>("/tools"), staleTime: 60_000, retry: 1 });
 
   const home = homeQ.data;
-  const today = now ? todayISO(now) : "";
+  // 「今天」锚到服务端聚合口径（team_load_7d.dates[0] 由后端按 UTC 生成），避免本地时区导致今天线偏移。
+  const today = home?.team_load_7d?.dates?.[0] ?? (now ? todayISO(now) : "");
   const stats = home?.stats;
   const focus = home?.today_focus ?? [];
   const risks = home?.risk_radar ?? [];

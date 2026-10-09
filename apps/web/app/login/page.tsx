@@ -17,11 +17,21 @@ const CAPABILITIES = [
   "首页指挥台：待办、风险、项目脉搏、团队负载一屏可见",
 ];
 
-/** 只允许站内相对路径，避免 ?next= 变成开放跳转。 */
+/** 只允许站内相对路径：先用 URL 归一化（处理 %5C / \ 等编码回退），再拦一次 `//`，避免开放跳转。 */
 function safeNext(v: string | null): string {
   if (!v) return "";
-  if (!v.startsWith("/") || v.startsWith("//")) return "";
-  return v;
+  try {
+    const u = new URL(v, window.location.origin);
+    if (u.origin !== window.location.origin) return "";
+    const path = u.pathname + u.search + u.hash;
+    if (path.startsWith("//")) return "";
+    // 下游（Next / 浏览器）会再归一化一次，解码后若变成协议相对地址或含反斜杠/控制字符则一律拒绝。
+    const decoded = decodeURIComponent(u.pathname);
+    if (decoded.startsWith("//") || decoded.includes("\\") || /[\u0000-\u001F\u007F]/.test(decoded)) return "";
+    return path;
+  } catch {
+    return "";
+  }
 }
 
 function loginError(err: unknown): string {

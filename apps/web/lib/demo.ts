@@ -178,57 +178,6 @@ export const ORG_TREE = {
   ],
 };
 
-// ---------- 首页 ----------
-export const HOME_STATS = [
-  { label: "今日待办", value: "24", sub: "+4 较昨日", subColor: "#2F6FED", icon: "zap", color: "#2F6FED" },
-  { label: "今日截止", value: "7", sub: "2 项已逾期", subColor: "#EE4B43", icon: "alarm-clock", color: "#EE4B43" },
-  { label: "本周冲突", value: "3", sub: "需协调", subColor: "#F2970A", icon: "git-branch", color: "#F2970A" },
-  { label: "待我审批", value: "12", sub: "4 项加急", subColor: "#9B59F5", icon: "stamp", color: "#9B59F5" },
-  { label: "团队负载", value: "78%", sub: "5 人过载", subColor: "#2FB365", icon: "activity", color: "#2FB365" },
-];
-
-export const HOME_FOCUS = [
-  { tag: "审批", tagColor: "#EE4B43", bar: "#EE4B43", title: "北线调度优化 · 立项书终审", sub: "已逾期 2 天 · 发起人 王建国" },
-  { tag: "冲突", tagColor: "#F2970A", bar: "#F2970A", title: "张伟同时被 2 个任务全天占用", sub: "影响 数据中台联调 进度" },
-  { tag: "成果", tagColor: "#3B82F6", bar: "#3B82F6", title: "数据中台联调阶段成果确认", sub: "张伟 提交于 09:20" },
-  { tag: "填报", tagColor: "#2FB365", bar: "#2FB365", title: "巡检机器人 · 本周进度填报", sub: "截止 18:00 · 周报自动生成" },
-  { tag: "会议", tagColor: "#878C94", bar: "#878C94", title: "周一例会纪要归档", sub: "10:30 · 4 条待办待拆解" },
-  { tag: "审核", tagColor: "#5F666D", bar: "#5F666D", title: "申报报告 v3 资料审核", sub: "资料库 · 等待 1 天" },
-];
-
-export const HOME_TIMELINE = [
-  { name: "数据中台联调", start: 0, end: 3, progress: 60, color: "#3B82F6", label: "60%" },
-  { name: "试点现场调研", start: 1, end: 3, progress: 100, color: "#F2970A" },
-  { name: "申报报告撰写", start: 2, end: 4, progress: 40, color: "#9B59F5", label: "40%" },
-  { name: "安全专项检查", start: 3, end: 4, progress: 100, color: "#2FB365" },
-  { name: "月度例会材料", start: 4, end: 6, progress: 0, color: "#AEB4BB" },
-];
-
-export const HOME_PULSE = [
-  { name: "智慧油田数据平台", status: "正常", color: "#2FB365", progress: 68 },
-  { name: "管道完整性管理", status: "风险", color: "#F2970A", progress: 34 },
-  { name: "巡检机器人研发", status: "正常", color: "#2FB365", progress: 82 },
-];
-
-export const HOME_RISKS = [
-  { icon: "alert-triangle", color: "#EE4B43", title: "高风险任务", sub: "数据中台联调 等 2 项逾期", count: 3 },
-  { icon: "user-x", color: "#F2970A", title: "资源阻塞成员", sub: "张伟 · 孙倩 全天冲突", count: 2 },
-  { icon: "file-warning", color: "#9B59F5", title: "资料缺口", sub: "3 个项目缺阶段报告", count: 5 },
-  { icon: "calendar-clock", color: "#3B82F6", title: "临近截止", sub: "未来 48 小时内", count: 7 },
-];
-
-// 团队负载热力图（未来 7 天）：idle/free/full/over
-export const HOME_HEATMAP: { name: string; cells: ("free" | "full" | "over" | "idle")[] }[] = [
-  { name: "张伟", cells: ["full", "full", "over", "over", "full", "idle", "idle"] },
-  { name: "刘洋", cells: ["idle", "free", "free", "free", "idle", "idle", "idle"] },
-  { name: "赵敏", cells: ["over", "over", "free", "over", "free", "over", "idle"] },
-  { name: "王强", cells: ["full", "idle", "free", "full", "free", "idle", "idle"] },
-  { name: "李文静", cells: ["idle", "idle", "full", "idle", "idle", "idle", "idle"] },
-  { name: "孙倩", cells: ["full", "full", "idle", "over", "over", "full", "idle"] },
-  { name: "周杰", cells: ["idle", "idle", "idle", "idle", "full", "idle", "idle"] },
-  { name: "吴迪", cells: ["over", "idle", "idle", "idle", "idle", "idle", "idle"] },
-];
-
 // ---------- 负载页 ----------
 export const LOAD_DAYS = ["6/22", "6/23", "6/24", "6/25", "6/26", "6/27", "6/28", "6/29", "6/30", "7/1", "7/2", "7/3", "7/4", "7/5"];
 export const LOAD_MATRIX: { name: string; color: string; cells: ("free" | "full" | "over" | "idle" | "lock")[] }[] = [
