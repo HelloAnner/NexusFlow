@@ -95,11 +95,11 @@ export function portalAllows(user:User,path:string,method:string) {
   else if(is("/api/dispatch"))required=read?"nexusflow:task:read":write?"nexusflow:dispatch:write":undefined;
   else if(is("/api/approvals"))required=read?"nexusflow:task:read":write?"nexusflow:approval:write":undefined;
   else if(is("/api/files"))required=read?"nexusflow:file:read":write?"nexusflow:file:write":undefined;
-  else if(is("/api/inbox"))required=read?"nexusflow:inbox:read":write?"nexusflow:inbox:write":undefined;
-  else if(is("/api/reports"))required=read?"nexusflow:report:read":undefined;
+  else if(is("/api/inbox"))required=read||write&&/^\/api\/inbox\/[^/]+\/(read|complete)$/.test(path)?"nexusflow:inbox:read":undefined;
+  else if(is("/api/reports"))required=read||method==="POST"&&/^\/api\/reports\/[^/]+\/export$/.test(path)?"nexusflow:report:read":undefined;
   else if(is("/api/config"))required=read?"nexusflow:config:read":write?"nexusflow:config:manage":undefined;
   else if(is("/api/admin")||is("/api/seed"))required="nexusflow:admin";
-  else if(is("/api/org")||is("/api/orgs")||is("/api/people")||is("/api/invitations"))required=read?"nexusflow:org:read":write?"nexusflow:org:manage":undefined;
+  else if(is("/api/org")||is("/api/orgs")||is("/api/people")||is("/api/invitations"))required=read&&(is("/api/people")||is("/api/orgs")||is("/api/org"))?"nexusflow:task:read":write?"nexusflow:org:manage":undefined;
   else if(is("/api/conflicts"))required=read?"nexusflow:task:read":write?"nexusflow:task:write":undefined;
   else if(is("/api/visibility_grants"))required=read?"nexusflow:project:read":write?"nexusflow:project:write":undefined;
   else if(is("/api/milestones")||is("/api/worklogs")||is("/api/mentions"))required=read?"nexusflow:task:read":write?"nexusflow:task:write":undefined;

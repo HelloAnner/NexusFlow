@@ -10,5 +10,10 @@ test("important workflows map to dedicated API operations",()=>{
  expect(commandRequest(parseArgs(["people","load","u-1","--date=2026-06-01"])).path).toBe("/api/load/u-1?date=2026-06-01");
  expect(commandRequest(parseArgs(["admin","audit"])).path).toBe("/api/admin/audit");
  expect(commandRequest(parseArgs(["seed","status"])).path).toBe("/api/seed/status");
+ expect(commandRequest(parseArgs(["projects","action","p-1","--action","pause","--reason","scope change"])).path).toBe("/api/projects/p-1/action");
+ expect(commandRequest(parseArgs(["admin","delegations","u-1","--org-ids","o-1,o-2","--reason","coverage"])).body).toEqual({org_ids:["o-1","o-2"],reason:"coverage"});
+ expect(commandRequest(parseArgs(["tasks","assign","t-1","--user-id","u-2","--start-date","2026-06-01","--end-date","2026-06-03","--daily-hours","4"])).body).toEqual({user_id:"u-2",start_date:"2026-06-01",end_date:"2026-06-03",daily_hours:4,all_day:false});
+ expect(commandRequest(parseArgs(["task-assignments","action","a-1","--action","submit","--result","done"])).path).toBe("/api/task_assignments/a-1/action");
+ expect(commandRequest(parseArgs(["files","rollback","f-1","--version-id","f-0","--reason","restore"])).body).toEqual({version_id:"f-0",reason:"restore"});
 });
-test("missing command arguments fail before network calls",()=>{expect(()=>commandRequest(parseArgs(["projects","create","{bad}"]))).toThrow("expected a JSON object");expect(()=>commandRequest(parseArgs(["dispatch","submit"]))).toThrow("requires dispatch ID");});
+test("missing command arguments fail before network calls",()=>{expect(()=>commandRequest(parseArgs(["projects","create","{bad}"]))).toThrow("expected a JSON object");expect(()=>commandRequest(parseArgs(["dispatch","submit"]))).toThrow("requires dispatch ID");expect(()=>commandRequest(parseArgs(["tasks","assign","t-1","--user-id","u-2"]))).toThrow("requires ID");});

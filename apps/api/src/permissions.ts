@@ -12,6 +12,7 @@ export function allowedAction(user:User,kind:string,action:"read"|"write") {
   if(["approvals","dispatch","conflicts"].includes(kind))return canManage(user)||user.role==="project_lead";
   if(kind==="tools")return canManage(user);
   if(kind==="projects")return canManage(user);
+  if(kind==="task_assignments")return canManage(user)||user.role==="project_lead"||user.role==="member";
   return ["tasks","files"].includes(kind);
 }
 async function grant(user:User,projectId:string,action:"view"|"edit"|"dispatch") {
@@ -27,14 +28,18 @@ async function project(user:User,id:string) {
 async function orgWithin(user:User,orgId:string|null) {
   if(!orgId)return false;
   if(["super_admin","center_director"].includes(user.role))return true;
-  if(!user.org_id||!sql)return orgId===user.org_id;
-  if(orgId===user.org_id)return true;
+  if(!sql)return orgId===user.org_id;
+  let roots=[user.org_id||""];
+  if(["center_deputy","department_deputy"].includes(user.role)){const rows=await sql`SELECT data FROM nexusflow.records WHERE kind='role_delegations' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'user_id'=${user.id} AND data->>'status'='active'`;roots=[...new Set([user.org_id||"",...rows.flatMap((r:any)=>Array.isArray(r.data?.org_ids)?r.data.org_ids.map(String):[])].filter(Boolean))];if(!roots.length)return false;}
+  if(!user.org_id&&!["center_deputy","department_deputy"].includes(user.role))return false;
+  if(roots.includes(orgId))return true;
   const rows=await sql`SELECT id,data FROM nexusflow.records WHERE kind='orgs' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`;
   const parents=new Map(rows.map((r:any)=>[String(r.id),String((r.data as any).parent_id||"")]));
   let current=orgId;
-  for(let depth=0;depth<64&&current;depth++){current=parents.get(current)||"";if(current===user.org_id)return true;}
+  for(let depth=0;depth<64&&current;depth++){current=parents.get(current)||"";if(roots.includes(current))return true;}
   return false;
 }
+export async function canManageOrganization(user:User,orgId:string){return canManage(user)&&orgWithin(user,orgId);}
 async function relatedOrg(user:User,kind:string,data:Record<string,unknown>):Promise<string|null>{
   if(typeof data.org_id==="string"&&data.org_id)return data.org_id;
   if(!sql)return null;
@@ -62,18 +67,20 @@ export async function canReadRecord(user:User,kind:string,row:{id?:string;tenant
   if(["invitations","admin","config","config_versions","visibility_grants"].includes(kind))return canManage(user)&&(!d.org_id||await orgWithin(user,String(d.org_id)));if(kind==="reports")return row.created_by===user.id||canManage(user)&&(!d.org_id||await orgWithin(user,String(d.org_id)));
   if(kind==="people"){if(["super_admin","center_director"].includes(user.role))return true;if(scopedManagers.has(user.role))return Boolean(d.org_id&&await orgWithin(user,String(d.org_id)));return d.user_id===user.id;}
   if(kind==="orgs"){
-    if(!scopedManagers.has(user.role))return true;if(!user.org_id||!sql)return false;
-    const rows=await sql`SELECT id,data FROM nexusflow.records WHERE kind='orgs' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`;const parents=new Map(rows.map((r:any)=>[String(r.id),String((r.data as any).parent_id||"")]));
+    if(!scopedManagers.has(user.role))return true;if(!sql)return false;
+    const rows=await sql`SELECT id,data FROM nexusflow.records WHERE kind='orgs' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`,parents=new Map(rows.map((r:any)=>[String(r.id),String((r.data as any).parent_id||"")]));let roots=[user.org_id||""];
+    if(["center_deputy","department_deputy"].includes(user.role)){const grants=await sql`SELECT data FROM nexusflow.records WHERE kind='role_delegations' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'user_id'=${user.id} AND data->>'status'='active'`;roots=[...new Set([user.org_id||"",...grants.flatMap((r:any)=>Array.isArray(r.data?.org_ids)?r.data.org_ids.map(String):[])].filter(Boolean))];}
     const ancestors=(id:string)=>{const path=new Set<string>();let current=id;for(let i=0;i<64&&current;i++){path.add(current);current=parents.get(current)||"";}return path;};
-    return ancestors(user.org_id).has(String(row.id||""))||ancestors(String(row.id||"")).has(user.org_id);
+    return roots.some(root=>ancestors(root).has(String(row.id||""))||ancestors(String(row.id||"")).has(root));
   }
   if(kind==="tools")return true;
   if(kind==="projects"){
-    const within=await orgWithin(user,String(d.org_id||"")||null),member=d.owner_id===user.id||(Array.isArray(d.member_ids)&&d.member_ids.includes(user.id));
-    if(["hidden","restricted"].includes(String(d.visibility))&&!member&&!(["super_admin","center_director"].includes(user.role))&&!await grant(user,String(row.id||d.id||""),"view"))return false;
-    return ["super_admin","center_director"].includes(user.role)||(canManage(user)&&within)||member;
+    const within=await orgWithin(user,String(d.org_id||"")||null),member=d.owner_id===user.id||(Array.isArray(d.member_ids)&&d.member_ids.includes(user.id)),viewGrant=await grant(user,String(row.id||d.id||""),"view");
+    if(["hidden","restricted"].includes(String(d.visibility))&&!member&&!(["super_admin","center_director"].includes(user.role))&&!viewGrant)return false;
+    return ["super_admin","center_director"].includes(user.role)||(canManage(user)&&within)||member||viewGrant;
   }
   if(kind==="inbox")return d.user_id===user.id;
+  if(kind==="task_assignments"){if(!sql)return false;const rows=await sql`SELECT id,tenant_id,created_by,data FROM nexusflow.records WHERE id=${String(d.task_id||"")} AND kind='tasks' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`;const task=rows[0];if(!task||!await canReadRecord(user,"tasks",{id:String(task.id),tenant_id:task.tenant_id??null,created_by:task.created_by??null,data:task.data as Record<string,unknown>}))return false;return d.user_id===user.id||row.created_by===user.id||canManage(user);}
   if(kind==="approvals"){if(d.approver_id===user.id||row.created_by===user.id)return true;return canManage(user)&&await orgWithin(user,String(d.target_org_id||"")||null);}
   if(kind==="mentions"){
     if(d.user_id!==user.id||!sql)return false;
@@ -85,19 +92,19 @@ export async function canReadRecord(user:User,kind:string,row:{id?:string;tenant
     if(d.requester_id!==user.id&&!targets.includes(String(user.org_id||""))){if(!canManage(user)||!targets.length)return false;for(const target of targets)if(!await orgWithin(user,target))return false;}
   }
   const projectId=String(d.project_id||"");
-  if(projectId&&["tasks","files","worklogs","conflicts","dispatch"].includes(kind)){
+  if(projectId&&["tasks","task_assignments","files","worklogs","conflicts","dispatch"].includes(kind)){
     const p=await project(user,projectId);if(!p)return false;
     if(["hidden","restricted"].includes(String((p.data as any).visibility))&&!await canProjectAction(user,projectId,"view"))return false;
   }
   const org=await relatedOrg(user,kind,d),projectView=projectId?await canProjectAction(user,projectId,"view"):false;
-  if(scopedManagers.has(user.role)&&["tasks","dispatch","approvals","files","worklogs","conflicts","mentions"].includes(kind)&&!await orgWithin(user,org)&&!projectView)return false;
-  if(kind==="tasks"||kind==="dispatch"||kind==="approvals"||kind==="files"||kind==="worklogs"||kind==="conflicts"){
+  if(scopedManagers.has(user.role)&&["tasks","task_assignments","dispatch","approvals","files","worklogs","conflicts","mentions"].includes(kind)&&!await orgWithin(user,org)&&!projectView)return false;
+  if(kind==="tasks"||kind==="task_assignments"||kind==="dispatch"||kind==="approvals"||kind==="files"||kind==="worklogs"||kind==="conflicts"){
     if(kind==="files"&&!d.project_id&&!d.task_id)return d.uploaded_by===user.id||row.created_by===user.id;
     if(kind==="files"&&d.access_scope==="uploader"){const owner=d.uploaded_by===user.id;if(!owner&&!(canManage(user)&&await orgWithin(user,org)))return false;if(projectId)return projectView||canManage(user)&&await orgWithin(user,org);if(d.task_id&&sql){const tasks=await sql`SELECT id,tenant_id,created_by,data FROM nexusflow.records WHERE id=${String(d.task_id)} AND kind='tasks' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`;return Boolean(owner&&tasks[0]&&await canReadRecord(user,"tasks",{id:String(tasks[0].id),tenant_id:tasks[0].tenant_id??null,created_by:tasks[0].created_by??null,data:tasks[0].data as Record<string,unknown>}));}return owner;}
     const member=d.owner_id===user.id||d.person_id===user.id||d.user_id===user.id||(Array.isArray(d.member_ids)&&d.member_ids.includes(user.id));
     if(kind==="files"&&d.task_id&&sql){const tasks=await sql`SELECT id,tenant_id,created_by,data FROM nexusflow.records WHERE id=${String(d.task_id)} AND kind='tasks' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`;if(tasks[0]&&await canReadRecord(user,"tasks",{id:String(tasks[0].id),tenant_id:tasks[0].tenant_id??null,created_by:tasks[0].created_by??null,data:tasks[0].data as Record<string,unknown>}))return true;}
     if(member||row.created_by===user.id)return true;
-    if(projectView&&["tasks","files","worklogs","conflicts"].includes(kind))return true;
+    if(projectView&&["tasks","task_assignments","files","worklogs","conflicts"].includes(kind))return true;
     if(canManage(user))return true;
     if(projectId){const p=await project(user,projectId);return Boolean(p&&await isProjectMember(user,p));}
     return false;
@@ -115,10 +122,12 @@ export async function canWriteRecord(user:User,kind:string,row:{id?:string;tenan
       if(row.data.project_id&&!await canProjectAction(user,String(row.data.project_id),"edit"))return false;
     }
     if(kind==="projects"&&!canManage(user))return false;
+    if(kind==="task_assignments"){if(!sql)return false;const rows=await sql`SELECT id,tenant_id,created_by,data FROM nexusflow.records WHERE id=${String(row.data.task_id||"")} AND kind='tasks' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`;const task=rows[0];if(!task||!await canReadRecord(user,"tasks",{id:String(task.id),tenant_id:task.tenant_id??null,created_by:task.created_by??null,data:task.data as Record<string,unknown>}))return false;if((task.data as any).project_id&&!await canProjectAction(user,String((task.data as any).project_id),"edit"))return false;if(action==="create")return canManage(user)||user.role==="project_lead"||(task.data as any).owner_id===user.id;}
     return true;
   }
   const visible=await canReadRecord(user,kind,row);
   if(!visible)return false;
+  const projectId=String(row.data.project_id||"");if(projectId&&["tasks","files"].includes(kind)&&!await canProjectAction(user,projectId,"edit"))return false;
   if(canManage(user))return true;
   return row.created_by===user.id||row.data.owner_id===user.id||row.data.user_id===user.id;
 }

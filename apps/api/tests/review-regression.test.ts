@@ -75,7 +75,7 @@ const department = { ...center, role: "department_director" };
 function row(id: string, kind: string, data: Record<string, any>, creator = "u1"): Row { return { id, kind, data, tenant_id: "t1", created_by: creator }; }
 function task(id = "task-1", patch = {}) { return { name: "Task", type: "market", owner_id: "u1", member_ids: [], org_id: "o1", start_date: "2026-06-01", end_date: "2026-06-01", daily_hours: 2, status: "draft", ...patch }; }
 async function request(path: string, method = "GET", body?: any, user = center) {
-  users = [{ ...user, status: "active", portal_id: user.portal_permissions === null ? null : "portal-review-user" }];
+  users = [...users.filter(u=>u.id!==user.id),{ ...user, status: "active", portal_id: user.portal_permissions === null ? null : "portal-review-user" }];
   const token = await createSession(user);
   return app.request(path, { method, headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
 }
@@ -132,6 +132,7 @@ test("view-only hidden-project grant cannot create a project task", async () => 
   await expect(createRecord(member, "tasks", task("new", { project_id: "hidden-project" }))).rejects.toThrow("project edit permission required");
 });
 test("authenticated specialized routes reach actual JSON handlers", async () => {
+  records=[row("person-1","people",{name:"Person",user_id:"u1",org_id:"o1"})];
   for (const path of ["/api/orgs/tree", "/api/load/person-1", "/api/load/conflicts", "/api/reports/task-overview", "/api/admin/audit", "/api/tools"]) {
     const response = await request(path);
     expect(response.status).toBe(200);
@@ -162,7 +163,7 @@ test("draft tasks do not create live risk and person ID resolves account assignm
   expect((await person.json()).hours).toBe(5);
 });
 test("hidden task occupancy affects overload without leaking hidden task details", async () => {
-  records = [row("hidden-project", "projects", { name: "Hidden", owner_id: "other", member_ids: [], visibility: "hidden", org_id: "o1" }, "other"), row("hidden-task", "tasks", task("hidden-task", { project_id: "hidden-project", owner_id: "target", status: "in_progress", daily_hours: 5 }), "other"), row("candidate", "tasks", task("candidate", { owner_id: "target", daily_hours: 5 })), row("target-person", "people", { name: "Target", user_id: "target", org_id: "o1", daily_standard_hours: 8 })];
+  records = [row("hidden-project", "projects", { name: "Hidden", owner_id: "other", member_ids: [], visibility: "hidden", org_id: "o1" }, "other"), row("hidden-task", "tasks", task("hidden-task", { project_id: "hidden-project", owner_id: "target", status: "in_progress", daily_hours: 5 }), "other"), row("candidate", "tasks", task("candidate", { owner_id: "target", daily_hours: 5 })), row("target-person", "people", { name: "Target", user_id: "target", org_id: "o1", daily_standard_hours: 8 })];users=[{id:"target",username:"target",role:"member",tenant_id:"t1",org_id:"o1",status:"active",portal_id:null}];
   const response = await request("/api/tasks/candidate/publish", "POST", {}, department);
   expect(response.status).toBe(200);const result=await response.json();expect(result.conflicts[0].peak_hours).toBe(10);expect(JSON.stringify(result)).not.toContain("hidden-task");
 });
