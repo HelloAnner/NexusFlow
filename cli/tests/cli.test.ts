@@ -15,5 +15,13 @@ test("important workflows map to dedicated API operations",()=>{
  expect(commandRequest(parseArgs(["tasks","assign","t-1","--user-id","u-2","--start-date","2026-06-01","--end-date","2026-06-03","--daily-hours","4"])).body).toEqual({user_id:"u-2",start_date:"2026-06-01",end_date:"2026-06-03",daily_hours:4,all_day:false});
  expect(commandRequest(parseArgs(["task-assignments","action","a-1","--action","submit","--result","done"])).path).toBe("/api/task_assignments/a-1/action");
  expect(commandRequest(parseArgs(["files","rollback","f-1","--version-id","f-0","--reason","restore"])).body).toEqual({version_id:"f-0",reason:"restore"});
+ expect(commandRequest(parseArgs(["tasks","assignments","t-1"])).path).toBe("/api/tasks/t-1/assignments");
+ expect(commandRequest(parseArgs(["task-assignments","list"])).path).toBe("/api/task_assignments");
+ expect(commandRequest(parseArgs(["task-assignments","show","a-1"])).path).toBe("/api/task_assignments/a-1");
+ expect(commandRequest(parseArgs(["task-assignments","update","a-1","--start-date","2026-06-02","--end-date","2026-06-02","--daily-hours","6"])).body).toEqual({action:"reschedule",start_date:"2026-06-02",end_date:"2026-06-02",daily_hours:6,all_day:false});
+ expect(commandRequest(parseArgs(["visibility_grants","create",'{"project_id":"p-1","user_id":"u-1","actions":["view"]}'])).path).toBe("/api/visibility_grants");
+ expect(commandRequest(parseArgs(["visibility-grants","revoke","g-1"])).path).toBe("/api/visibility_grants/g-1/revoke");
+ expect(commandRequest(parseArgs(["task-assignments","action","a-1","--action","submit","--result","done","--file-ids","f-1,f-2"])).body).toEqual({action:"submit",result:"done",reason:"",file_ids:["f-1","f-2"]});
+ expect(commandRequest(parseArgs(["visibility-grants","list"])).path).toBe("/api/visibility_grants");
 });
 test("missing command arguments fail before network calls",()=>{expect(()=>commandRequest(parseArgs(["projects","create","{bad}"]))).toThrow("expected a JSON object");expect(()=>commandRequest(parseArgs(["dispatch","submit"]))).toThrow("requires dispatch ID");expect(()=>commandRequest(parseArgs(["tasks","assign","t-1","--user-id","u-2"]))).toThrow("requires ID");});

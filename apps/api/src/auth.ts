@@ -91,6 +91,7 @@ export function portalAllows(user:User,path:string,method:string) {
   let required:string|undefined;
   if(path==="/api/auth/me"||path==="/api/home"||path==="/api/gantt"||is("/api/load")||is("/api/tools"))required=read?"nexusflow:task:read":undefined;
   else if(is("/api/tasks"))required=read?"nexusflow:task:read":write?"nexusflow:task:write":undefined;
+  else if(is("/api/task_assignments"))required=read?"nexusflow:task:read":write?"nexusflow:task:write":undefined;
   else if(is("/api/projects"))required=read?"nexusflow:project:read":write?"nexusflow:project:write":undefined;
   else if(is("/api/dispatch"))required=read?"nexusflow:task:read":write?"nexusflow:dispatch:write":undefined;
   else if(is("/api/approvals"))required=read?"nexusflow:task:read":write?"nexusflow:approval:write":undefined;
