@@ -14,6 +14,9 @@ test("important workflows map to dedicated API operations",()=>{
  expect(commandRequest(parseArgs(["admin","delegations","u-1","--org-ids","o-1,o-2","--reason","coverage"])).body).toEqual({org_ids:["o-1","o-2"],reason:"coverage"});
  expect(commandRequest(parseArgs(["tasks","assign","t-1","--user-id","u-2","--start-date","2026-06-01","--end-date","2026-06-03","--daily-hours","4","--deliverables","overall-report,dataset"])).body).toEqual({user_id:"u-2",start_date:"2026-06-01",end_date:"2026-06-03",daily_hours:4,all_day:false,deliverables:["overall-report","dataset"]});
  expect(commandRequest(parseArgs(["task-assignments","requirements","a-1","--deliverables","overall-report,dataset"])).body).toEqual({action:"set_deliverables",deliverables:["overall-report","dataset"]});
+ expect(()=>commandRequest(parseArgs(["task-assignments","requirements","a-1"]))).toThrow("requires ID and --deliverables CSV");
+ expect(()=>commandRequest(parseArgs(["task-assignments","requirements","a-1","--deliverables"]))).toThrow("requires a CSV value");
+ expect(commandRequest(parseArgs(["task-assignments","requirements","a-1","--deliverables="])).body).toEqual({action:"set_deliverables",deliverables:[]});
  expect(commandRequest(parseArgs(["task-assignments","action","a-1","--action","submit","--result","done"])).path).toBe("/api/task_assignments/a-1/action");
  expect(commandRequest(parseArgs(["files","rollback","f-1","--version-id","f-0","--reason","restore"])).body).toEqual({version_id:"f-0",reason:"restore"});
  expect(commandRequest(parseArgs(["tasks","assignments","t-1"])).path).toBe("/api/tasks/t-1/assignments");
