@@ -23,6 +23,9 @@ export const PEOPLE: Person[] = [
   { id: "wjg", name: "王建国", title: "中心主任", department: "创新中心", skills: ["管理"], projects: [], load: 60, status: "正常", color: "#2FB365" },
 ];
 
+// 06 团队页按设计稿只展示 9 人（郑凯仅出现在 07 热力图，王建国为主任不出现在成员表）
+export const TEAM_PEOPLE: Person[] = PEOPLE.filter((p) => !["zk", "wjg"].includes(p.id));
+
 export type Project = {
   id: string; name: string; type: string; level: string; owner: string; ownerColor: string;
   start: string; end: string; progress: number; status: string; updated: string;
@@ -90,7 +93,7 @@ export const GANTT_GROUPS: GanttGroup[] = [
     type: "文职", typeColor: "#3B82F6", owner: "陈思远", ownerColor: "#5F666D",
     tasks: [
       { id: "t9", name: "阶段报告撰写", start: 66, end: 80, kind: "done", note: "已完成" },
-      { id: "t10", name: "验收材料准备", start: 102, end: 150, kind: "mixed", progress: 72, overdueTo: 150, overdueLabel: "已交付 72%" },
+      { id: "t10", name: "验收材料准备", start: 102, end: 117, kind: "prog", progress: 72, overdueTo: 150, overdueLabel: "已交付 72%" },
     ],
   },
   {

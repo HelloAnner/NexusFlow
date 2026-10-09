@@ -47,10 +47,6 @@ function GanttSidebar() {
 
 type Row = { kind: "group"; group: GanttGroup } | { kind: "task"; group: GanttGroup; task: GanttTask };
 
-function barOpacity(kind: GanttTask["kind"]) {
-  return kind === "done" ? 1 : 1;
-}
-
 export default function GanttClient() {
   const params = useParams<{ id: string }>();
   const id = params?.id || "p1";
@@ -232,12 +228,13 @@ export default function GanttClient() {
                   const parts: React.ReactNode[] = [];
                   if (t.kind === "plan") {
                     parts.push(<rect key="b" x={x} y={y} width={w} height={10} rx={5} fill="none" stroke={c} strokeWidth={1.5} />);
-                  } else if (t.kind === "done" || t.kind === "prog") {
-                    parts.push(<rect key="b" x={x} y={y} width={w} height={10} rx={5} fill={c} opacity={barOpacity(t.kind)} />);
+                  } else if (t.kind === "done") {
+                    parts.push(<rect key="b" x={x} y={y} width={w} height={10} rx={5} fill={c} />);
                   } else {
-                    // mixed：实色进度 + 浅色剩余
+                    // prog / mixed：实色 progress% + 25% 透明剩余（无 progress 时整条实色）
+                    const pct = t.progress ?? 100;
                     parts.push(<rect key="bg" x={x} y={y} width={w} height={10} rx={5} fill={c} opacity={0.25} />);
-                    parts.push(<rect key="fg" x={x} y={y} width={Math.max(6, (w * (t.progress || 0)) / 100)} height={10} rx={5} fill={c} />);
+                    parts.push(<rect key="fg" x={x} y={y} width={Math.max(6, (w * pct) / 100)} height={10} rx={5} fill={c} />);
                   }
                   // 逾期延伸（红色描边段）
                   if (t.overdueTo && t.overdueTo > t.end) {
@@ -248,12 +245,13 @@ export default function GanttClient() {
                   // 行尾说明文字
                   if (t.note) {
                     parts.push(
-                      <text key="n" x={(t.overdueTo || t.end) * DAY_W + 8} y={y + 9} fontSize={11} fill="#878C94">{t.note}</text>,
+                      <text key="n" x={Math.min((t.overdueTo || t.end) * DAY_W + 8, CHART_W - 8)} y={y + 9} fontSize={11} fill="#878C94">{t.note}</text>,
                     );
                   }
                   if (t.overdueLabel) {
+                    // 红字标签画在逾期延伸条内部右端，避免超出 viewBox 被裁剪
                     parts.push(
-                      <text key="o" x={(t.overdueTo || t.end) * DAY_W + 8} y={y + 9} fontSize={11} fill="#EE4B43">{t.overdueLabel}</text>,
+                      <text key="o" x={(t.overdueTo || t.end) * DAY_W - 8} y={y + 9} fontSize={11} fill="#EE4B43" textAnchor="end">{t.overdueLabel}</text>,
                     );
                   }
                   return (

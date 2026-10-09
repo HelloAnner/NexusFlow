@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Building2, Layers, Users2, Sparkles, UserPlus, ChevronRight, Building } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { SideSection, SideItem, Card, Badge, Avatar, Bar, PageHeader, SearchBox, STATUS_COLOR } from "@/components/ui";
-import { PEOPLE, ORG_TREE, Person } from "@/lib/demo";
+import { PEOPLE, TEAM_PEOPLE, ORG_TREE, Person } from "@/lib/demo";
 import { useData } from "@/lib/data";
 import { cx, str, num, arr, avatarColor } from "@/lib/utils";
 
@@ -49,14 +49,14 @@ function normalize(items: unknown[]): Person[] {
         color: demo?.color || avatarColor(str(x.name)),
       } as Person;
     });
-  return rows.length ? rows : PEOPLE;
+  return rows.length ? rows : TEAM_PEOPLE;
 }
 
 const loadColor = (v: number) => (v >= 90 ? "#EE4B43" : v >= 75 ? "#F2970A" : v >= 40 ? "#2FB365" : "#2FB365");
 
 export default function TeamPage() {
-  const { data } = useData<unknown[]>("people", "/people", PEOPLE);
-  const people = normalize(Array.isArray(data) ? data : PEOPLE);
+  const { data } = useData<unknown[]>("people", "/people", TEAM_PEOPLE);
+  const people = normalize(Array.isArray(data) ? data : TEAM_PEOPLE);
   const [skill, setSkill] = useState("全部");
   const shown = people.filter((p) => skill === "全部" || p.skills.some((s) => s.includes(skill)));
 
