@@ -26,7 +26,6 @@ dist/
 build/
 out/
 target/
-backend/target/
 .next/
 .nuxt/
 .svelte-kit/
@@ -47,16 +46,8 @@ temp/
 # Test and browser automation artifacts
 test-results/
 playwright-report/
-.playwright-mcp/
-screenshots/
-e2e/artifacts/*
-!e2e/artifacts/.gitkeep
-frontend_*_check.png
-frontend_preview*.png
-sa_admin*.png
-new_task*.png
-page_summaries.txt
-page_summary_*.txt
+downloads/
+*.tsbuildinfo
 
 # Package manager caches
 .npm/

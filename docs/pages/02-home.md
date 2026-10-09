@@ -4,7 +4,7 @@
 
 ## 0. 当前首页设计观察
 
-当前 `nexusflow.pen` 与 `DashboardPage.tsx` 的首页已经具备清晰骨架：
+当前 `design.pen`（见 `design-exports/01-home.png`）与 `apps/web/app/page.tsx` 的首页已经具备清晰骨架：
 
 - 顶部问候语、日期、`新建任务` 主操作。
 - 四个统计数字：今日待处理、今日截止、本周冲突、待审批。
@@ -424,7 +424,7 @@ Command Band 下方新增一排更紧凑的信号卡，用于补足“多一点�
 
 ## 19. 下一步落地顺序
 
-1. 在 `nexusflow.pen` 中把首页画面从当前两列卡片升级为 Command Band + 三栏核心区 + 第二层模块。
+1. 在 `design.pen` 中把首页画面从当前两列卡片升级为 Command Band + 三栏核心区 + 第二层模块。
 2. 先实现静态布局和真实接口已有数据：dashboard、tasks、todos、conflicts、activities。
 3. 再补 Project Pulse、资料缺口、Team Load 等需要新增聚合接口的数据。
 4. 最后增加 Timeline SVG、Sparkline、键盘焦点和批量处理。
