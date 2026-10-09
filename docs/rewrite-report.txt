@@ -1,0 +1,49 @@
+NexusFlow 全 TS 重写交付报告
+=============================
+
+1. 交付物（HEAD 3a5cb36）
+------------------------
+apps/api    Bun + Hono + postgres.js + ioredis + jose + bcryptjs（schema：nexusflow）
+apps/web    Next.js 15 静态导出（basePath /nexusflow），10 页面 + Shell 1:1 复刻 design.pen
+cli/        Bun TS CLI，覆盖全领域（auth/org/people/projects/tasks/dispatch/approvals/
+            load/conflicts/files/inbox/reports/tools/config/admin/seed/health）
+packages/shared  共享枚举（taskTypes/fileCategories/roles），api 与 web 真实引用
+scripts/    build-linux.sh（本地交叉编译 bun-linux-x64 单二进制）+ deploy.sh（scp+重启+健康校验）
+删除        backend/（Rust）、frontend/（旧 Vite）、e2e/、screenshots/、旧部署脚本
+
+2. 部署（与 Northline/Documind 同逻辑）
+--------------------------------------
+make deploy-build -> dist/linux-x86_64/nexusflow（约 91MB，内嵌 23 页静态资源）
+make deploy       -> scp 到 nexusflow(101.200.138.250) -> systemctl restart nexusflow
+
+  系统入口   http://101.200.138.250:8089/nexusflow/
+  健康检查   /nexusflow/healthz（{ok}）  /nexusflow/readyz（PG/Redis/MinIO 全 true）
+  运行环境   systemd nexusflow，端口 8089，env：/opt/nexusflow/.env
+  存储       PostgreSQL(nexusflow) + Redis(0) + MinIO(bucket: nexusflow)
+
+3. 用户系统与 Portal 配合（三系统一致）
+--------------------------------------
+本地登录：admin（SUPER_ADMIN_* 环境变量，bcrypt）
+Portal SSO：GET /auth/portal/callback?code=<id>:<secret>
+  -> POST {PORTAL_BASE_URL}/api/auth/exchange-ticket {system_code:"nexusflow", code}
+  门户角色映射：tenant_owner/tenant_admin -> center_director；user -> member
+  已实测：真票据 302 + HttpOnly cookie；/api/auth/me 返回角色与 nexusflow:* 权限；
+  票据一次性（重用 401）。Portal 侧已加 systems 条目 + tickets CHECK 迁移。
+演示账号：seed 返回（demo.wangjianguo 中心主任 / demo.zhangwei 部门主任 等 10 个）
+
+4. 验证链（证据）
+----------------
+后端 pair（GPT-6 Luna worker + Sol High reviewer）：16 轮评审收敛 PASS（含权限裁剪、
+  会话撤销、派发/审批状态机、负载冲突计算、MinIO SigV4、seed 幂等与可恢复、升级迁移去重）
+前端 pair（Kimi K3 worker + Kimi reviewer）：逐页对照 design-exports 复刻，2 轮评审 PASS
+协调者集成：make deploy 成功；CLI 服务器全领域循环（seed 幂等 6 组织/10 人/6 项目/16 任务/
+  3 冲突/9 工具、负载列表、文件上传下载入 MinIO、报表导出、审计、配置草稿、甘特摘要）；
+  审批链路真实跑通：草稿任务 -> 派发 -> 部门主任通过 -> 中心主任通过 -> published
+最终门禁（独立 reviewer）：3 轮，FINAL_PASS（矩阵 R1-R10 全通过、工作区干净）
+
+5. 已知遗留（非阻断）
+--------------------
+1) 甘特「周/月」视图为 UI 占位，阶段视图数据完整；任务拖拽编辑未实现。
+2) 页面视觉验收为代码级逐页核对 + 构建取证，未做浏览器像素比对。
+3) 配置发布的 CLI 在服务器未单独实测（config 创建已实测）。
+4) Portal 仓库另有并行 WIP（design.pen/web 改版）未提交，本次仅提交 sso 与 tickets 迁移。
