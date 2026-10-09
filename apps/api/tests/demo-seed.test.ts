@@ -9,7 +9,7 @@ test("demo seed matches the six-project, ten-member design", () => {
   expect(seed.people.map(x => x.name)).toEqual([
     "王建国", "李文静", "张伟", "陈思远", "刘洋", "赵敏", "孙倩", "周杰", "吴迪", "王强",
   ]);
-  expect(seed.people.every(x => x.title && x.skills.length > 0)).toBe(true);
+  expect(seed.people.every(x => x.title && Array.isArray(x.skills) && x.skills.length > 0)).toBe(true);
   expect(seed.projects.filter(x => x.status === "active")).toHaveLength(4);
   expect(seed.projects.every(x => x.level && x.type)).toBe(true);
 });

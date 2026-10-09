@@ -30,17 +30,17 @@ export function buildDemoSeed(today = new Date().toISOString().slice(0, 10)) {
     start_date: plusDays(base, -20 + index * 5), end_date: plusDays(base, 130 + index * 5),
   }));
   const people = [
-    ["王建国", "中心主任", ["项目管理", "科研管理"]],
-    ["李文静", "技术总监", ["系统架构", "数据工程"]],
-    ["张伟", "部门主任", ["项目协调", "油气工程"]],
-    ["陈思远", "高级工程师", ["算法研发", "数据分析"]],
-    ["刘洋", "工程师", ["后端研发", "调度优化"]],
-    ["赵敏", "项目经理", ["市场拓展", "项目管理"]],
-    ["孙倩", "工程师", ["文档管理", "质量管理"]],
-    ["周杰", "高级工程师", ["机器人", "自动化"]],
-    ["吴迪", "工程师", ["网络安全", "测评"]],
-    ["王强", "工程师", ["现场实施", "管道检测"]],
-  ].map(([name, title, skills], index) => ({ name, title, skills, index }));
+    ["王建国", "中心主任", ["项目管理", "科研管理"], "wangjianguo", "center_director", 2],
+    ["李文静", "技术总监", ["系统架构", "数据工程"], "liwenjing", "center_deputy", 2],
+    ["张伟", "部门主任", ["项目协调", "油气工程"], "zhangwei", "department_director", 3],
+    ["陈思远", "高级工程师", ["算法研发", "数据分析"], "chensiyuan", "member", 3],
+    ["刘洋", "工程师", ["后端研发", "调度优化"], "liuyang", "member", 3],
+    ["赵敏", "项目经理", ["市场拓展", "项目管理"], "zhaomin", "department_director", 4],
+    ["孙倩", "工程师", ["文档管理", "质量管理"], "sunqian", "member", 4],
+    ["周杰", "高级工程师", ["机器人", "自动化"], "zhoujie", "member", 4],
+    ["吴迪", "工程师", ["网络安全", "测评"], "wudi", "member", 4],
+    ["王强", "工程师", ["现场实施", "管道检测"], "wangqiang", "member", 4],
+  ].map(([name, title, skills, username, role, org_index], index) => ({ name, title, skills, username, role, org_index: Number(org_index), index }));
   const categories = [
     { type: "research-company", label: "科研", items: ["需求调研与确认", "总体设计评审", "五日迭代闭环演示"] },
     { type: "market", label: "市场", items: ["试点单位签约", "数据中台迁移", "推广方案定稿"] },
@@ -62,11 +62,19 @@ export function buildDemoSeed(today = new Date().toISOString().slice(0, 10)) {
       summary: `${category.label}工作：${name}`,
     };
   }));
+  const loadExamples = [
+    [3, 2, 10, false], [2, 4, 10, false], [13, 9, 8, true], [14, 9, 0, false],
+  ] as const;
+  for (const [taskIndex, ownerIndex, hours, allDay] of loadExamples) {
+    const task = tasks[taskIndex]!;
+    task.owner_index = ownerIndex; task.start_date = plusDays(base, -2); task.end_date = plusDays(base, 10);
+    task.status = "in_progress"; task.progress = 60; task.daily_hours = hours; task.all_day = allDay;
+  }
   return {
     projects, people, tasks,
     conflicts: [
       { type: "workload_overload", person_index: 2, task_index: 3, severity: "warning", title: "张伟工作负载偏高" },
-      { type: "all_day_overlap", person_index: 9, task_index: 6, severity: "blocking", title: "王强现场任务时间冲突" },
+      { type: "all_day_overlap", person_index: 9, task_index: 13, severity: "blocking", title: "王强现场任务时间冲突" },
       { type: "workload_overload", person_index: 4, task_index: 2, severity: "warning", title: "刘洋多任务并行超负荷" },
     ],
   };
