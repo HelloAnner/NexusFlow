@@ -4,8 +4,8 @@ import { createHash, createHmac } from "node:crypto";
 delete process.env.DATABASE_URL; delete process.env.REDIS_URL; delete process.env.APP_ENV;
 process.env.JWT_SECRET = "review-only-secret-at-least-32-bytes";
 const root = new URL("../src", import.meta.url).pathname;
-type Row = { id:string; kind:string; tenant_id:string|null; created_by:string; data:Record<string,any>; updated_at:Date; created_at:Date };
-let records:Row[] = [], users:any[] = [], audits:any[] = [], failRevoke=false, beforeNextBegin:(()=>Promise<void>)|null=null;
+type Row = { id:string; kind:string; tenant_id:string|null; created_by:string; data:Record<string,any>; updated_at:Date; created_at:Date; xmin:string };
+let records:Row[] = [], users:any[] = [], audits:any[] = [], failRevoke=false, beforeNextBegin:(()=>Promise<void>)|null=null, nextXmin=0, activeXmin:string|null=null;
 const cache=new Map<string,string>(), sets=new Map<string,Set<string>>();
 const redis:any={status:"ready", get:async(k:string)=>cache.get(k)??null,
   async eval(script:string,n:number,...args:any[]) {
@@ -31,7 +31,7 @@ const sql:any=async(strings:TemplateStringsArray,...v:any[])=>{
   const person=/\(id=\$(\d+) OR data->>'user_id'=\$(\d+)\)/.exec(q);
   if(person)candidates=candidates.filter(r=>r.id===v[+person[1]!]||r.data?.user_id===v[+person[2]!]);
   else candidates=equalFilter(candidates,q,v,"id");
-  candidates=equalFilter(candidates,q,v,"kind");candidates=equalFilter(candidates,q,v,"created_by");candidates=equalFilter(candidates,q,v,"created_at");
+  candidates=equalFilter(candidates,q,v,"kind");candidates=equalFilter(candidates,q,v,"created_by");candidates=equalFilter(candidates,q,v,"created_at");const xmin=/xmin::text=\$(\d+)/.exec(q);if(xmin)candidates=candidates.filter(r=>r.xmin===String(v[+xmin[1]!]));
   if(q.includes("nexusflow.users")&&!q.includes("nexusflow.records")){
     candidates=equalFilter(candidates,q,v,"org_id");candidates=equalFilter(candidates,q,v,"status");candidates=equalFilter(candidates,q,v,"role");
     candidates=equalFilter(candidates,q,v,"portal_id");candidates=equalFilter(candidates,q,v,"portal_tenant_id");
@@ -48,18 +48,18 @@ const sql:any=async(strings:TemplateStringsArray,...v:any[])=>{
   const exclude=/id<>\$(\d+)/.exec(q);if(exclude)candidates=candidates.filter(r=>r.id!==v[+exclude[1]!]);
   if(q.includes("max((data->>'version')::int)"))return [{version:Math.max(0,...candidates.map(r=>Number(r.data.version)||0))}];
   if(q.startsWith("DELETE FROM nexusflow.records")){const deleted=candidates.map(r=>({id:r.id}));records=records.filter(r=>!candidates.includes(r));return deleted;}
-  if(q.startsWith("SELECT"))return candidates;
+  if(q.startsWith("SELECT"))return q.includes("xmin::text AS seed_xid")?candidates.map(r=>({...r,seed_xid:r.xmin})):candidates;
   if(q.startsWith("INSERT INTO nexusflow.users")){users.push({id:v[0],username:v[1],password_hash:v[2],display_name:v[3],role:v[4],tenant_id:v[5],org_id:v[6],status:"active",portal_id:null,portal_permissions:null});return [];}
   if(q.startsWith("INSERT INTO nexusflow.records")){records.push(row(v[0],v[1],structuredClone(v[4]),v[3],v[2]));return [];}
   if(q.startsWith("INSERT INTO nexusflow.audit")){audits.push({q,v});return [];}
   if(q.startsWith("UPDATE nexusflow.users SET role=")){const account=users.find(u=>u.id===v[2]);if(account){account.role=v[0];account.org_id=v[1];}return [];}
   if(q.startsWith("UPDATE nexusflow.users SET password_hash=")){const account=users.find(u=>u.id===v[1]&&u.tenant_id===v[2]&&u.status==="active"&&!u.portal_id&&!u.password_hash);if(!account)return [];account.password_hash=v[0];return [{id:account.id}];}
   if(q.startsWith("UPDATE nexusflow.records")){
-    const payload=/SET data(?:=data\|\||=)\$(\d+)/.exec(q);for(const r of candidates){const patch=payload?v[+payload[1]!]:{};r.data=q.includes("data=data||")?{...r.data,...patch}:{...patch};r.updated_at=new Date(r.updated_at.valueOf()+1);}return [];
+    const payload=/SET data(?:=data\|\||=)\$(\d+)/.exec(q);for(const r of candidates){const patch=payload?v[+payload[1]!]:{};r.data=q.includes("data=data||")?{...r.data,...patch}:{...patch};r.updated_at=new Date(r.updated_at.valueOf()+1);if(activeXmin)r.xmin=activeXmin;}return [];
   }
   return [];
 };
-sql.json=(v:any)=>v;sql.begin=async(fn:any)=>{const hook=beforeNextBegin;beforeNextBegin=null;if(hook)await hook();const old=structuredClone(records),oldUsers=structuredClone(users),audit=structuredClone(audits);try{return await fn(sql);}catch(e){records=old;users=oldUsers;audits=audit;throw e;}};
+sql.json=(v:any)=>v;sql.begin=async(fn:any)=>{const hook=beforeNextBegin;beforeNextBegin=null;if(hook)await hook();const old=structuredClone(records),oldUsers=structuredClone(users),audit=structuredClone(audits),previousXmin=activeXmin;activeXmin=String(++nextXmin);try{return await fn(sql);}catch(e){records=old;users=oldUsers;audits=audit;throw e;}finally{activeXmin=previousXmin;}};
 mock.module(`${root}/db.ts`,()=>({sql,redis,migrate:async()=>{},probeDependencies:async()=>{}}));
 const {config}=await import(`${root}/config.ts`);Object.assign(config,{jwtSecret:"review-only-secret-at-least-32-bytes"});
 const {createSession,portalAllows}=await import(`${root}/auth.ts`);
@@ -76,11 +76,11 @@ const blockFetch=async()=>{throw Error("reviewer blocked unexpected network acce
 globalThis.fetch=blockFetch as unknown as typeof fetch;
 const center:any={id:"u1",username:"one",role:"center_director",tenant_id:"t1",org_id:"o1",portal_permissions:null};
 const member={...center,role:"member"}, department={...center,role:"department_director"}, lead={...center,role:"project_lead"};
-function row(id:string,kind:string,data:any,creator="u1",tenant:string|null="t1"):Row{return {id,kind,data,created_by:creator,tenant_id:tenant,created_at:new Date(0),updated_at:new Date(0)};}
+function row(id:string,kind:string,data:any,creator="u1",tenant:string|null="t1"):Row{return {id,kind,data,created_by:creator,tenant_id:tenant,created_at:new Date(0),updated_at:new Date(0),xmin:activeXmin||"0"};}
 function task(patch:any={}){return {name:"Task",type:"market",owner_id:"u1",org_id:"o1",member_ids:[],start_date:"2026-06-01",end_date:"2026-06-01",daily_hours:2,status:"draft",all_day:false,...patch};}
 function addAccount(user:any){const account={...user,status:"active",portal_id:user.portal_permissions===null?null:"portal-review"};users=users.filter(u=>u.id!==user.id);users.push(account);}
 async function request(path:string,method="GET",body?:any,user=center){addAccount(user);const token=await createSession(user);return app.request(path,{method,headers:{authorization:`Bearer ${token}`,"content-type":"application/json"},...(body===undefined?{}:{body:JSON.stringify(body)})});}
-beforeEach(()=>{Object.assign(config,initialConfig);records=[row("c1","orgs",{name:"Center",type:"center"}),row("o1","orgs",{name:"One",type:"department",parent_id:"c1"}),row("o2","orgs",{name:"Two",type:"department",parent_id:"c1"})];users=[{...member,status:"active",portal_id:null},{...member,id:"u2",username:"two",org_id:"o2",status:"active",portal_id:null}];audits=[];cache.clear();sets.clear();failRevoke=false;beforeNextBegin=null;globalThis.fetch=blockFetch as unknown as typeof fetch;});
+beforeEach(()=>{Object.assign(config,initialConfig);records=[row("c1","orgs",{name:"Center",type:"center"}),row("o1","orgs",{name:"One",type:"department",parent_id:"c1"}),row("o2","orgs",{name:"Two",type:"department",parent_id:"c1"})];users=[{...member,status:"active",portal_id:null},{...member,id:"u2",username:"two",org_id:"o2",status:"active",portal_id:null}];audits=[];cache.clear();sets.clear();failRevoke=false;beforeNextBegin=null;nextXmin=0;activeXmin=null;globalThis.fetch=blockFetch as unknown as typeof fetch;});
 afterAll(()=>{globalThis.fetch=previousFetch;});
 
 test("R1: deny unknown-owner orgless departmental read and allow NULL-tenant assigned task",async()=>{
@@ -298,9 +298,9 @@ test("T2: demo approvers receive unique one-time credentials and complete login 
  const centerDecision=await app.request(`/api/approvals/${centerApproval.id}/decision`,{method:"POST",headers:{authorization:`Bearer ${centerToken}`,"content-type":"application/json"},body:JSON.stringify({approved:true})});expect(centerDecision.status).toBe(200);expect(records.find(r=>r.id===dispatch.id)!.data.status).toBe("published");
  const again=await request("/api/seed","POST",{},seedAdmin);expect((await again.json()).credentials).toBeUndefined();expect(again.headers.get("cache-control")).toBe("no-store");
 });
-test("T2: existing v3 demo approvers get credentials without recreating records",async()=>{
+test("v3 seed with no provable relationship cohort fails closed without upgrading marker or credentials",async()=>{
  records.push(row("legacy-v3","seed",{version:3}));users.push(...[["demo.zhangwei","department_director","o1"],["demo.zhaomin","department_director","o2"],["demo.wangjianguo","center_director","c1"]].map(([username,role,org_id],i)=>({id:`demo-user-${i}`,username,role,org_id,tenant_id:"t1",status:"active",password_hash:"",portal_id:null} as any)));
- const before=records.length,response=await request("/api/seed","POST",{},seedAdmin),body=await response.json();expect(response.status).toBe(201);expect(body.already_seeded).toBe(true);expect(body.credentials).toHaveLength(3);expect(records.length).toBe(before);expect(records.find(r=>r.id==="legacy-v3")!.data.version).toBe(4);expect(users.filter(u=>u.id.startsWith("demo-user-")).every(u=>u.password_hash)).toBe(true);
+ const before=records.length,response=await request("/api/seed","POST",{},seedAdmin);expect(response.status).toBe(500);expect(records.length).toBe(before);expect(records.find(r=>r.id==="legacy-v3")!.data.version).toBe(3);expect(users.filter(u=>u.id.startsWith("demo-user-")).every(u=>!u.password_hash)).toBe(true);
 });
 test("T1/U2: v3 migration repairs only its original seed cohort and restores owner access",async()=>{
  const plan:any=buildDemoSeed();await runDemoSeed();const marker=records.find(r=>r.kind==="seed")!,demoUsers=plan.people.map((person:any)=>users.find((u:any)=>u.username===`demo.${person.username}`)!);marker.data.version=3;for(const account of demoUsers)account.password_hash="";
@@ -311,6 +311,15 @@ test("T1/U2: v3 migration repairs only its original seed cohort and restores own
  for(const taskPlan of plan.tasks){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===taskPlan.name&&r.created_at.valueOf()===marker.created_at.valueOf())!,owner=users.find(u=>u.id===parent.data.owner_id)!,assignment=records.find(r=>r.kind==="task_assignments"&&r.data.task_id===parent.id&&r.data.user_id===owner.id)!;expect(parent.data.org_id).toBe(owner.org_id);expect(records.find(r=>r.id===parent.data.project_id)!.data.member_ids).toContain(owner.id);expect(assignment.data.user_id).toBe(owner.id);}
  for(const name of ["试点单位签约","设备安装联调"]){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===name&&r.created_at.valueOf()===marker.created_at.valueOf())!,owner=users.find(u=>u.id===parent.data.owner_id)!,credential=body.credentials.find((c:any)=>c.username===owner.username)!,login=await localLogin(owner.username,credential.password),token=(await login.json()).access_token,assignment=records.find(r=>r.kind==="task_assignments"&&r.data.task_id===parent.id&&r.data.user_id===owner.id)!,taskResponse=await app.request(`/api/tasks/${parent.id}`,{headers:{authorization:`Bearer ${token}`}}),assignmentResponse=await app.request(`/api/task_assignments/${assignment.id}`,{headers:{authorization:`Bearer ${token}`}});expect(taskResponse.status).toBe(200);expect(assignmentResponse.status).toBe(200);expect(records.find(r=>r.id===parent.data.project_id)!.data.member_ids).toContain(owner.id);expect(parent.data.org_id).toBe(owner.org_id);}
  const repeat=await request("/api/seed","POST",{},seedAdmin);expect((await repeat.json()).credentials).toBeUndefined();expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(realSnapshot);
+});
+test("legacy v4 without a complete migration manifest is repaired by verified task-assignment graph",async()=>{
+ const plan:any=buildDemoSeed(),seeded=await runDemoSeed(),credentials=seeded.credentials as {username:string;password:string}[],marker=records.find(r=>r.kind==="seed")!,demoUsers=plan.people.map((person:any)=>users.find((u:any)=>u.username===`demo.${person.username}`)!);delete marker.data.relationship_migration;marker.created_at=new Date("2020-01-01T00:00:00Z");
+ for(const [i,projectPlan] of plan.projects.entries()){const project=records.find(r=>r.kind==="projects"&&r.data.name===projectPlan.name)!;project.data.org_id=records.find(r=>r.kind==="orgs"&&r.data.name===(i%2?"项目部":"研发部"))!.id;project.data.member_ids=demoUsers.filter((_:any,n:number)=>n%2===i%2).map((u:any)=>u.id);}
+ for(const taskPlan of plan.tasks){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===taskPlan.name)!,project=records.find(r=>r.id===parent.data.project_id)!;parent.data.org_id=project.data.org_id;}
+ const realProject=row("legacy-v4-real-project","projects",{...records.find(r=>r.kind==="projects"&&r.data.name===plan.projects[0].name)!.data},seedAdmin.id);realProject.created_at=new Date("2026-01-01T00:00:00Z");const sourceTask=records.find(r=>r.kind==="tasks"&&r.data.name===plan.tasks[0].name)!,realTask=row("legacy-v4-real-task","tasks",{...sourceTask.data,project_id:realProject.id},seedAdmin.id);realTask.created_at=new Date(realProject.created_at);const realFile=row("legacy-v4-real-file","files",{name:"customer-data.csv",project_id:realProject.id,task_id:realTask.id,object_key:"customer-data"},seedAdmin.id);realFile.created_at=new Date(realProject.created_at);records.push(realProject,realTask,realFile);
+ const snapshot=JSON.stringify([realProject.data,realTask.data,realFile.data]),ids=records.map(r=>r.id).sort(),response=await request("/api/seed","POST",{},seedAdmin),body=await response.json();expect(response.status).toBe(201);expect(body.already_seeded).toBe(true);expect(body.credentials).toBeUndefined();expect(marker.data.version).toBe(4);expect(marker.data.relationship_migration.task_ids).toHaveLength(plan.tasks.length);expect(marker.data.relationship_migration.project_ids.length).toBeGreaterThanOrEqual(4);expect(records.map(r=>r.id).sort()).toEqual(ids);expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(snapshot);
+ for(const name of ["试点单位签约","设备安装联调"]){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===name&&r.id!==realTask.id)!,owner=users.find(u=>u.id===parent.data.owner_id)!,credential=credentials.find(c=>c.username===owner.username)!,login=await localLogin(owner.username,credential.password),token=(await login.json()).access_token,assignment=records.find(r=>r.kind==="task_assignments"&&r.data.task_id===parent.id&&r.data.user_id===owner.id)!;expect((await app.request(`/api/tasks/${parent.id}`,{headers:{authorization:`Bearer ${token}`}})).status).toBe(200);expect((await app.request(`/api/task_assignments/${assignment.id}`,{headers:{authorization:`Bearer ${token}`}})).status).toBe(200);}
+ expect((await request("/api/seed","POST",{},seedAdmin)).status).toBe(201);expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(snapshot);
 });
 test("T3: role downgrade and department transfer invalidate pending approval authority",async()=>{
  const seeded=await runDemoSeed(),credentials=seeded.credentials as {username:string;password:string}[],cred=(name:string)=>credentials.find(x=>x.username===name)!,dept=users.find(u=>u.username==="demo.zhangwei")!,centerAccount=users.find(u=>u.username==="demo.wangjianguo")!,org=records.find(r=>r.kind==="orgs"&&r.data.name==="研发部")!,otherOrg=records.find(r=>r.kind==="orgs"&&r.data.name==="项目部")!;
