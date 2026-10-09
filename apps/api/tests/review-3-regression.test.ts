@@ -53,7 +53,8 @@ const sql:any=async(strings:TemplateStringsArray,...v:any[])=>{
   if(q.startsWith("INSERT INTO nexusflow.records")){records.push(row(v[0],v[1],structuredClone(v[4]),v[3],v[2]));return [];}
   if(q.startsWith("INSERT INTO nexusflow.audit")){audits.push({q,v});return [];}
   if(q.startsWith("UPDATE nexusflow.users SET role=")){const account=users.find(u=>u.id===v[2]);if(account){account.role=v[0];account.org_id=v[1];}return [];}
-  if(q.startsWith("UPDATE nexusflow.users SET password_hash=")){const account=users.find(u=>u.id===v[1]&&u.tenant_id===v[2]&&u.status==="active"&&!u.portal_id&&!u.password_hash);if(!account)return [];account.password_hash=v[0];return [{id:account.id}];}
+  if(q.startsWith("UPDATE nexusflow.users SET display_name=")){const account=users.find(u=>u.id===v[3]);if(account){account.display_name=v[0];account.role=v[1];account.org_id=v[2];account.status="active";}return [];}
+  if(q.startsWith("UPDATE nexusflow.users SET password_hash=")){const nameIndex=/lower\(username\)=lower\(\$(\d+)\)/.exec(q)?.[1];const account=nameIndex!=null?users.find(u=>u.tenant_id===v[+tenant![1]!]&&u.status==="active"&&!u.portal_id&&u.username.toLowerCase()===String(v[+nameIndex]).toLowerCase()):users.find(u=>u.id===v[1]&&u.tenant_id===v[2]&&u.status==="active"&&!u.portal_id&&!u.password_hash);if(!account)return [];account.password_hash=v[0];return [{id:account.id}];}
   if(q.startsWith("UPDATE nexusflow.records")){
     const payload=/SET data(?:=data\|\||=)\$(\d+)/.exec(q);for(const r of candidates){const patch=payload?v[+payload[1]!]:{};r.data=q.includes("data=data||")?{...r.data,...patch}:{...patch};r.updated_at=new Date(r.updated_at.valueOf()+1);if(activeXmin)r.xmin=activeXmin;}return [];
   }
@@ -296,7 +297,7 @@ test("T2: demo approvers receive unique one-time credentials and complete login 
  const departmentDecision=await app.request(`/api/approvals/${approval.id}/decision`,{method:"POST",headers:{authorization:`Bearer ${token}`,"content-type":"application/json"},body:JSON.stringify({approved:true})});expect(departmentDecision.status).toBe(200);
  const centerApproval=records.find(r=>r.kind==="approvals"&&r.data.dispatch_id===dispatch.id&&r.data.step==="center_director")!,centerCredential=credentials.find(x=>x.username==="demo.wangjianguo")!,centerLogin=await localLogin(centerCredential.username,centerCredential.password),centerToken=(await centerLogin.json()).access_token;
  const centerDecision=await app.request(`/api/approvals/${centerApproval.id}/decision`,{method:"POST",headers:{authorization:`Bearer ${centerToken}`,"content-type":"application/json"},body:JSON.stringify({approved:true})});expect(centerDecision.status).toBe(200);expect(records.find(r=>r.id===dispatch.id)!.data.status).toBe("published");
- const again=await request("/api/seed","POST",{},seedAdmin);expect((await again.json()).credentials).toBeUndefined();expect(again.headers.get("cache-control")).toBe("no-store");
+ const again=await request("/api/seed","POST",{},seedAdmin);expect((await again.json()).credentials).toHaveLength(10);expect(again.headers.get("cache-control")).toBe("no-store");
 });
 test("v3 seed with no provable relationship cohort fails closed without upgrading marker or credentials",async()=>{
  records.push(row("legacy-v3","seed",{version:3}));users.push(...[["demo.zhangwei","department_director","o1"],["demo.zhaomin","department_director","o2"],["demo.wangjianguo","center_director","c1"]].map(([username,role,org_id],i)=>({id:`demo-user-${i}`,username,role,org_id,tenant_id:"t1",status:"active",password_hash:"",portal_id:null} as any)));
@@ -310,15 +311,15 @@ test("T1/U2: v3 migration repairs only its original seed cohort and restores own
  const realSnapshot=JSON.stringify([realProject.data,realTask.data,realFile.data]),beforeIds=records.map(r=>r.id).sort(),response=await request("/api/seed","POST",{},seedAdmin),body=await response.json();expect(response.status).toBe(201);expect(body.credentials).toHaveLength(10);expect(records.map(r=>r.id).sort()).toEqual(beforeIds);expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(realSnapshot);expect(marker.data.version).toBe(4);expect(marker.data.relationship_migration.task_ids).toHaveLength(plan.tasks.length);expect(marker.data.relationship_migration.project_ids).toHaveLength(plan.projects.length);expect(marker.data.relationship_migration.assignment_ids).toHaveLength(plan.tasks.length);
  for(const taskPlan of plan.tasks){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===taskPlan.name&&r.created_at.valueOf()===marker.created_at.valueOf())!,owner=users.find(u=>u.id===parent.data.owner_id)!,assignment=records.find(r=>r.kind==="task_assignments"&&r.data.task_id===parent.id&&r.data.user_id===owner.id)!;expect(parent.data.org_id).toBe(owner.org_id);expect(records.find(r=>r.id===parent.data.project_id)!.data.member_ids).toContain(owner.id);expect(assignment.data.user_id).toBe(owner.id);}
  for(const name of ["试点单位签约","设备安装联调"]){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===name&&r.created_at.valueOf()===marker.created_at.valueOf())!,owner=users.find(u=>u.id===parent.data.owner_id)!,credential=body.credentials.find((c:any)=>c.username===owner.username)!,login=await localLogin(owner.username,credential.password),token=(await login.json()).access_token,assignment=records.find(r=>r.kind==="task_assignments"&&r.data.task_id===parent.id&&r.data.user_id===owner.id)!,taskResponse=await app.request(`/api/tasks/${parent.id}`,{headers:{authorization:`Bearer ${token}`}}),assignmentResponse=await app.request(`/api/task_assignments/${assignment.id}`,{headers:{authorization:`Bearer ${token}`}});expect(taskResponse.status).toBe(200);expect(assignmentResponse.status).toBe(200);expect(records.find(r=>r.id===parent.data.project_id)!.data.member_ids).toContain(owner.id);expect(parent.data.org_id).toBe(owner.org_id);}
- const repeat=await request("/api/seed","POST",{},seedAdmin);expect((await repeat.json()).credentials).toBeUndefined();expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(realSnapshot);
+ const repeat=await request("/api/seed","POST",{},seedAdmin);expect((await repeat.json()).credentials).toHaveLength(10);expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(realSnapshot);
 });
 test("legacy v4 without a complete migration manifest is repaired by verified task-assignment graph",async()=>{
  const plan:any=buildDemoSeed(),seeded=await runDemoSeed(),credentials=seeded.credentials as {username:string;password:string}[],marker=records.find(r=>r.kind==="seed")!,demoUsers=plan.people.map((person:any)=>users.find((u:any)=>u.username===`demo.${person.username}`)!);delete marker.data.relationship_migration;marker.created_at=new Date("2020-01-01T00:00:00Z");
  for(const [i,projectPlan] of plan.projects.entries()){const project=records.find(r=>r.kind==="projects"&&r.data.name===projectPlan.name)!;project.data.org_id=records.find(r=>r.kind==="orgs"&&r.data.name===(i%2?"项目部":"研发部"))!.id;project.data.member_ids=demoUsers.filter((_:any,n:number)=>n%2===i%2).map((u:any)=>u.id);}
  for(const taskPlan of plan.tasks){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===taskPlan.name)!,project=records.find(r=>r.id===parent.data.project_id)!;parent.data.org_id=project.data.org_id;}
  const realProject=row("legacy-v4-real-project","projects",{...records.find(r=>r.kind==="projects"&&r.data.name===plan.projects[0].name)!.data},seedAdmin.id);realProject.created_at=new Date("2026-01-01T00:00:00Z");const sourceTask=records.find(r=>r.kind==="tasks"&&r.data.name===plan.tasks[0].name)!,realTask=row("legacy-v4-real-task","tasks",{...sourceTask.data,project_id:realProject.id},seedAdmin.id);realTask.created_at=new Date(realProject.created_at);const realFile=row("legacy-v4-real-file","files",{name:"customer-data.csv",project_id:realProject.id,task_id:realTask.id,object_key:"customer-data"},seedAdmin.id);realFile.created_at=new Date(realProject.created_at);records.push(realProject,realTask,realFile);
- const snapshot=JSON.stringify([realProject.data,realTask.data,realFile.data]),ids=records.map(r=>r.id).sort(),response=await request("/api/seed","POST",{},seedAdmin),body=await response.json();expect(response.status).toBe(201);expect(body.already_seeded).toBe(true);expect(body.credentials).toBeUndefined();expect(marker.data.version).toBe(4);expect(marker.data.relationship_migration.task_ids).toHaveLength(plan.tasks.length);expect(marker.data.relationship_migration.project_ids.length).toBeGreaterThanOrEqual(4);expect(records.map(r=>r.id).sort()).toEqual(ids);expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(snapshot);
- for(const name of ["试点单位签约","设备安装联调"]){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===name&&r.id!==realTask.id)!,owner=users.find(u=>u.id===parent.data.owner_id)!,credential=credentials.find(c=>c.username===owner.username)!,login=await localLogin(owner.username,credential.password),token=(await login.json()).access_token,assignment=records.find(r=>r.kind==="task_assignments"&&r.data.task_id===parent.id&&r.data.user_id===owner.id)!;expect((await app.request(`/api/tasks/${parent.id}`,{headers:{authorization:`Bearer ${token}`}})).status).toBe(200);expect((await app.request(`/api/task_assignments/${assignment.id}`,{headers:{authorization:`Bearer ${token}`}})).status).toBe(200);}
+ const snapshot=JSON.stringify([realProject.data,realTask.data,realFile.data]),ids=records.map(r=>r.id).sort(),response=await request("/api/seed","POST",{},seedAdmin),body=await response.json();expect(response.status).toBe(201);expect(body.already_seeded).toBe(true);expect(body.credentials).toHaveLength(10);expect(marker.data.version).toBe(4);expect(marker.data.relationship_migration.task_ids).toHaveLength(plan.tasks.length);expect(marker.data.relationship_migration.project_ids.length).toBeGreaterThanOrEqual(4);expect(records.map(r=>r.id).sort()).toEqual(ids);expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(snapshot);
+ for(const name of ["试点单位签约","设备安装联调"]){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===name&&r.id!==realTask.id)!,owner=users.find(u=>u.id===parent.data.owner_id)!,credential=body.credentials.find((c:any)=>c.username===owner.username)!,login=await localLogin(owner.username,credential.password),token=(await login.json()).access_token,assignment=records.find(r=>r.kind==="task_assignments"&&r.data.task_id===parent.id&&r.data.user_id===owner.id)!;expect((await app.request(`/api/tasks/${parent.id}`,{headers:{authorization:`Bearer ${token}`}})).status).toBe(200);expect((await app.request(`/api/task_assignments/${assignment.id}`,{headers:{authorization:`Bearer ${token}`}})).status).toBe(200);}
  expect((await request("/api/seed","POST",{},seedAdmin)).status).toBe(201);expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(snapshot);
 });
 test("T3: role downgrade and department transfer invalidate pending approval authority",async()=>{
@@ -329,4 +330,79 @@ test("T3: role downgrade and department transfer invalidate pending approval aut
  expect((await binding(dept.id,"department_director",org.id)).status).toBe(200);expect((await binding(dept.id,"member",org.id)).status).toBe(200);expect((await decision(departmentApproval.id,"demo.zhangwei")).status).toBe(403);expect(records.find(r=>r.id===departmentApproval.id)!.data.status).toBe("pending");expect(audits.some(a=>a.v.includes("approval.decision"))).toBe(false);
  expect((await binding(dept.id,"department_director",org.id)).status).toBe(200);expect((await decision(departmentApproval.id,"demo.zhangwei")).status).toBe(200);const centerApproval=records.find(r=>r.kind==="approvals"&&r.data.dispatch_id===dispatch.id&&r.data.step==="center_director")!;expect(centerApproval.data.approver_id).toBe(centerAccount.id);
  expect((await binding(centerAccount.id,"member",org.id)).status).toBe(200);expect((await decision(centerApproval.id,"demo.wangjianguo")).status).toBe(403);expect(records.find(r=>r.id===centerApproval.id)!.data.status).toBe("pending");expect(audits.filter(a=>a.v.includes("approval.decision"))).toHaveLength(1);
+});
+
+// ---- review round 14: seed recovery/idempotency, load list, center-level approvals, credentials ----
+const seededCounts=()=>({people:records.filter(r=>r.kind==="people").length,projects:records.filter(r=>r.kind==="projects").length,orgs:records.filter(r=>r.kind==="orgs").length,tasks:records.filter(r=>r.kind==="tasks"&&r.data.category).length,tools:records.filter(r=>r.kind==="tools").length,conflicts:records.filter(r=>r.kind==="conflicts").length});
+const seedKeyPairs=()=>records.filter(r=>r.data?.seed_key).map(r=>`${r.kind}:${r.data.seed_key}`).sort();
+
+test("R14-S1: seeding an empty database creates the full demo set with usable credentials",async()=>{
+ records=[];users=[];const seeded=await runDemoSeed();
+ expect(seededCounts()).toEqual({people:10,projects:6,orgs:6,tasks:15,tools:9,conflicts:3});
+ expect(seeded.credentials).toHaveLength(10);
+ expect(new Set((seeded.credentials as any[]).map(c=>c.password)).size).toBe(10);
+ const credential=(seeded.credentials as any[]).find(c=>c.username==="demo.zhangwei")!;
+ expect((await localLogin(credential.username,credential.password)).status).toBe(200);
+ const before=seededCounts();await runDemoSeed();expect(seededCounts()).toEqual(before);
+});
+
+test("R14-P0-1: seed repairs records wiped while demo accounts survive and rebinds the same accounts",async()=>{
+ const first=await runDemoSeed(),accountIds=()=>users.filter(u=>u.username.startsWith("demo.")).map(u=>u.id).sort(),idsBefore=accountIds();
+ records=[]; // simulate DELETE FROM nexusflow.records; users remain, some with empty password_hash
+ for(const account of users.filter(u=>u.username.startsWith("demo.")))account.password_hash="";
+ const repaired=await runDemoSeed();
+ expect(seededCounts()).toEqual({people:10,projects:6,orgs:6,tasks:15,tools:9,conflicts:3});
+ expect(repaired.credentials).toHaveLength(10);
+ expect(accountIds()).toEqual(idsBefore);
+ const credential=(repaired.credentials as any[]).find(c=>c.username==="demo.zhangwei")!;
+ expect((await localLogin(credential.username,credential.password)).status).toBe(200);
+ const count=records.length;await runDemoSeed();expect(records.length).toBe(count);
+});
+
+test("R14-P0-2: repeat seed reuses seed keys, restores partially deleted rows, and never duplicates",async()=>{
+ await runDemoSeed();
+ const baseline=seedKeyPairs(),doomed=new Set([...records.filter(r=>r.kind==="tasks"&&r.data.seed_key).slice(0,2),...records.filter(r=>r.kind==="tools"&&r.data.seed_key).slice(0,1),...records.filter(r=>r.kind==="people"&&r.data.seed_key).slice(0,1)].map(r=>r.id));
+ records=records.filter(r=>!doomed.has(r.id));
+ const survivingIds=records.map(r=>r.id).sort();
+ await runDemoSeed();
+ expect(seededCounts()).toEqual({people:10,projects:6,orgs:9,tasks:15,tools:9,conflicts:3});
+ expect(seedKeyPairs()).toEqual(baseline);
+ for(const id of survivingIds)expect(records.some(r=>r.id===id)).toBe(true);
+ for(let i=0;i<3;i++){const body=await runDemoSeed();expect(body.credentials).toHaveLength(10);}
+ expect(seedKeyPairs()).toEqual(baseline);
+});
+
+test("R14-P1-1: load list returns per-person load, supports org filtering, and matches conflict totals",async()=>{
+ await runDemoSeed();const asAdmin=(path:string)=>request(path,"GET",undefined,seedAdmin);
+ const list=await (await asAdmin("/api/load")).json();
+ expect(list.items).toHaveLength(10);
+ expect(list.items.every((x:any)=>x.person_id&&x.date)).toBe(true);
+ expect(list.items.some((x:any)=>x.hours>0)).toBe(true);
+ const org=records.find(r=>r.kind==="orgs"&&r.data.name==="研发部")!;
+ const filtered=await (await asAdmin(`/api/load?org_id=${org.id}`)).json();
+ expect(filtered.items.length).toBeGreaterThan(0);
+ for(const item of filtered.items)expect(records.find(r=>r.kind==="people"&&r.data.user_id===item.person_id)!.data.org_id).toBe(org.id);
+ const home=await (await asAdmin("/api/home")).json(),conflicts=await (await asAdmin("/api/conflicts")).json();
+ expect(home.stats.open_conflicts).toBe(conflicts.items.length);
+ expect(home.risk_radar).toHaveLength(conflicts.items.length);
+});
+
+test("R14-P1-2: center-level super_admin decides any pending department approval directly",async()=>{
+ await runDemoSeed();
+ const approval=records.find(r=>r.kind==="approvals"&&r.data.step==="department_director"&&r.data.status==="pending")!;
+ expect((await request(`/api/approvals/${approval.id}/decision`,"POST",{approved:true},member)).status).toBe(403);
+ expect(records.find(r=>r.id===approval.id)!.data.status).toBe("pending");
+ const decision=await request(`/api/approvals/${approval.id}/decision`,"POST",{approved:true},seedAdmin);
+ expect(decision.status).toBe(200);
+ expect(records.find(r=>r.id===approval.id)!.data.status).toBe("approved");
+ expect(records.find(r=>r.id===approval.id)!.data.decided_by).toBe(seedAdmin.id);
+});
+
+test("R14-P2: every seed rotates and returns usable credentials",async()=>{
+ const first=await runDemoSeed();
+ for(const credential of first.credentials as any[])expect((await localLogin(credential.username,credential.password)).status).toBe(200);
+ const second=await runDemoSeed();
+ expect(second.credentials).toHaveLength(10);
+ expect((second.credentials as any[]).map(c=>c.password)).not.toEqual((first.credentials as any[]).map(c=>c.password));
+ for(const credential of second.credentials as any[])expect((await localLogin(credential.username,credential.password)).status).toBe(200);
 });

@@ -8,6 +8,8 @@ test("important workflows map to dedicated API operations",()=>{
  expect(commandRequest(parseArgs(["tasks","action","t-1","--action","report","--progress","40"])).body).toEqual({action:"report",progress:"40"});
  expect(commandRequest(parseArgs(["reports","export","files","--from","2026-01-01","--out","files.json"])).download).toBe("files.json");
  expect(commandRequest(parseArgs(["people","load","u-1","--date=2026-06-01"])).path).toBe("/api/load/u-1?date=2026-06-01");
+ expect(commandRequest(parseArgs(["load","list","--date","2026-06-22","--org-id","o-1"])).path).toBe("/api/load?date=2026-06-22&org_id=o-1");
+ expect(commandRequest(parseArgs(["load"])).path).toBe("/api/load");
  expect(commandRequest(parseArgs(["admin","audit"])).path).toBe("/api/admin/audit");
  expect(commandRequest(parseArgs(["seed","status"])).path).toBe("/api/seed/status");
  expect(commandRequest(parseArgs(["projects","action","p-1","--action","pause","--reason","scope change"])).path).toBe("/api/projects/p-1/action");
