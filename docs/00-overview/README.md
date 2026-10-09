@@ -25,7 +25,7 @@
 
 1. 先读 `product-scope.md`，确认系统目标、一期范围和边界。
 2. 再读 `domain-model.md`，理解组织、人员、项目、任务、分工、资料、审批之间的关系。
-3. 技术评审读 `architecture.md` 和 `submodel-implementation.md`，确认 Rust 后端、TS+Bun 前端、单二进制部署、`.env` 基础组件配置和子模型实现边界。
+3. 技术评审读 `architecture.md` 和 `submodel-implementation.md`，确认全 TS 栈（Bun+Hono API / Next 静态前端 / Bun CLI）、单二进制部署、`.env` 基础组件配置和子模型实现边界。
 4. 按领域阅读功能设计、页面设计和技术设计。
 5. 开发前重点核对 `02-permission`、`03-task-management`、`04-dispatch-collaboration`、`05-load-conflict`、`08-config-center`、`11-project-management`、`12-gantt-search`、`13-admin-auth`，这些模块决定系统能否形成完整闭环。
 

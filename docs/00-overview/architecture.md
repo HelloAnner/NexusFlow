@@ -14,54 +14,45 @@
 
 ## 2. 技术栈
 
-### 2.1 后端
+全栈 TypeScript。与 Northline / Documind 保持一致的部署与用户体系约定。
 
-- 语言：Rust。
-- Web 框架：Axum。
-- 异步运行时：Tokio。
-- 数据访问：SQLx。
+### 2.1 后端（apps/api）
+
+- 运行时与语言：Bun + TypeScript。
+- Web 框架：Hono。
+- 数据访问：postgres.js（原始 SQL + 事务），schema 为 `nexusflow`。
 - 关系数据库：PostgreSQL，作为主数据、权限、流程、配置、审计和报表口径存储。
-- 缓存与轻量队列：Redis，用于会话、权限缓存、短期计算结果、通知待办分发和轻量异步任务。
-- 对象存储：S3 兼容对象存储，默认按 MinIO 协议接入，用于资料附件和导出文件。
-- 搜索：PostgreSQL 全文检索作为一期默认方案，后续可通过配置切换到 Meilisearch 或 OpenSearch。
-- 任务调度：后端内置 Tokio 定时任务，用于审批超时、截止提醒、资料归档检查和报表预计算。
+- 会话与缓存：Redis（会话撤销、权限缓存、短期计算）。
+- 对象存储：S3 兼容对象存储（MinIO 协议），用于资料附件与导出文件。
+- 鉴权：本地 bcrypt 登录 + Portal 票据换会话（jose JWT + HttpOnly Cookie）。
+- 构建：`bun build --compile` 编译为 Linux 单二进制，web 静态资源内嵌。
 
-PostgreSQL、Redis、MinIO 都是外部服务。系统只要求能通过 `.env` 连接，不关心它们部署在本机、内网服务器还是云服务。
+### 2.2 前端（apps/web）
 
-### 2.2 前端
+- 语言：TypeScript，框架：Next.js 15（`output: 'export'` 静态导出），basePath `/nexusflow`。
+- React 19 + Tailwind 4 + TanStack Query + zustand + lucide-react。
+- 甘特图：自研 SVG 视图层，业务计算（负载/冲突）全部在后端。
 
-- 语言：TypeScript。
-- 包管理与构建：Bun。
-- UI 框架：React。
-- 路由：TanStack Router 或 React Router。
-- 请求状态：TanStack Query。
-- 表格与复杂列表：TanStack Table。
-- 甘特图：自研 SVG/Canvas 视图层，后续可替换专业甘特图库，但业务计算必须留在后端。
-- 构建产物：Bun 构建为静态资源，由 Rust 二进制内嵌或随二进制同目录读取。
+### 2.3 CLI（cli/）
 
-### 2.3 单二进制运行
+- Bun + TypeScript CLI，覆盖系统全部功能（认证、组织、人员、项目、任务、派发、审批、负载冲突、资料、报表、配置、管理员、seed、health）。
+- 所有功能验收以 CLI 对真实服务器环境循环测试为准。
 
-推荐构建流程：
+### 2.4 单二进制运行
 
 ```text
-Bun 构建前端静态资源 -> Rust 编译后端 -> 前端资源内嵌进 Rust 二进制 -> 输出 nexusflow
+Next.js 静态导出（apps/web）-> bun build --compile（apps/api + 内嵌静态资源）-> dist/linux-x86_64/nexusflow
 ```
 
-运行方式：
+本地交叉编译产物 scp 到服务器后由 systemd 托管，运行方式：
 
 ```bash
-./nexusflow
+./nexusflow   # 读取 .env；默认端口 8089；base path /nexusflow
 ```
 
-默认行为：
-
-- 读取当前目录或指定路径的 `.env`。
-- 连接 PostgreSQL、Redis 和对象存储。
-- 执行数据库迁移检查。
-- 启动 HTTP 服务。
-- 默认端口为 `8089`。
-- `/api/*` 提供后端 API。
-- `/assets/*` 和其他前端路由返回前端静态资源。
+- `/nexusflow/healthz`、`/nexusflow/readyz` 健康检查（readiness 校验 PG/Redis/MinIO）。
+- `/nexusflow/api/*` 后端 API；其余路径返回前端静态资源。
+- 部署：`make deploy-build`（本地编译）+ `make deploy`（scp + 重启 + 健康校验）。
 
 ## 3. 运行时拓扑
 
