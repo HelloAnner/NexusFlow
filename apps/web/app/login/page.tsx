@@ -50,7 +50,6 @@ export default function LoginPage() {
   const login = useAuth((s) => s.login);
   const fetchMe = useAuth((s) => s.fetchMe);
 
-  const [checking, setChecking] = useState(true);
   const [next, setNext] = useState("");
   const [env, setEnv] = useState("");
   const [username, setUsername] = useState("");
@@ -62,7 +61,8 @@ export default function LoginPage() {
   const userRef = useRef<HTMLInputElement>(null);
   const pwdRef = useRef<HTMLInputElement>(null);
 
-  // 已登录（本地 token 或 nf_session Cookie，含 Portal 落地）直接放行。
+  // 会话检查在后台进行，不阻塞首帧：首帧直接就渲染品牌面板 + 表单（静态导出 HTML 含表单）。
+  // 命中已有会话（本地 token 或 nf_session Cookie，含 Portal 落地）时再跳 ?next= 或 /。
   useEffect(() => {
     absorbPortalToken();
     const params = new URLSearchParams(window.location.search);
@@ -72,9 +72,7 @@ export default function LoginPage() {
     setEnv(host === "localhost" || host === "127.0.0.1" ? "localhost" : window.location.host);
     let alive = true;
     fetchMe().then((u) => {
-      if (!alive) return;
-      if (u) router.replace(target || "/");
-      else setChecking(false);
+      if (alive && u) router.replace(target || "/");
     });
     return () => { alive = false; };
   }, [fetchMe, router]);
@@ -103,10 +101,6 @@ export default function LoginPage() {
       pwdRef.current?.select();
     }
   };
-
-  if (checking) {
-    return <div className="flex h-screen items-center justify-center bg-canvas text-[12.5px] text-ink-4">正在检查登录状态…</div>;
-  }
 
   return (
     <div className="flex min-h-screen bg-canvas">
