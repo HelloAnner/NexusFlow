@@ -1,6 +1,8 @@
 # 交互逻辑与后端接口逐功能差距核查
 
-核查范围：`docs` 设计文档、`frontend/src/App.tsx` 路由、`frontend/src/pages` 页面交互、`backend/src/app/routes.rs` 路由和 `backend/src/domains` 主要实现。验收口径仍按项目约定：服务器 `ssh nexusflow`，默认端口 `8089`。
+> 历史审计记录（重写前）：以下 `frontend/src`、`backend/src` 路径属旧架构，已在全量 TypeScript 重写中删除；当前对应实现为 `apps/web`、`apps/api`。
+
+核查范围（写入时）：`docs` 设计文档、旧 `frontend/src/App.tsx` 路由与 `frontend/src/pages` 页面交互、旧 `backend/src/app/routes.rs` 路由和 `backend/src/domains` 实现。验收口径仍按项目约定：服务器 `ssh nexusflow`，默认端口 `8089`。
 
 ## 总体判断
 

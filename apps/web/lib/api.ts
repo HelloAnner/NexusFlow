@@ -38,6 +38,8 @@ export async function api<T = unknown>(path: string, init?: RequestInit): Promis
   return data as T;
 }
 
-export type Item = { id: string; [k: string]: unknown };
+import type { ApiRecord } from "../../../packages/shared/src/index";
+
+export type Item = ApiRecord;
 
 export const listItems = (kind: string) => api<{ items: Item[] }>(`/${kind}`).then((r) => r.items || []);

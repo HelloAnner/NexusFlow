@@ -217,7 +217,7 @@ SA 后台用于：
 
 系统运行形态：
 
-- Rust 后端。
+- Bun + Hono 后端（TypeScript）。
 - TypeScript + Bun 前端。
 - 单二进制部署。
 - 默认端口 `8089`。

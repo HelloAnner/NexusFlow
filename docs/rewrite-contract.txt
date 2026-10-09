@@ -3,7 +3,7 @@ NexusFlow 全量重写契约（worker / reviewer / final reviewer 共同事实�
 
 0. 一句话目标
 -------------
-废弃现有 Rust 后端（backend/）与旧前端（frontend/），全部用 TypeScript 重写：
+废弃旧后端（backend/）与旧前端（frontend/），全部用 TypeScript 重写：
 后端 Bun + Hono，前端 Next.js 静态导出，本地交叉编译单二进制，scp 部署。
 用户系统、Portal SSO、make deploy 流程与 Northline / Documind 完全一致。
 
@@ -32,7 +32,7 @@ NexusFlow/
   Makefile                 # target 命名与 Northline 一致：build / deploy-build / deploy / status / health / logs
   docs/ design-exports/ design.pen
 ```
-删除：backend/（Rust）、frontend/（旧 Vite 工程）、scripts/build_release.sh、scripts/provision_server.sh 中 Rust 相关内容。
+删除：backend/、frontend/（旧 Vite 工程）、scripts/build_release.sh、scripts/provision_server.sh 中旧后端相关内容。
 
 2. 设计复刻（前端）
 ------------------

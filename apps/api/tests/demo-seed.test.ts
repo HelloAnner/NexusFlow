@@ -1,5 +1,14 @@
 import { expect, test } from "bun:test";
 import { buildDemoSeed, demoTools } from "../src/demo-seed.ts";
+import { taskTypes, fileCategories, roles } from "../../../packages/shared/src/index.ts";
+
+test("shared enums are the single source of truth for task types, categories and roles", () => {
+  expect(taskTypes).toContain("research-company");
+  expect(fileCategories).toEqual(["personal-report", "overall-report", "presentation", "application-report", "dataset", "minutes"]);
+  expect(new Set(taskTypes).size).toBe(taskTypes.length);
+  expect(new Set(roles).size).toBe(roles.length);
+  expect(roles).toContain("super_admin");
+});
 
 test("demo seed matches the six-project, ten-member design", () => {
   const seed = buildDemoSeed("2026-06-22");

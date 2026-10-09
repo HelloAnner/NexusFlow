@@ -2,7 +2,7 @@
 
 ## 1. 后端模块
 
-Rust 模块建议：
+模块建议（`apps/api/src/*`）：
 
 ```text
 todo
