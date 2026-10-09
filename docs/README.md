@@ -9,7 +9,7 @@
 | [origin-prd.md](origin-prd.md) | 原始需求描述 |
 | [prd.md](prd.md) | 汇总版 PRD |
 | [00-overview/README.md](00-overview/README.md) | 领域文档阅读入口 |
-|  全 TS（Bun+Hono API / Next 静态前端 / Bun CLI）、单二进制部署架构 | 全 TS（Bun+Hono API / Next 静态前端 / Bun CLI）、单二进制部署架构 |
+| [00-overview/architecture.md](00-overview/architecture.md) | 全 TS 栈（Bun+Hono API / Next 静态前端 / Bun CLI）、单二进制部署架构 |
 | [00-overview/submodel-implementation.md](00-overview/submodel-implementation.md) | 各子模型的数据、服务、状态和实现边界 |
 
 ## 前端页面设计（重构后）
