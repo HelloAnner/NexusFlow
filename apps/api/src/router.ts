@@ -129,15 +129,27 @@ async function repairV3DemoRelations(tx:any,user:ReturnType<typeof actor>,marker
  return {task_ids:taskRows.map(({row})=>String(row.id)),project_ids:[...projects.values()].map((row:any)=>String(row.id)),assignment_ids:assignmentIds};
 }
 function hasDemoRelationshipMigration(data:Record<string,any>,plan:ReturnType<typeof buildDemoSeed>){const migration=data.relationship_migration,projectCount=new Set(plan.tasks.map(task=>String(plan.projects[task.project_index]!.name))).size;return Array.isArray(migration?.task_ids)&&new Set(migration.task_ids).size===plan.tasks.length&&migration.task_ids.length===plan.tasks.length&&Array.isArray(migration?.assignment_ids)&&new Set(migration.assignment_ids).size===plan.tasks.length&&migration.assignment_ids.length===plan.tasks.length&&Array.isArray(migration?.project_ids)&&new Set(migration.project_ids).size===migration.project_ids.length&&migration.project_ids.length>=projectCount&&migration.project_ids.length<=plan.projects.length;}
-async function seedRecordId(tx:any,user:ReturnType<typeof actor>,kind:string,seedKey:string,match?:{name?:string;userId?:string}):Promise<string|null>{
- const byKey=await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'seed_key'=${seedKey} LIMIT 1`;
- if(byKey[0])return String(byKey[0].id);
- if(match?.userId){const byUser=await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'user_id'=${match.userId} LIMIT 1`;if(byUser[0])return String(byUser[0].id);}
- // ponytail: rows written before seed_key existed have no provenance left; the oldest exact-name match is the only stable reuse key.
- if(match?.name){const byName=await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'name'=${match.name} ORDER BY created_at ASC LIMIT 1`;if(byName[0])return String(byName[0].id);}
+type SeedMatch={name?:string;userId?:string;taskId?:string;personId?:string;type?:string;toolId?:string;dispatchId?:string;step?:string;sourceId?:string};
+// ponytail: rows written before seed_key existed have no provenance left, so each kind falls back to its natural business key.
+async function naturalSeedId(tx:any,user:ReturnType<typeof actor>,kind:string,match?:SeedMatch):Promise<string|null>{
+ const one=(rows:any[])=>rows[0]?String(rows[0].id):null;
+ if(kind==="task_assignments"&&match?.taskId&&match?.userId)return one(await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'task_id'=${match.taskId} AND data->>'user_id'=${match.userId} ORDER BY created_at ASC LIMIT 1`);
+ if(kind==="conflicts"&&match?.taskId&&match?.personId&&match?.type)return one(await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'task_id'=${match.taskId} AND data->>'person_id'=${match.personId} AND data->>'type'=${match.type} ORDER BY created_at ASC LIMIT 1`);
+ if(kind==="tools"&&match?.toolId)return one(await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'id'=${match.toolId} ORDER BY created_at ASC LIMIT 1`);
+ if(kind==="dispatch"&&match?.taskId)return one(await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'task_id'=${match.taskId} ORDER BY created_at ASC LIMIT 1`);
+ if(kind==="approvals"&&match?.dispatchId&&match?.step)return one(await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'dispatch_id'=${match.dispatchId} AND data->>'step'=${match.step} ORDER BY created_at ASC LIMIT 1`);
+ if(kind==="inbox"&&match?.userId&&match?.type)return one(await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'user_id'=${match.userId} AND data->>'type'=${match.type} ORDER BY created_at ASC LIMIT 1`);
+ if(kind==="mentions"&&match?.userId&&match?.sourceId)return one(await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'user_id'=${match.userId} AND data->>'source_id'=${match.sourceId} ORDER BY created_at ASC LIMIT 1`);
  return null;
 }
-async function ensureSeedRecord(tx:any,user:ReturnType<typeof actor>,kind:any,seedKey:string,data:Record<string,unknown>,match?:{name?:string;userId?:string}):Promise<string>{
+async function seedRecordId(tx:any,user:ReturnType<typeof actor>,kind:string,seedKey:string,match?:SeedMatch):Promise<string|null>{
+ const byKey=await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'seed_key'=${seedKey} LIMIT 1`;
+ if(byKey[0])return String(byKey[0].id);
+ if(kind==="people"&&match?.userId){const byUser=await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'user_id'=${match.userId} LIMIT 1`;if(byUser[0])return String(byUser[0].id);}
+ if(match?.name){const byName=await tx`SELECT id FROM nexusflow.records WHERE kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'name'=${match.name} ORDER BY created_at ASC LIMIT 1`;if(byName[0])return String(byName[0].id);}
+ return naturalSeedId(tx,user,kind,match);
+}
+async function ensureSeedRecord(tx:any,user:ReturnType<typeof actor>,kind:any,seedKey:string,data:Record<string,unknown>,match?:SeedMatch):Promise<string>{
  const existing=await seedRecordId(tx,user,kind,seedKey,match);
  if(existing){await tx`UPDATE nexusflow.records SET data=data||${tx.json({...data,seed_key:seedKey} as any)},updated_at=now() WHERE id=${existing} AND kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`;return existing;}
  return insertRecord(tx,user,kind,{...data,seed_key:seedKey});
@@ -204,28 +216,28 @@ async function ensureDemoData(tx:any,user:ReturnType<typeof actor>,plan:ReturnTy
   assignmentIds.push(await ensureSeedRecord(tx,user,"task_assignments",`assignment:${task.name}:${plan.people[task.owner_index]!.username}`,{
    task_id:id,user_id:owner,start_date:task.start_date,end_date:task.end_date,daily_hours:task.daily_hours,
    all_day:task.all_day,status:task.status==="done"?"accepted":task.status==="draft"?"assigned":"active",progress:task.progress,deliverables:[],
-  }));
+  },{taskId:id,userId:owner}));
  }
  const flowTask=await ensureSeedRecord(tx,user,"tasks","task:demo-flow",{
   name:"跨部门派发审批演示",type:"market",status:"draft",org_id:orgIds[3],project_id:projectIds[0],
   owner_id:user.id,member_ids:[user.id],daily_hours:1,all_day:false,start_date:plan.tasks[0]!.start_date,
   end_date:plan.tasks[0]!.end_date,summary:"可直接用于演示任务派发与审批闭环",
  },{name:"跨部门派发审批演示"});
- await ensureSeedRecord(tx,user,"task_assignments","assignment:demo-flow",{task_id:flowTask,user_id:user.id,start_date:plan.tasks[0]!.start_date,end_date:plan.tasks[0]!.end_date,daily_hours:1,all_day:false,status:"assigned",progress:0,deliverables:[]});
+ await ensureSeedRecord(tx,user,"task_assignments","assignment:demo-flow",{task_id:flowTask,user_id:user.id,start_date:plan.tasks[0]!.start_date,end_date:plan.tasks[0]!.end_date,daily_hours:1,all_day:false,status:"assigned",progress:0,deliverables:[]},{taskId:flowTask,userId:user.id});
  for(const [index,item] of plan.conflicts.entries())await ensureSeedRecord(tx,user,"conflicts",`conflict:${index}`,{
   task_id:taskIds[item.task_index],person_id:accountIds[item.person_index],type:item.type,severity:item.severity,
   title:item.title,status:"open",reported_by:user.id,reported_at:new Date().toISOString(),
- });
- for(const tool of demoTools)await ensureSeedRecord(tx,user,"tools",`tool:${tool.id}`,tool as any);
+ },{taskId:taskIds[item.task_index],personId:accountIds[item.person_index],type:item.type});
+ for(const tool of demoTools)await ensureSeedRecord(tx,user,"tools",`tool:${tool.id}`,tool as any,{toolId:String(tool.id)});
  const reviewTask=taskIds[5]!,targetOrg=orgIds[plan.people[plan.tasks[5]!.owner_index]!.org_index],approver=accountIds[2]!;
  await tx`UPDATE nexusflow.records SET data=data||${tx.json({status:"pending_coordination"} as any)},updated_at=now() WHERE id=${reviewTask} AND kind='tasks' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`;
- const demoDispatch=await ensureSeedRecord(tx,user,"dispatch","dispatch:demo-review",{task_id:reviewTask,requester_id:user.id,workflow:"standard",status:"pending_approval",target_org_ids:[targetOrg]});
- const approvalId=await ensureSeedRecord(tx,user,"approvals","approval:demo-review",{dispatch_id:demoDispatch,task_id:reviewTask,target_org_id:targetOrg,step:"department_director",approver_id:approver,status:"pending"});
- await ensureSeedRecord(tx,user,"inbox","inbox:seed-approval",{user_id:approver,type:"approval",title:"管道完整性管理·项目立项审批",source_id:approvalId,status:"pending",read_at:null,project_id:projectIds[1],sender:"王建国"});
- await ensureSeedRecord(tx,user,"inbox","inbox:seed-assignment",{user_id:accountIds[4],type:"assignment",title:"数据中台迁移演练·你被指定为成员",source_id:taskIds[4],status:"pending",read_at:null,sender:"张伟"});
- await ensureSeedRecord(tx,user,"mentions","mention:seed-demo",{user_id:accountIds[4],source_id:taskIds[1],type:"task_update",text:"刘洋在联调用例评审中提到了你"});
- await ensureSeedRecord(tx,user,"inbox","inbox:seed-mention",{user_id:accountIds[4],type:"mention",title:"刘洋在联调用例评审中提到了你",source_id:taskIds[1],status:"pending",read_at:null});
- await ensureSeedRecord(tx,user,"inbox","inbox:seed-system",{user_id:user.id,type:"system",title:"演示数据已就绪",status:"pending",read_at:null});
+ const demoDispatch=await ensureSeedRecord(tx,user,"dispatch","dispatch:demo-review",{task_id:reviewTask,requester_id:user.id,workflow:"standard",status:"pending_approval",target_org_ids:[targetOrg]},{taskId:reviewTask});
+ const approvalId=await ensureSeedRecord(tx,user,"approvals","approval:demo-review",{dispatch_id:demoDispatch,task_id:reviewTask,target_org_id:targetOrg,step:"department_director",approver_id:approver,status:"pending"},{dispatchId:demoDispatch,step:"department_director"});
+ await ensureSeedRecord(tx,user,"inbox","inbox:seed-approval",{user_id:approver,type:"approval",title:"管道完整性管理·项目立项审批",source_id:approvalId,status:"pending",read_at:null,project_id:projectIds[1],sender:"王建国"},{userId:approver,type:"approval"});
+ await ensureSeedRecord(tx,user,"inbox","inbox:seed-assignment",{user_id:accountIds[4],type:"assignment",title:"数据中台迁移演练·你被指定为成员",source_id:taskIds[4],status:"pending",read_at:null,sender:"张伟"},{userId:accountIds[4],type:"assignment"});
+ await ensureSeedRecord(tx,user,"mentions","mention:seed-demo",{user_id:accountIds[4],source_id:taskIds[1],type:"task_update",text:"刘洋在联调用例评审中提到了你"},{userId:accountIds[4],sourceId:taskIds[1]});
+ await ensureSeedRecord(tx,user,"inbox","inbox:seed-mention",{user_id:accountIds[4],type:"mention",title:"刘洋在联调用例评审中提到了你",source_id:taskIds[1],status:"pending",read_at:null},{userId:accountIds[4],type:"mention"});
+ await ensureSeedRecord(tx,user,"inbox","inbox:seed-system",{user_id:user.id,type:"system",title:"演示数据已就绪",status:"pending",read_at:null},{userId:user.id,type:"system"});
  return {orgIds,accountIds,profileIds,projectIds,taskIds,assignmentIds,flowTask,reviewTask};
 }
 async function seedDemo(user:ReturnType<typeof actor>){return seedDemoInner(user);}

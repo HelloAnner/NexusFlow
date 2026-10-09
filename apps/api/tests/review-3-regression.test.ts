@@ -406,3 +406,22 @@ test("R14-P2: every seed rotates and returns usable credentials",async()=>{
  expect((second.credentials as any[]).map(c=>c.password)).not.toEqual((first.credentials as any[]).map(c=>c.password));
  for(const credential of second.credentials as any[])expect((await localLogin(credential.username,credential.password)).status).toBe(200);
 });
+
+test("R14-X1: upgrading a legacy deployment without seed_key reuses natural keys instead of duplicating",async()=>{
+ await runDemoSeed();
+ const countBy=(kind:string)=>records.filter(r=>r.kind===kind).length;
+ const snapshot=()=>({task_assignments:countBy("task_assignments"),conflicts:countBy("conflicts"),tools:countBy("tools"),inbox:countBy("inbox"),mentions:countBy("mentions"),dispatch:countBy("dispatch"),approvals:countBy("approvals")});
+ const before=snapshot();
+ expect(before).toEqual({task_assignments:16,conflicts:3,tools:9,inbox:4,mentions:1,dispatch:1,approvals:1});
+ // c2b22fb deployment state: v4 marker with a full manifest, rows present, but no row carries seed_key.
+ for(const record of records)if(record.data)delete record.data.seed_key;
+ expect(records.some(r=>r.data?.seed_key)).toBe(false);
+ const loadBefore=(await (await request("/api/load","GET",undefined,seedAdmin)).json()).items.reduce((sum:number,item:any)=>sum+item.hours,0);
+ const body=await runDemoSeed();
+ expect(body.already_seeded).toBe(true);
+ expect(snapshot()).toEqual(before);
+ expect(records.filter(r=>r.data?.seed_key).length).toBeGreaterThan(0);
+ const loadAfter=(await (await request("/api/load","GET",undefined,seedAdmin)).json()).items.reduce((sum:number,item:any)=>sum+item.hours,0);
+ expect(loadAfter).toBe(loadBefore);
+ await runDemoSeed();expect(snapshot()).toEqual(before);
+});
