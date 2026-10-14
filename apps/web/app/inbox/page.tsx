@@ -6,10 +6,12 @@ import {
   Paperclip, Check, X,
 } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Card, Badge, Avatar, PageHeader, Marker } from "@/components/ui";
-import { INBOX, InboxItem } from "@/lib/demo";
+import { SideSection, SideItem, Card, Badge, Avatar, PageHeader, Marker, Empty } from "@/components/ui";
+import type { InboxItem } from "@/lib/demo";
+import { QueryNotice } from "@/components/query-notice";
+import { recordQueryState } from "@/lib/query-state";
 import { useData } from "@/lib/data";
-import { cx, str } from "@/lib/utils";
+import { cx, str,avatarColor } from "@/lib/utils";
 
 const KIND_COLOR: Record<string, string> = {
   审批: "#EE4B43", 指派: "#3B82F6", 提及: "#9B59F5", 冲突: "#F2970A", 系统: "#878C94",
@@ -41,36 +43,25 @@ function InboxSidebar() {
 
 const FILTERS = ["全部", "审批", "指派", "@ 提及", "系统"];
 
-function normalize(items: unknown[]): InboxItem[] {
-  const rows = items
-    .map((x) => x as Record<string, unknown>)
-    .filter((x) => typeof x.title === "string")
-    .map((x, i) => {
-      const demo = INBOX[i % INBOX.length];
-      return {
-        ...demo,
-        id: str(x.id, demo.id),
-        title: str(x.title, demo.title),
-        desc: str(x.desc, demo.desc),
-        kind: str(x.kind, demo.kind) as InboxItem["kind"],
-      } as InboxItem;
-    });
-  return rows.length ? rows : INBOX;
+type InboxRow=Omit<InboxItem,"kind"> & {kind:string};
+function normalize(items: Record<string,unknown>[]): InboxRow[] {
+ return items.map((x):InboxRow=>({id:str(x.id),title:str(x.title),desc:str(x.desc,str(x.message,"—")),kind:str(x.kind,str(x.type,"—")),actor:str(x.actor,str(x.created_by,"—")),actorColor:avatarColor(str(x.created_by)),time:str(x.created_at,"—")}));
 }
 
 export default function InboxPage() {
-  const { data } = useData<unknown[]>("inbox", "/inbox", INBOX);
-  const items = normalize(Array.isArray(data) ? data : INBOX);
+  const query=useData<unknown[]>("inbox", "/inbox"),state=recordQueryState(query,"title");
   const [filter, setFilter] = useState("全部");
-  const [selectedId, setSelectedId] = useState("i1");
+  const [selectedId, setSelectedId] = useState<string|null>(null);
+  if(state.kind!=="ready")return <Shell sidebar={<></>}><PageHeader title="收件箱" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无消息" /></Shell>;
+  const items=normalize(state.items);
   const shown = items.filter((m) => filter === "全部" || m.kind === filter.replace("@ ", ""));
-  const selected = items.find((m) => m.id === selectedId) || items[0];
+  const selected = shown.find((m) => m.id === selectedId) || shown[0];
 
   return (
     <Shell sidebar={<InboxSidebar />}>
       <PageHeader
         title="收件箱"
-        extra={<Badge color="#EE4B43">17 未读</Badge>}
+        extra={<Badge color="#878C94">已加载 {items.length} 条</Badge>}
         right={<button className="text-[12.5px] text-accent">全部标为已读</button>}
       />
 
@@ -112,12 +103,13 @@ export default function InboxPage() {
                 </div>
               </button>
             ))}
+            {shown.length===0 && <Empty text="没有符合条件的消息" />}
           </div>
         </div>
 
         {/* 详情 */}
         <div className="p-5">
-          {selected?.detail ? (
+          {!selected ? <Empty text="选择一条消息查看" /> : selected.detail ? (
             <>
               <Card className="p-5">
                 <div className="flex items-center gap-2">

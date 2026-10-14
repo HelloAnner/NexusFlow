@@ -2,98 +2,74 @@
 
 import React, { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { CornerUpLeft, Share2, MoreHorizontal, SlidersHorizontal, Star } from "lucide-react";
+import { CornerUpLeft, Share2, MoreHorizontal, SlidersHorizontal } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Badge, Avatar, Marker } from "@/components/ui";
-import { PROJECTS, GANTT_GROUPS, GANTT_START, GANTT_TOTAL_DAYS, GANTT_TODAY_DAY, GanttGroup, GanttTask } from "@/lib/demo";
+import { SideSection, SideItem, Badge, Avatar, Marker,Empty,PageHeader } from "@/components/ui";
+import type { GanttGroup,GanttTask } from "@/lib/demo";
+import { QueryNotice } from "@/components/query-notice";
+import { recordQueryState,queryState } from "@/lib/query-state";
+import { projectPlanState } from "@/lib/plan-data";
 import { useData } from "@/lib/data";
-import { cx, addDays, mdCn, str } from "@/lib/utils";
+import { cx, addDays, mdCn, str,dayDiff } from "@/lib/utils";
 
 const CHART_W = 1500;
 const ROW_H = 40;
 const GROUP_H = 40;
 const LABEL_W = 210;
-const DAY_W = CHART_W / GANTT_TOTAL_DAYS;
-
-function GanttSidebar() {
-  return (
-    <>
-      <SideSection title="收藏">
-        <SideItem icon={<Star size={14} className="text-orange" fill="currentColor" />} label="智慧油田数据平台" />
-        <SideItem icon={<Marker color="#EE4B43" />} label="管道完整性管理" />
-        <SideItem icon={<Marker color="#F2970A" shape="square" />} label="北线调度优化" />
-      </SideSection>
-      <SideSection title="进行中项目">
-        <SideItem icon={<Marker color="#EE4B43" />} label="管道完整性管理" count={1} countColor="#EE4B43" />
-        <SideItem icon={<Marker color="#F2970A" />} label="智慧油田数据平台" count={2} countColor="#EE4B43" active bold />
-        <div className="ml-6 flex flex-col gap-0.5">
-          {["需求调研", "总体设计", "开发实施", "试运行"].map((s) => (
-            <SideItem key={s} icon={<Marker color="#AEB4BB" shape="square" size={12} />} label={<span className="text-ink-3">{s}</span>} />
-          ))}
-        </div>
-        <SideItem icon={<Marker color="#2FB365" shape="square" />} label="巡检机器人研发" />
-        <SideItem icon={<Marker color="#2FB365" shape="triangle" />} label="数字化转型咨询" />
-      </SideSection>
-      <SideSection title="待启动">
-        <SideItem icon={<Marker color="#AEB4BB" shape="dash" />} label="LNG 接收站智能化" />
-        <SideItem icon={<Marker color="#AEB4BB" shape="dash" />} label="管网数字孪生" />
-      </SideSection>
-      <SideSection title="已完成 · 3" defaultOpen={false}>
-        <></>
-      </SideSection>
-    </>
-  );
+function GanttSidebar({project,groups}:{project:Record<string,unknown>;groups:GanttGroup[]}) {
+ return <SideSection title="项目计划"><SideItem icon={<Marker color="#F2970A" />} label={str(project.name)} active bold />{groups.map((group,i)=><SideItem key={i} icon={<Marker color={group.typeColor} />} label={`${group.type} · ${group.owner}`} />)}</SideSection>;
 }
 
 type Row = { kind: "group"; group: GanttGroup } | { kind: "task"; group: GanttGroup; task: GanttTask };
 
 export default function GanttClient() {
-  const params = useParams<{ id: string }>();
-  const id = params?.id || "p1";
-  const { data: projects } = useData("projects", "/projects", PROJECTS);
-  const project = (projects as typeof PROJECTS).find((p) => p.id === id) || PROJECTS[0];
-  const { data: groups } = useData<GanttGroup[]>(`plan-${id}`, `/projects/${id}/tasks`, GANTT_GROUPS);
-  const safeGroups = Array.isArray(groups) && groups.length && (groups[0] as GanttGroup).tasks ? groups : GANTT_GROUPS;
-
-  const [selected, setSelected] = useState<string | null>("t5"); // 设计稿默认选中「数据中台迁移」
+ const params=useParams<{id:string}>(),id=params?.id;
+ if(!id)return <Shell sidebar={<></>}><Empty text="未指定项目" /></Shell>;
+ return <PlanQueries id={id} />;
+}
+function PlanQueries({id}:{id:string}){
+ const projects=useData<unknown[]>("projects","/projects");
+ const groups=useData<unknown[]>(`plan-${id}`,`/projects/${encodeURIComponent(id)}/tasks`);
+ const state=projectPlanState(id,recordQueryState(projects),queryState(groups));
+ if(state.kind!=="ready")return <Shell sidebar={<></>}><PageHeader title="项目计划" /><QueryNotice state={state} retry={()=>Promise.all([projects.refetch(),groups.refetch()])} emptyText={state.kind==="empty"?state.message:"暂无项目任务"} /></Shell>;
+ return <PlanChart project={state.project} groups={state.groups} start={state.start} days={state.days} />;
+}
+function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;groups:GanttGroup[];start:string;days:number}){
+  const GANTT_START=start,GANTT_TOTAL_DAYS=days,GANTT_TODAY_DAY=dayDiff(start,new Date().toISOString().slice(0,10)),DAY_W=CHART_W/days;
+  const [selected, setSelected] = useState<string | null>(null);
   const [scale, setScale] = useState<"周" | "月" | "阶段">("阶段");
 
   const rows = useMemo<Row[]>(() => {
     const out: Row[] = [];
-    for (const g of safeGroups) {
+    for (const g of groups) {
       out.push({ kind: "group", group: g });
       for (const t of g.tasks) out.push({ kind: "task", group: g, task: t });
     }
     return out;
-  }, [safeGroups]);
+  }, [groups]);
 
   const rowY = (i: number, kind: Row["kind"]) => rows.slice(0, i).reduce((h, r) => h + (r.kind === "group" ? GROUP_H : ROW_H), 0);
   const totalH = rows.reduce((h, r) => h + (r.kind === "group" ? GROUP_H : ROW_H), 0);
-  const ticks = Array.from({ length: GANTT_TOTAL_DAYS / 30 + 1 }, (_, i) => i * 30);
-  const selectedRow = rows.findIndex((r) => r.kind === "task" && r.task.id === selected);
-  const selectedTask = selectedRow >= 0 ? (rows[selectedRow] as Extract<Row, { kind: "task" }>) : null;
+  const ticks = Array.from({ length: Math.floor(GANTT_TOTAL_DAYS / 30) + 1 }, (_, i) => i * 30);
+  const selectedTask=rows.find((r):r is Extract<Row,{kind:"task"}>=>r.kind==="task"&&r.task.id===selected);
+  const selectedRow=selectedTask?rows.indexOf(selectedTask):-1;
 
   return (
-    <Shell sidebar={<GanttSidebar />}>
+    <Shell sidebar={<GanttSidebar project={project} groups={groups} />}>
       {/* 项目页头 */}
       <div className="flex items-start justify-between px-7 pt-5">
         <div>
           <div className="flex items-center gap-2.5">
             <Marker color="#F2970A" size={18} />
-            <h1 className="text-[17px] font-semibold">{str(project.name, "智慧油田数据平台")}</h1>
-            <Badge color="#F2970A">存在风险</Badge>
+            <h1 className="text-[17px] font-semibold">{str(project.name)}</h1>
+            <Badge color="#878C94">{str(project.status,"—")}</Badge>
           </div>
           <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-ink-3">
             <CornerUpLeft size={12} />
-            创新中心 / 软件研发部 / 公司级科研 / <span className="font-medium text-ink">{str(project.name, "智慧油田数据平台")}</span>
+            <span className="font-medium text-ink">{str(project.name)}</span>
           </p>
         </div>
         <div className="flex items-center gap-2.5">
-          <span className="flex -space-x-1.5">
-            {[["张", "#2FB365"], ["李", "#9B59F5"], ["王", "#F2970A"], ["陈", "#3B82F6"]].map(([n, c]) => (
-              <Avatar key={n} name={n} color={c} size={26} className="border-2 border-panel" />
-            ))}
-          </span>
           <button className="flex h-8 items-center gap-1.5 rounded-sm border border-border bg-panel px-3 text-[12.5px] text-ink-2">
             <Share2 size={13} /> 分享
           </button>
@@ -106,7 +82,7 @@ export default function GanttClient() {
       {/* 页签 */}
       <div className="flex items-center gap-5 border-b border-border px-7 text-[12.5px]">
         {[
-          ["概览", ""], ["计划", ""], ["成员", ""], ["问题", "7"], ["资料", "12"], ["动态", "3"],
+          ["概览", ""], ["计划", ""], ["成员", ""], ["问题", ""], ["资料", ""], ["动态", ""],
         ].map(([t, c]) => (
           <button
             key={t}
@@ -231,10 +207,10 @@ export default function GanttClient() {
                   } else if (t.kind === "done") {
                     parts.push(<rect key="b" x={x} y={y} width={w} height={10} rx={5} fill={c} />);
                   } else {
-                    // prog / mixed：实色 progress% + 25% 透明剩余（无 progress 时整条实色）
-                    const pct = t.progress ?? 100;
+                    // 缺少进度时只画背景，不暗示已完成。
+                    const pct = t.progress ?? 0;
                     parts.push(<rect key="bg" x={x} y={y} width={w} height={10} rx={5} fill={c} opacity={0.25} />);
-                    parts.push(<rect key="fg" x={x} y={y} width={Math.max(6, (w * pct) / 100)} height={10} rx={5} fill={c} />);
+                    parts.push(<rect key="fg" x={x} y={y} width={(w * pct) / 100} height={10} rx={5} fill={c} />);
                   }
                   // 逾期延伸（红色描边段）
                   if (t.overdueTo && t.overdueTo > t.end) {

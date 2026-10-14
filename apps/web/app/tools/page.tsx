@@ -7,7 +7,10 @@ import {
 } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { SideSection, SideItem, Card, Badge, PageHeader, SearchBox } from "@/components/ui";
-import { TOOLS, Tool } from "@/lib/demo";
+import type { Tool } from "@/lib/demo";
+import { QueryNotice } from "@/components/query-notice";
+import { recordQueryState } from "@/lib/query-state";
+import { str } from "@/lib/utils";
 import { useData } from "@/lib/data";
 
 const ICONS: Record<string, React.ComponentType<{ size?: number | string; style?: React.CSSProperties }>> = {
@@ -54,10 +57,10 @@ function ToolIcon({ tool, size = 34 }: { tool: Tool; size?: number }) {
 }
 
 export default function ToolsPage() {
-  // 静态注册表兜底；API /tools 提供真实条目后替换
-  const { data } = useData<unknown[]>("tools", "/tools", TOOLS);
-  const tools = (Array.isArray(data) && data.length >= TOOLS.length ? data : TOOLS) as Tool[];
-  const recent = TOOLS.filter((t) => t.recent);
+  const query=useData<unknown[]>("tools", "/tools"),state=recordQueryState(query);
+  if(state.kind!=="ready")return <Shell sidebar={<></>}><PageHeader title="智能工具台" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无工具" /></Shell>;
+  const tools=state.items.map((x):Tool=>({id:str(x.id),name:str(x.name),desc:str(x.description,str(x.desc,"—")),usage:str(x.usage,"—"),ai:x.category==="agent"||x.ai===true,icon:str(x.icon,"wrench"),color:"#878C94",recent:str(x.recent)}));
+  const recent = tools.filter((t) => t.recent);
 
   return (
     <Shell sidebar={<ToolsSidebar />}>

@@ -7,9 +7,11 @@ import {
 } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { SideSection, SideItem, Card, Badge, Avatar, Bar, Marker, PageHeader, SearchBox, Empty, STATUS_COLOR, TYPE_COLOR } from "@/components/ui";
-import { PROJECTS, Project } from "@/lib/demo";
+import type { Project } from "@/lib/demo";
+import { QueryNotice } from "@/components/query-notice";
+import { recordQueryState,measured } from "@/lib/query-state";
 import { useData } from "@/lib/data";
-import { cx, str, num, md } from "@/lib/utils";
+import { cx, str, md, avatarColor } from "@/lib/utils";
 
 const TYPES = ["科研", "市场", "出差", "文职", "党建", "学习", "休假"];
 const LEVELS = ["公司级", "处级", "中心级"];
@@ -38,30 +40,13 @@ function ProjectsSidebar() {
   );
 }
 
-// API 记录 → 页面行（字段缺失时回退 demo 同名字段）
-function normalize(items: unknown[]): Project[] {
-  const rows = items
-    .map((x) => x as Record<string, unknown>)
-    .filter((x) => typeof x.name === "string")
-    .map((x, i) => {
-      const demo = PROJECTS.find((p) => p.name === x.name) || PROJECTS[i % PROJECTS.length];
-      return {
-        ...demo,
-        id: str(x.id, demo.id),
-        name: str(x.name, demo.name),
-        type: str(x.type, demo.type),
-        owner: str(x.owner, demo.owner),
-        start: str(x.start_date, demo.start),
-        end: str(x.end_date, demo.end),
-        progress: num(x.progress, demo.progress),
-        status: str(x.status, demo.status),
-      } as Project;
-    });
-  return rows.length ? rows : PROJECTS;
+type ProjectRow = Omit<Project,"progress"> & {progress?:number;members?:string[]};
+function normalize(items: Record<string,unknown>[]): ProjectRow[] {
+ return items.map((x):ProjectRow=>({id:str(x.id),name:str(x.name),type:str(x.type,"—"),level:str(x.level),owner:str(x.owner,str(x.owner_id,"—")),ownerColor:avatarColor(str(x.owner_id)),start:str(x.start_date),end:str(x.end_date),progress:measured(x.progress),status:str(x.status,"—"),updated:str(x.updated_at,"—"),marker:"circle",color:"#878C94",members:Array.isArray(x.member_ids)?x.member_ids.filter((id):id is string=>typeof id==="string"):undefined}));
 }
 
-function progressColor(p: Project): string {
-  if (p.status === "完成" || p.progress >= 100) return "#AEB4BB";
+function progressColor(p: ProjectRow): string {
+  if (p.status === "完成" || (p.progress !== undefined && p.progress >= 100)) return "#AEB4BB";
   if (p.status === "逾期") return "#2FB365";
   if (p.type === "市场") return "#9B59F5";
   if (p.type === "文职") return "#3B82F6";
@@ -70,10 +55,11 @@ function progressColor(p: Project): string {
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { data, isLoading } = useData<unknown[]>("projects", "/projects", PROJECTS);
-  const projects = normalize(Array.isArray(data) ? data : PROJECTS);
+  const query = useData<unknown[]>("projects", "/projects"),state=recordQueryState(query);
   const [type, setType] = useState("全部");
   const [level, setLevel] = useState("");
+  if(state.kind!=="ready")return <Shell sidebar={<></>}><PageHeader title="项目" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无项目" /></Shell>;
+  const projects=normalize(state.items);
   const shown = projects.filter((p) => (type === "全部" || p.type === type) && (!level || p.level === level));
 
   return (
@@ -157,21 +143,20 @@ export default function ProjectsPage() {
                   <td className="px-3 py-3 text-ink-3 tabular-nums">{md(p.start)} - {md(p.end)}</td>
                   <td className="px-3 py-3">
                     <span className="flex items-center gap-2">
-                      <Bar value={p.progress} color={progressColor(p)} height={4} />
-                      <span className="w-8 shrink-0 text-right text-[11.5px] text-ink-3 tabular-nums">{p.progress}%</span>
+                      {p.progress !== undefined ? <><Bar value={p.progress} color={progressColor(p)} height={4} /><span className="w-8 shrink-0 text-right text-[11.5px] text-ink-3 tabular-nums">{p.progress}%</span></> : <span className="text-ink-4">—</span>}
                     </span>
                   </td>
                   <td className="px-3 py-3">
                     <span className="flex -space-x-1.5">
-                      {["成", "成", "成"].map((c, i) => (
+                      {p.members ? p.members.map((c, i) => (
                         <span
                           key={i}
                           className="flex h-5 w-5 items-center justify-center rounded-full border border-panel text-[9px] text-white"
-                          style={{ background: ["#2FB365", "#9B59F5", "#F2970A"][i] }}
+                          style={{ background: avatarColor(c) }}
                         >
-                          {c}
+                          {c.slice(0,1)}
                         </span>
-                      ))}
+                      )) : "—"}
                     </span>
                   </td>
                   <td className="px-3 py-3"><Badge color={STATUS_COLOR[p.status] || "#878C94"}>{p.status}</Badge></td>
@@ -180,7 +165,7 @@ export default function ProjectsPage() {
               ))}
             </tbody>
           </table>
-          {!isLoading && shown.length === 0 && <Empty text="没有符合条件的项目" />}
+          {shown.length === 0 && <Empty text="没有符合条件的项目" />}
         </Card>
       </div>
     </Shell>

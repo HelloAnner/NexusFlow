@@ -3,10 +3,12 @@
 import React, { useState } from "react";
 import { Building2, Layers, Users2, Sparkles, UserPlus, ChevronRight, Building } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Card, Badge, Avatar, Bar, PageHeader, SearchBox, STATUS_COLOR } from "@/components/ui";
-import { PEOPLE, TEAM_PEOPLE, ORG_TREE, Person } from "@/lib/demo";
+import { SideSection, SideItem, Card, Badge, Avatar, Bar, PageHeader, SearchBox, Empty, STATUS_COLOR } from "@/components/ui";
+import { ORG_TREE,type Person } from "@/lib/demo";
+import { QueryNotice } from "@/components/query-notice";
+import { recordQueryState,measured } from "@/lib/query-state";
 import { useData } from "@/lib/data";
-import { cx, str, num, arr, avatarColor } from "@/lib/utils";
+import { cx, str, avatarColor } from "@/lib/utils";
 
 const SKILLS = ["全部", "前端", "后端", "Python", "Go", "报告撰写", "PPT 制作", "需求对接", "运维"];
 
@@ -31,34 +33,19 @@ function TeamSidebar() {
   );
 }
 
-function normalize(items: unknown[]): Person[] {
-  const rows = items
-    .map((x) => x as Record<string, unknown>)
-    .filter((x) => typeof x.name === "string")
-    .map((x) => {
-      const demo = PEOPLE.find((p) => p.name === x.name);
-      return {
-        id: str(x.id, demo?.id || str(x.name)),
-        name: str(x.name),
-        title: str(x.title, demo?.title || "工程师"),
-        department: str(x.department, demo?.department || "软件研发部"),
-        skills: arr(x.skills).map(String).length ? arr(x.skills).map(String) : demo?.skills || [],
-        projects: arr(x.projects).map(String).length ? arr(x.projects).map(String) : demo?.projects || [],
-        load: num(x.load, demo?.load ?? 50),
-        status: str(x.status, demo?.status || "正常"),
-        color: demo?.color || avatarColor(str(x.name)),
-      } as Person;
-    });
-  return rows.length ? rows : TEAM_PEOPLE;
+type PersonRow=Omit<Person,"load"|"skills"|"projects"> & {load?:number;skills?:string[];projects?:string[]};
+function normalize(items: Record<string,unknown>[]): PersonRow[] {
+ return items.map((x):PersonRow=>({id:str(x.id),name:str(x.name),title:str(x.title,"—"),department:str(x.department,str(x.org_id,"—")),skills:Array.isArray(x.skills)?x.skills.filter((s):s is string=>typeof s==="string"):undefined,projects:Array.isArray(x.projects)?x.projects.filter((s):s is string=>typeof s==="string"):undefined,load:measured(x.load),status:str(x.status,"—"),color:avatarColor(str(x.name))}));
 }
 
 const loadColor = (v: number) => (v >= 90 ? "#EE4B43" : v >= 75 ? "#F2970A" : v >= 40 ? "#2FB365" : "#2FB365");
 
 export default function TeamPage() {
-  const { data } = useData<unknown[]>("people", "/people", TEAM_PEOPLE);
-  const people = normalize(Array.isArray(data) ? data : TEAM_PEOPLE);
+  const query=useData<unknown[]>("people", "/people"),state=recordQueryState(query);
   const [skill, setSkill] = useState("全部");
-  const shown = people.filter((p) => skill === "全部" || p.skills.some((s) => s.includes(skill)));
+  if(state.kind!=="ready")return <Shell sidebar={<></>}><PageHeader title="团队" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无人员" /></Shell>;
+  const people=normalize(state.items);
+  const shown = people.filter((p) => skill === "全部" || p.skills?.some((s) => s.includes(skill)));
 
   return (
     <Shell sidebar={<TeamSidebar />}>
@@ -66,9 +53,7 @@ export default function TeamPage() {
         title="团队"
         extra={
           <>
-            <span className="text-[12px] text-ink-3">在编 86</span>
-            <span className="text-[12px] text-ink-3">借调 4</span>
-            <span className="text-[12px] text-red">负载过高 5</span>
+            <span className="text-[12px] text-ink-3">已加载 {people.length} 人</span>
           </>
         }
         right={
@@ -161,20 +146,19 @@ export default function TeamPage() {
                     </td>
                     <td className="px-3 py-3">
                       <span className="flex flex-wrap gap-1">
-                        {p.projects.map((x) => (
+                        {p.projects ? p.projects.map((x) => (
                           <span key={x} className="rounded-[5px] bg-fill px-1.5 py-0.5 text-[10.5px] text-ink-2">{x}</span>
-                        ))}
+                        )) : "—"}
                       </span>
                     </td>
                     <td className="px-3 py-3">
                       <span className="flex flex-wrap gap-1">
-                        {p.skills.map((s) => <Badge key={s} color="#2F6FED">{s}</Badge>)}
+                        {p.skills ? p.skills.map((s) => <Badge key={s} color="#2F6FED">{s}</Badge>) : "—"}
                       </span>
                     </td>
                     <td className="px-3 py-3">
                       <span className="flex items-center gap-2">
-                        <Bar value={p.load} color={loadColor(p.load)} height={5} />
-                        <span className="w-9 shrink-0 text-right text-[11.5px] text-ink-3 tabular-nums">{p.load}%</span>
+                        {p.load!==undefined ? <><Bar value={p.load} color={loadColor(p.load)} height={5} /><span className="w-9 shrink-0 text-right text-[11.5px] text-ink-3 tabular-nums">{p.load}%</span></> : <span className="text-ink-4">暂不可用</span>}
                       </span>
                     </td>
                     <td className="px-5 py-3"><Badge color={STATUS_COLOR[p.status] || "#878C94"}>{p.status}</Badge></td>
@@ -182,6 +166,7 @@ export default function TeamPage() {
                 ))}
               </tbody>
             </table>
+            {shown.length===0 && <Empty text="没有符合条件的人员" />}
           </Card>
         </div>
       </div>

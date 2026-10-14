@@ -7,7 +7,9 @@ import {
 } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { SideSection, SideItem, Card, Badge, PageHeader, SearchBox, Marker } from "@/components/ui";
-import { FILES, FileItem } from "@/lib/demo";
+import type { FileItem } from "@/lib/demo";
+import { QueryNotice } from "@/components/query-notice";
+import { recordQueryState,measured } from "@/lib/query-state";
 import { useData } from "@/lib/data";
 import { cx, str } from "@/lib/utils";
 
@@ -49,22 +51,16 @@ const FTYPE_ICON: Record<string, { icon: React.ComponentType<{ size?: number | s
 
 const FILTERS = ["全部类型", "Word", "PPT", "PDF", "Excel", "数据"];
 
-function normalize(items: unknown[]): FileItem[] {
-  const rows = items
-    .map((x) => x as Record<string, unknown>)
-    .filter((x) => typeof x.name === "string")
-    .map((x, i) => {
-      const demo = FILES.find((f) => f.name === x.name) || FILES[i % FILES.length];
-      const name = str(x.name, demo.name);
-      return { ...demo, id: str(x.id, demo.id), name, attr: str(x.category, demo.attr), uploader: str(x.uploader, demo.uploader) } as FileItem;
-    });
-  return rows.length ? rows : FILES;
+type FileRow=Omit<FileItem,"ftype"> & {ftype:string};
+function normalize(items: Record<string,unknown>[]): FileRow[] {
+ return items.map((x):FileRow=>({id:str(x.id),name:str(x.name),attr:str(x.category,"—"),attrColor:"#878C94",task:str(x.task,str(x.task_id,"—")),uploader:str(x.uploader,str(x.uploaded_by,"—")),time:str(x.created_at,"—"),size:measured(x.size_bytes)!==undefined?`${x.size_bytes} B`:"—",ftype:str(x.ftype,"other")}));
 }
 
 export default function FilesPage() {
-  const { data } = useData<unknown[]>("files", "/files", FILES);
-  const files = normalize(Array.isArray(data) ? data : FILES);
+  const query=useData<unknown[]>("files", "/files"),state=recordQueryState(query);
   const [filter, setFilter] = useState("全部类型");
+  if(state.kind!=="ready")return <Shell sidebar={<></>}><PageHeader title="资料库" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无资料" /></Shell>;
+  const files=normalize(state.items);
 
   return (
     <Shell sidebar={<FilesSidebar />}>
@@ -72,8 +68,8 @@ export default function FilesPage() {
         title="资料库"
         extra={
           <>
-            <span className="rounded bg-fill px-1.5 py-0.5 text-[11px] text-ink-3">1,284 份</span>
-            <span className="text-[12px] text-ink-3">智慧油田数据平台 / 开发实施</span>
+            <span className="rounded bg-fill px-1.5 py-0.5 text-[11px] text-ink-3">已加载 {files.length} 份</span>
+            <span className="text-[12px] text-ink-3">当前可见资料</span>
           </>
         }
         right={
