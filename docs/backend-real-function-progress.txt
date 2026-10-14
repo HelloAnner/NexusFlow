@@ -1,0 +1,143 @@
+NexusFlow 实施进度与恢复步骤
+============================
+记录时间：2026-10-14 14:48，Asia/Shanghai。
+按用户要求暂停实施，写下进度后关闭本轮全部子智能体。
+本次只提交进度文档，不改运行代码、不重新部署、不删除分支或证据。
+
+一、当前结论
+------------
+已完成13模块调研、独立复核和实施方案确认；正在实施公共底座B0。
+B0代码已部署，服务器检查通过，但独立最终门禁尚未完成。
+13模块完整实现没有完成。02a权限、13a认证只做了准备，尚未实施。
+不能把140个测试通过、B0只读CLI通过，称为全系统业务验收通过。
+
+  调研/方案确认 [完成]
+          |
+  B0代码 + 服务器验证 [通过]
+          |
+  B0文档更新 + 独立FINAL_PASS [未完成] <- 当前停止点
+          |
+  02a权限 / 13a认证 [准备完成，待B0门禁]
+          |
+  其余切片 -> 全系统CLI闭环 -> 全系统FINAL_PASS [未开始/待完成]
+
+二、主分支与线上版本
+------------------
+本记录写入前，main = origin/main = 线上API = 部署marker = 编译CLI：
+0bdf0fb1aa423ab07e24b05a1473c0962c475529
+
+本记录提交会使main增加一个纯文档提交；线上仍运行上述代码版本。
+这是主动暂停时的版本区别，不表示新文档提交已部署。
+实际技术栈沿用用户确认的Bun/Hono/Next及design.pen，不重写Rust。
+未修改AGENTS.md，未部署其他系统，未调用生产seed创建、修复或轮换凭据。
+
+三、B0已经交付的窄能力
+--------------------
+1. API领域装配、共享schema/services、DTO/错误/request-id/审计契约。
+2. 共享查询不再用demo填初始值或错误结果；会话/租户缓存隔离，旧响应不能覆盖新账号。
+3. 六个查询消费页面增加真实加载、错误、空态及结构守卫；修复甘特预渲染崩溃。
+4. 公开版本接口和编译时冻结SHA；认证后的未知API返回JSON404，不落首页HTML。
+5. 管理preflight只读且受权限/租户限制；生产seed默认拒绝，同名数据不被自动认领。
+6. readiness/S3探针使用只读检查；已知conflict GET写入改为授权写事务处理。
+7. CLI按域拆分，新增版本/preflight/B0验证；登录令牌按需写0600私密文件，不吐stdout。
+8. 干净已push的main统一make deploy；隔离源码、依赖、Bun runtime和CLI验证附件。
+9. 部署前服务器检查与PG/对象元数据/旧二进制备份；失败恢复二进制及commit身份。
+10. 跨平台打包去macOS扩展属性，原生SCP压缩；每个测试文件独立Bun进程。
+
+上述不覆盖：全接口分页排序、完整成员/跨租户实测矩阵、真实业务写闭环、全部页面/控件。
+独立静态区域、负载/我的分工常量、未接动作、真实UUID计划路由等仍需后续切片处理。
+
+四、已发生的服务器验收
+----------------------
+成功发布：0bdf0fb，make deploy第5次执行通过。
+- Next预渲染23/23页。
+- API、Web、CLI三包服务器类型检查通过。
+- 服务器140个测试通过，0失败；隔离运行，不加载生产.env进行单测。
+- 发布脚本及CLI回归通过；已知GET写入守卫通过，但不是所有GET只读的完整证明。
+- PG dump、对象元数据/引用清单、旧二进制及SHA256备份完成。
+- 旧服务没有可验证版本/marker，备份记录为legacy；未伪造旧SHA。
+- 对象字节未改、未备份；未实际演练故障回滚或整库恢复。
+- 部署内和部署后再次执行B0产品CLI验证，两次均通过。
+- 验证含版本、健康、匿名/非法会话拒绝、认证未知API404、preflight、现有各域读取。
+- 验证器报告business_writes=false；登录/退出会操作验证会话，不等于零基础设施写入。
+- 未证明完整成员/跨租户矩阵、Portal实接、浏览器点击、业务写入/并发/故障恢复闭环。
+
+前4次失败均在切换线上二进制前停止，修复后重新review、push、完整make deploy：
+26c905d：构建类型推断失败 -> a882e47修Zustand循环引用。
+a882e47：甘特SSR读取undefined.find -> ed5e95d修查询消费契约。
+ed5e95d：服务器测试类型/本机绝对导入路径失败 -> 1f242e1修可移植测试。
+299f53c：旧T2测试从stdout提取token失败 -> 0bdf0fb改读私密文件，保留审批/发布断言。
+
+五、停下来的工作与复核状态
+--------------------------
+C0、D0累计独立代码复核均已PASS，范围绑定5c46266..0bdf0fb。
+独立high门禁只返回FINAL_PREPARED B0：预审未发现新的确定代码硬阻塞，未返回FINAL_PASS。
+222条稳定功能/控件清单的服务器结构检查通过；条数不证明需求完整或业务通过。
+
+P0 v3三份验收/发布/coverage文档已经在本地独立分支提交：
+5e629445ec37b75cccf2d556843fa6e32e69845f
+worktree干净，但worker网络请求失败后未完成正式handoff。
+该提交尚未独立review、未合并main、未push、未部署；不能直接视为已接受文档。
+main中这三份TXT仍有旧基线表述，当前进度以本记录及实际日志为准。
+
+保留工作区（均在/Users/anner/cnpc/.nexusflow-worktrees）：
+b0-core     | nf/b0-core     | 0bdf0fb | clean，代码已合并且服务器通过
+b0-delivery | nf/b0-delivery | 0bdf0fb | clean，代码已合并且服务器通过
+b0-coverage | nf/b0-coverage | 5e62944 | clean，文档新提交未审核/未合并
+module-02   | nf/module-02   | cef706e | clean，仅准备；尚未实施02a
+module-13   | nf/module-13   | cef706e | clean，仅准备；尚未实施13a
+
+关闭范围：本轮11个子智能体及闲置NF-B0-DEPLOY窗口。
+不关闭主协调者或其他项目原有窗口；不清理上述worktree/分支和验收证据。
+旧Herdr pane/tab关闭后不可复用；恢复时重新注册，不能直接运行旧coordinator启动/路由。
+
+六、下一步，按优先级执行
+----------------------
+1. 先核Git/线上真实状态，阅读已确认方案，不把本记录的历史SHA当新的运行事实。
+2. 独立复核P0的5e62944，只更新三份TXT的真实证据、当前路径及未验证边界。
+   rebase到最新main，review当前SHA，ff-only集成并push；不直接推功能分支。
+3. 从干净已push main执行make deploy，重跑服务器检查、CLI及222条文档结构检查。
+   新候选必须满足main/origin/main/API/marker/编译CLI同SHA，失败回原worktree修。
+4. 提交正式B0独立high门禁：14项矩阵、累计C0/D0 PASS、当前P0 PASS、模型证据、真实日志。
+   获得FINAL_PASS B0后，核clean/merged/server accepted，再安全清理B0工作区及临时证据。
+5. B0门禁通过后，将module-02和module-13 rebase到接受的main，启动02a与13a。
+   02a负责权限/guards及权限CLI；13a负责认证/会话/SSO及认证CLI。
+   Portal路由scope注册由13a负责，权限对接经协调者交接，不交叉修改owner文件。
+   真实角色/跨租户写测试先准备服务器隔离fixture，禁止写生产业务数据。
+6. 按已确认方案的28切片依赖表推进就绪模块，不重复造整套系统，不设无谓整波等待。
+   每片：功能分支commit -> review -> 最新main ff -> push -> make deploy -> 服务器CLI循环。
+7. 全部必做能力/控件核销后，再做代表业务写闭环、拒绝、回读、恢复、联动及最终high门禁。
+   只有全系统FINAL_PASS才算13模块完成；页面/设计对齐不等于已经浏览器实测。
+
+  commit -> review -> main/push -> make deploy -> server CLI
+                ^                                  |
+                +----------- FAIL修复 -------------+
+
+外部条件仍待确认/接入：真实工具URL与授权、Portal验收上下文、特殊工作日规则、可信seed provenance。
+这些缺失必须记录BLOCKED，不造URL、业务记录或成功结果。
+
+七、恢复入口与证据
+------------------
+计划：docs/backend-real-function-plan.txt（用户已确认，不擅改）。
+追踪：docs/function-coverage.txt；验收：docs/backend-real-function-acceptance.txt。
+发布：docs/backend-real-function-release.txt（新候选在nf/b0-coverage分支）。
+
+本地保留：/tmp/nexusflow-implementation-x5f9TG/
+- deploy-0bdf0fb.log：完整成功部署、140测试和首次真实CLI验证。
+- server-0bdf0fb-repeat.log：再次验证、实际版本/marker/CLI身份及备份清单。
+- coverage-0bdf0fb-server.log：222条结构检查。
+- c0-cumulative-0bdf0fb.txt、d0-cumulative-0bdf0fb.txt：累计review范围。
+- nf-b0-cr-pass.txt、nf-b0-dr-pass.txt、nf-b0-pr-pass.txt：复核包；P0当前仍为历史v2。
+- b0-requirements.txt、model-evidence.json、registry.json：门禁/模型/旧协调记录。
+- 前4次deploy日志：失败定位与完整修复链。
+/tmp不是长期归档；恢复后先取用，正式门禁消耗后再决定清理，当前不得删除。
+
+服务器不可变附件：
+/opt/nexusflow/validation/0bdf0fb1aa423ab07e24b05a1473c0962c475529
+STATUS为PASS，含源码、依赖、私有runtime、编译CLI及校验清单。
+备份：/opt/nexusflow/backups/0bdf0fb1aa423ab07e24b05a1473c0962c475529-*
+
+可复跑现有附件检查（仅服务器执行，不本地test/build/start）：
+make test COMMIT=0bdf0fb1aa423ab07e24b05a1473c0962c475529
+ssh nexusflow "python3 /opt/nexusflow/validation/0bdf0fb1aa423ab07e24b05a1473c0962c475529/source/scripts/server-env.py verify /opt/nexusflow/.env /opt/nexusflow/validation/0bdf0fb1aa423ab07e24b05a1473c0962c475529 http://127.0.0.1:8089"
+不打印.env、密码、token或票据；不把测试日志中的mock场景当生产业务闭环。
