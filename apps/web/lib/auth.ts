@@ -14,7 +14,7 @@ type AuthState = {
   logout: () => Promise<void>;
 };
 
-export const useAuth = create<AuthState>((set) => ({
+export const useAuth = create<AuthState>((set, get) => ({
   user: null,
   checked: false,
   setUser: (user) => set({ user, checked: true }),
@@ -30,7 +30,7 @@ export const useAuth = create<AuthState>((set) => ({
       set({ user, checked: true });
       return user;
     } catch (error) {
-      if (error instanceof ApiError && error.code === "SESSION_CHANGED") return useAuth.getState().user;
+      if (error instanceof ApiError && error.code === "SESSION_CHANGED") return get().user;
       set({ user: null, checked: true });
       return null;
     }

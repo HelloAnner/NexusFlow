@@ -2,6 +2,12 @@ import { expect,test } from "bun:test";
 import { api,ApiError,resetApiSession,sessionEpoch,sessionTenant } from "../../web/lib/api.ts";
 import { useAuth } from "../../web/lib/auth.ts";
 
+// Server tsc must reject a circular initializer silently degrading the hook/store to any.
+type Assert<T extends true> = T;
+type NotAny<T> = 0 extends (1 & T) ? false : true;
+export type AuthHookIsTyped = Assert<NotAny<typeof useAuth>>;
+export type AuthStateIsTyped = Assert<NotAny<ReturnType<typeof useAuth.getState>>>;
+
 // Browser-shaped memory only: no DOM, real storage, sockets, tokens or credentials.
 async function withBrowser(check:(storage:Map<string,string>,location:{pathname:string;href:string})=>Promise<void>){
  const previousFetch=globalThis.fetch,windowDescriptor=Object.getOwnPropertyDescriptor(globalThis,"window"),storageDescriptor=Object.getOwnPropertyDescriptor(globalThis,"localStorage"),previousAuth=useAuth.getState();
