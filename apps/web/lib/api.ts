@@ -1,45 +1,47 @@
 "use client";
 
-// 静态导出部署在同源 basePath(/nexusflow) 下，API 走相对路径 ./api 或 /nexusflow/api。
-export function apiBase(): string {
-  if (typeof window === "undefined") return "";
-  const p = window.location.pathname;
-  if (p === "/nexusflow" || p.startsWith("/nexusflow/")) return "/nexusflow";
-  return "";
-}
-
-export class ApiError extends Error {
-  status: number;
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-  }
-}
-
-export function token(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("nf_token");
-}
-
-export async function api<T = unknown>(path: string, init?: RequestInit): Promise<T> {
-  const headers: Record<string, string> = { "content-type": "application/json" };
-  const t = token();
-  if (t) headers["authorization"] = `Bearer ${t}`;
-  const res = await fetch(`${apiBase()}/api${path}`, {
-    ...init,
-    headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
-  });
-  if (res.status === 401 && typeof window !== "undefined" && !path.startsWith("/auth/")) {
-    window.location.href = `${apiBase()}/login`;
-    throw new ApiError(401, "unauthorized");
-  }
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(res.status, (data as { error?: string }).error || res.statusText);
-  return data as T;
-}
-
+import { unwrapList } from "../../../packages/shared/src/contracts";
 import type { ApiRecord } from "../../../packages/shared/src/index";
-
-export type Item = ApiRecord;
-
-export const listItems = (kind: string) => api<{ items: Item[] }>(`/${kind}`).then((r) => r.items || []);
+export function apiBase():string{
+ if(typeof window==="undefined")return "";
+ const p=window.location.pathname;return p==="/nexusflow"||p.startsWith("/nexusflow/")?"/nexusflow":"";
+}
+export class ApiError extends Error{
+ constructor(public status:number,message:string,public request_id?:string){super(message);}
+}
+export function token():string|null{return typeof window==="undefined"?null:localStorage.getItem("nf_token");}
+let epoch=0,lastToken:string|null=null,identity="",tenant:string|null=null;
+const listeners=new Set<()=>void>();
+export const subscribeSession=(listener:()=>void)=>{listeners.add(listener);return ()=>{listeners.delete(listener);};};
+export const sessionEpoch=()=>epoch;
+export const sessionTenant=()=>tenant;
+function changeSession(){epoch++;for(const listener of listeners)listener();}
+export const invalidateSessionCache=changeSession;
+export function resetApiSession(){identity="";tenant=null;lastToken=token();changeSession();}
+function syncToken(){const current=token();if(current!==lastToken){lastToken=current;identity="";tenant=null;changeSession();}}
+export async function api<T=unknown>(path:string,init?:RequestInit):Promise<T>{
+ syncToken();const requestEpoch=epoch,headers=new Headers(init?.headers);
+ if(!headers.has("content-type")&&!(init?.body instanceof FormData))headers.set("content-type","application/json");
+ const t=token();if(t)headers.set("authorization",`Bearer ${t}`);
+ const res=await fetch(`${apiBase()}/api${path}`,{...init,headers});
+ const request_id=res.headers.get("x-request-id")||undefined;
+ if(res.status===401&&typeof window!=="undefined"&&!path.startsWith("/auth/")){
+  resetApiSession();window.location.href=`${apiBase()}/login`;throw new ApiError(401,"unauthorized",request_id);
+ }
+ if(!res.headers.get("content-type")?.toLowerCase().includes("application/json"))throw new ApiError(res.ok?502:res.status,"API returned non-JSON response",request_id);
+ let data:unknown;try{data=await res.json();}catch{throw new ApiError(res.ok?502:res.status,"API returned invalid JSON",request_id);}
+ if(!res.ok)throw new ApiError(res.status,(data as {error?:string})?.error||res.statusText,request_id);
+ if(requestEpoch!==epoch&&!path.startsWith("/auth/"))throw new ApiError(409,"session changed; retry request",request_id);
+ if(path==="/auth/logout")resetApiSession();
+ if(path==="/auth/login"||path==="/auth/me"){
+  if(path==="/auth/login"&&typeof (data as any)?.access_token==="string")lastToken=(data as any).access_token;
+  const user=path==="/auth/me"?data:(data as any)?.user;
+  if(user&&typeof user.id==="string"){
+   const next=JSON.stringify([user.id,user.tenant_id??null]);
+   if(next!==identity){identity=next;tenant=user.tenant_id??null;changeSession();}
+  }
+ }
+ return data as T;
+}
+export type Item=ApiRecord;
+export const listItems=(kind:string)=>api<unknown>(`/${kind}`).then(unwrapList<Item>);

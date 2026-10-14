@@ -1,3 +1,4 @@
+export * from "./contracts";
 export const taskTypes = ["research-company","research-department","research-center","market","business-trip","clerical","party","learning","leave"] as const;
 export const fileCategories = ["personal-report","overall-report","presentation","application-report","dataset","minutes"] as const;
 export const roles = ["center_director","center_deputy","department_director","department_deputy","project_lead","member","super_admin"] as const;

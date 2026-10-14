@@ -2,6 +2,9 @@ import { expect, test, mock, beforeEach, afterAll } from "bun:test";
 import { createHash, createHmac } from "node:crypto";
 // Reviewer checks only: pure memory SQL/Redis models, no sockets or listeners.
 delete process.env.DATABASE_URL; delete process.env.REDIS_URL; delete process.env.APP_ENV;
+const seedEnvironment={enabled:process.env.DEMO_SEED_ENABLED,tenant:process.env.DEMO_SEED_TENANT_ID};
+// Memory-only isolated tenant; never enable production seed in a verification environment.
+process.env.DEMO_SEED_ENABLED="true";process.env.DEMO_SEED_TENANT_ID="t1";
 process.env.JWT_SECRET = "review-only-secret-at-least-32-bytes";
 const root = new URL("../src", import.meta.url).pathname;
 type Row = { id:string; kind:string; tenant_id:string|null; created_by:string; data:Record<string,any>; updated_at:Date; created_at:Date; xmin:string };
@@ -31,7 +34,10 @@ const sql:any=async(strings:TemplateStringsArray,...v:any[])=>{
   const person=/\(id=\$(\d+) OR data->>'user_id'=\$(\d+)\)/.exec(q);
   if(person)candidates=candidates.filter(r=>r.id===v[+person[1]!]||r.data?.user_id===v[+person[2]!]);
   else candidates=equalFilter(candidates,q,v,"id");
-  candidates=equalFilter(candidates,q,v,"kind");candidates=equalFilter(candidates,q,v,"created_by");candidates=equalFilter(candidates,q,v,"created_at");const xmin=/xmin::text=\$(\d+)/.exec(q);if(xmin)candidates=candidates.filter(r=>r.xmin===String(v[+xmin[1]!]));
+  candidates=equalFilter(candidates,q,v,"kind");
+  const kinds=/kind IN \(([^)]*)\)/.exec(q);if(kinds){const allowed=[...kinds[1]!.matchAll(/'([^']+)'/g)].map(m=>m[1]);candidates=candidates.filter(r=>allowed.includes(r.kind));}
+  if(q.includes("username LIKE 'demo.%'"))candidates=candidates.filter(r=>r.username?.startsWith("demo."));
+  candidates=equalFilter(candidates,q,v,"created_by");candidates=equalFilter(candidates,q,v,"created_at");const xmin=/xmin::text=\$(\d+)/.exec(q);if(xmin)candidates=candidates.filter(r=>r.xmin===String(v[+xmin[1]!]));
   if(q.includes("nexusflow.users")&&!q.includes("nexusflow.records")){
     candidates=equalFilter(candidates,q,v,"org_id");candidates=equalFilter(candidates,q,v,"status");candidates=equalFilter(candidates,q,v,"role");
     candidates=equalFilter(candidates,q,v,"portal_id");candidates=equalFilter(candidates,q,v,"portal_tenant_id");
@@ -82,7 +88,7 @@ function task(patch:any={}){return {name:"Task",type:"market",owner_id:"u1",org_
 function addAccount(user:any){const account={...user,status:"active",portal_id:user.portal_permissions===null?null:"portal-review"};users=users.filter(u=>u.id!==user.id);users.push(account);}
 async function request(path:string,method="GET",body?:any,user=center){addAccount(user);const token=await createSession(user);return app.request(path,{method,headers:{authorization:`Bearer ${token}`,"content-type":"application/json"},...(body===undefined?{}:{body:JSON.stringify(body)})});}
 beforeEach(()=>{Object.assign(config,initialConfig);records=[row("c1","orgs",{name:"Center",type:"center"}),row("o1","orgs",{name:"One",type:"department",parent_id:"c1"}),row("o2","orgs",{name:"Two",type:"department",parent_id:"c1"})];users=[{...member,status:"active",portal_id:null},{...member,id:"u2",username:"two",org_id:"o2",status:"active",portal_id:null}];audits=[];cache.clear();sets.clear();failRevoke=false;beforeNextBegin=null;nextXmin=0;activeXmin=null;globalThis.fetch=blockFetch as unknown as typeof fetch;});
-afterAll(()=>{globalThis.fetch=previousFetch;});
+afterAll(()=>{globalThis.fetch=previousFetch;for(const [key,value] of [["DEMO_SEED_ENABLED",seedEnvironment.enabled],["DEMO_SEED_TENANT_ID",seedEnvironment.tenant]]){if(value===undefined)delete process.env[key!];else process.env[key!]=value;}});
 
 test("R1: deny unknown-owner orgless departmental read and allow NULL-tenant assigned task",async()=>{
  expect(await canReadRecord(department,"tasks",row("x","tasks",{owner_id:"missing"},"missing"))).toBe(false);
@@ -249,7 +255,15 @@ test("configured demo department approver completes dispatch confirmation and ap
 });
 
 const seedAdmin={...center,role:"super_admin",org_id:null};
-async function runDemoSeed(){const response=await request("/api/seed","POST",{},seedAdmin);expect(response.status).toBe(201);return response.json();}
+async function runDemoSeed(){
+ if(records.length===3&&records.every(r=>["c1","o1","o2"].includes(r.id)))for(const record of records)record.tenant_id="base-fixture";
+ const response=await request("/api/seed","POST",{},seedAdmin);expect(response.status).toBe(201);return response.json();
+}
+async function expectSeedRefusedUnchanged(){
+ addAccount(seedAdmin);const before=JSON.stringify({records,users,audits});
+ const response=await request("/api/seed","POST",{},seedAdmin);expect(response.status).toBe(403);expect(await response.json()).not.toHaveProperty("credentials");
+ expect(JSON.stringify({records,users,audits})).toBe(before);
+}
 test("Q1: seed maps all ten profiles and project/task assignments to active same-tenant accounts",async()=>{
  await runDemoSeed();const account=(id:any)=>users.find(u=>u.id===id&&u.tenant_id==="t1"&&u.status==="active"),people=records.filter(r=>r.kind==="people"),projects=records.filter(r=>r.kind==="projects"),tasks=records.filter(r=>r.kind==="tasks").filter(r=>r.data.category),assignments=records.filter(r=>r.kind==="task_assignments");
  expect(people).toHaveLength(10);expect(people.every(p=>account(p.data.user_id))).toBe(true);expect(projects).toHaveLength(6);
@@ -275,9 +289,9 @@ test("Q4: new load risks appear, cleared risks disappear, and expired force retu
  const saved=row("expired-force","conflicts",{task_id:parent.id,person_id:accountId,type:"workload_overload",status:"forced",forced_until:new Date(Date.now()-1000).toISOString()});records.push(saved);list=await (await request("/api/load/conflicts","GET",undefined,seedAdmin)).json();expect(records.find(r=>r.id===saved.id)!.data.status).toBe("open");expect(list.items.find((x:any)=>x.id===saved.id)?.status).toBe("open");
  expect((await request(`/api/people/${profile.id}`,"PATCH",{daily_standard_hours:8},seedAdmin)).status).toBe(200);list=await (await request("/api/conflicts","GET",undefined,seedAdmin)).json();expect(list.items.some((x:any)=>x.task_id===parent.id&&x.type==="workload_overload")).toBe(false);
 });
-test("Q5: legacy seed upgrade preserves unowned legacy rows and later same-name user data",async()=>{
+test("Q5: legacy seed refusal preserves unowned rows and later same-name user data",async()=>{
  addAccount(seedAdmin);const oldDate=new Date("2020-01-01T00:00:00Z");const marker=row("legacy-seed","seed",{version:1},"u1");marker.created_at=oldDate;const demo=row("legacy-demo-project","projects",{name:"智慧油田数据平台",owner_id:"u1",org_id:"o1"},"u1");demo.created_at=new Date(oldDate);const real=row("real-project","projects",{name:"智慧油田数据平台",owner_id:"u1",org_id:"o1"},"u1");real.created_at=new Date();records.push(marker,demo,real,row("real-task","tasks",task({project_id:"real-project",status:"in_progress"}),"u2"),row("real-file","files",{name:"customer-data.csv",project_id:"real-project",task_id:"real-task",uploaded_by:"u2",status:"active",object_key:"customer-data"},"u2"));
- await runDemoSeed();for(const id of ["legacy-demo-project","real-project","real-task","real-file"])expect(records.some(r=>r.id===id)).toBe(true);const count=records.length;expect((await runDemoSeed()).already_seeded).toBe(true);expect(records.length).toBe(count);
+ await expectSeedRefusedUnchanged();for(const id of ["legacy-demo-project","real-project","real-task","real-file"])expect(records.some(r=>r.id===id)).toBe(true);
 });
 test("Q6: org JSON cannot forge demo approvers and only role-scoped approvers can decide",async()=>{
  await runDemoSeed();const rAndD=records.find(r=>r.kind==="orgs"&&r.data.name==="研发部")!,manager=users.find(u=>u.org_id===rAndD!.id&&u.role==="department_director")!,ordinary=users.find(u=>u.role==="member")!,centerAccount=users.find(u=>u.role==="center_director")!;
@@ -301,26 +315,18 @@ test("T2: demo approvers receive unique one-time credentials and complete login 
 });
 test("v3 seed with no provable relationship cohort fails closed without upgrading marker or credentials",async()=>{
  records.push(row("legacy-v3","seed",{version:3}));users.push(...[["demo.zhangwei","department_director","o1"],["demo.zhaomin","department_director","o2"],["demo.wangjianguo","center_director","c1"]].map(([username,role,org_id],i)=>({id:`demo-user-${i}`,username,role,org_id,tenant_id:"t1",status:"active",password_hash:"",portal_id:null} as any)));
- const before=records.length,response=await request("/api/seed","POST",{},seedAdmin);expect(response.status).toBe(500);expect(records.length).toBe(before);expect(records.find(r=>r.id==="legacy-v3")!.data.version).toBe(3);expect(users.filter(u=>u.id.startsWith("demo-user-")).every(u=>!u.password_hash)).toBe(true);
+ const before=records.length,response=await request("/api/seed","POST",{},seedAdmin);expect(response.status).toBe(403);expect(records.length).toBe(before);expect(records.find(r=>r.id==="legacy-v3")!.data.version).toBe(3);expect(users.filter(u=>u.id.startsWith("demo-user-")).every(u=>!u.password_hash)).toBe(true);
 });
-test("T1/U2: v3 migration repairs only its original seed cohort and restores owner access",async()=>{
- const plan:any=buildDemoSeed();await runDemoSeed();const marker=records.find(r=>r.kind==="seed")!,demoUsers=plan.people.map((person:any)=>users.find((u:any)=>u.username===`demo.${person.username}`)!);marker.data.version=3;for(const account of demoUsers)account.password_hash="";
- for(const [i,projectPlan] of plan.projects.entries()){const project=records.find(r=>r.kind==="projects"&&r.data.name===projectPlan.name)!;project.data.org_id=records.find(r=>r.kind==="orgs"&&r.data.name===(i%2?"项目部":"研发部"))!.id;project.data.owner_id=demoUsers[i%demoUsers.length]!.id;project.data.member_ids=demoUsers.filter((_:any,n:number)=>n%2===i%2).map((u:any)=>u.id);}
- for(const taskPlan of plan.tasks){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===taskPlan.name)!,owner=demoUsers[taskPlan.owner_index]!,project=records.find(r=>r.id===parent.data.project_id)!;parent.data.org_id=project.data.org_id;}
- const realProject=row("real-v3-project","projects",{name:plan.projects[0]!.name,owner_id:demoUsers[0]!.id,member_ids:[],org_id:"o1"},seedAdmin.id);realProject.created_at=new Date("2026-01-01T00:00:00Z");const realTask=row("real-v3-task","tasks",{name:plan.tasks[0]!.name,project_id:realProject.id,owner_id:demoUsers[0]!.id,member_ids:[],org_id:"o1"},seedAdmin.id);realTask.created_at=new Date(realProject.created_at);const realFile=row("real-v3-file","files",{name:"customer-data.csv",project_id:realProject.id,task_id:realTask.id,uploaded_by:demoUsers[0]!.id,object_key:"customer-data"},seedAdmin.id);realFile.created_at=new Date(realProject.created_at);records.push(realProject,realTask,realFile);
- const realSnapshot=JSON.stringify([realProject.data,realTask.data,realFile.data]),beforeIds=records.map(r=>r.id).sort(),response=await request("/api/seed","POST",{},seedAdmin),body=await response.json();expect(response.status).toBe(201);expect(body.credentials).toHaveLength(10);expect(records.map(r=>r.id).sort()).toEqual(beforeIds);expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(realSnapshot);expect(marker.data.version).toBe(4);expect(marker.data.relationship_migration.task_ids).toHaveLength(plan.tasks.length);expect(marker.data.relationship_migration.project_ids).toHaveLength(plan.projects.length);expect(marker.data.relationship_migration.assignment_ids).toHaveLength(plan.tasks.length);
- for(const taskPlan of plan.tasks){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===taskPlan.name&&r.created_at.valueOf()===marker.created_at.valueOf())!,owner=users.find(u=>u.id===parent.data.owner_id)!,assignment=records.find(r=>r.kind==="task_assignments"&&r.data.task_id===parent.id&&r.data.user_id===owner.id)!;expect(parent.data.org_id).toBe(owner.org_id);expect(records.find(r=>r.id===parent.data.project_id)!.data.member_ids).toContain(owner.id);expect(assignment.data.user_id).toBe(owner.id);}
- for(const name of ["试点单位签约","设备安装联调"]){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===name&&r.created_at.valueOf()===marker.created_at.valueOf())!,owner=users.find(u=>u.id===parent.data.owner_id)!,credential=body.credentials.find((c:any)=>c.username===owner.username)!,login=await localLogin(owner.username,credential.password),token=(await login.json()).access_token,assignment=records.find(r=>r.kind==="task_assignments"&&r.data.task_id===parent.id&&r.data.user_id===owner.id)!,taskResponse=await app.request(`/api/tasks/${parent.id}`,{headers:{authorization:`Bearer ${token}`}}),assignmentResponse=await app.request(`/api/task_assignments/${assignment.id}`,{headers:{authorization:`Bearer ${token}`}});expect(taskResponse.status).toBe(200);expect(assignmentResponse.status).toBe(200);expect(records.find(r=>r.id===parent.data.project_id)!.data.member_ids).toContain(owner.id);expect(parent.data.org_id).toBe(owner.org_id);}
- const repeat=await request("/api/seed","POST",{},seedAdmin);expect((await repeat.json()).credentials).toHaveLength(10);expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(realSnapshot);
+test("T1/U2: legacy v3 repair is pending and preserves same-name real records and credentials",async()=>{
+ await runDemoSeed();const marker=records.find(r=>r.kind==="seed")!;marker.data.version=3;delete marker.data.provenance;
+ const project=records.find(r=>r.kind==="projects")!,taskRecord=records.find(r=>r.kind==="tasks")!;
+ records.push(row("real-v3-project","projects",{...project.data},seedAdmin.id),row("real-v3-task","tasks",{...taskRecord.data,project_id:"real-v3-project"},seedAdmin.id),row("real-v3-file","files",{name:"customer-data.csv",object_key:"customer-data",project_id:"real-v3-project"},seedAdmin.id));
+ await expectSeedRefusedUnchanged();expect(marker.data.version).toBe(3);await expectSeedRefusedUnchanged();
 });
-test("legacy v4 without a complete migration manifest is repaired by verified task-assignment graph",async()=>{
- const plan:any=buildDemoSeed(),seeded=await runDemoSeed(),credentials=seeded.credentials as {username:string;password:string}[],marker=records.find(r=>r.kind==="seed")!,demoUsers=plan.people.map((person:any)=>users.find((u:any)=>u.username===`demo.${person.username}`)!);delete marker.data.relationship_migration;marker.created_at=new Date("2020-01-01T00:00:00Z");
- for(const [i,projectPlan] of plan.projects.entries()){const project=records.find(r=>r.kind==="projects"&&r.data.name===projectPlan.name)!;project.data.org_id=records.find(r=>r.kind==="orgs"&&r.data.name===(i%2?"项目部":"研发部"))!.id;project.data.member_ids=demoUsers.filter((_:any,n:number)=>n%2===i%2).map((u:any)=>u.id);}
- for(const taskPlan of plan.tasks){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===taskPlan.name)!,project=records.find(r=>r.id===parent.data.project_id)!;parent.data.org_id=project.data.org_id;}
- const realProject=row("legacy-v4-real-project","projects",{...records.find(r=>r.kind==="projects"&&r.data.name===plan.projects[0].name)!.data},seedAdmin.id);realProject.created_at=new Date("2026-01-01T00:00:00Z");const sourceTask=records.find(r=>r.kind==="tasks"&&r.data.name===plan.tasks[0].name)!,realTask=row("legacy-v4-real-task","tasks",{...sourceTask.data,project_id:realProject.id},seedAdmin.id);realTask.created_at=new Date(realProject.created_at);const realFile=row("legacy-v4-real-file","files",{name:"customer-data.csv",project_id:realProject.id,task_id:realTask.id,object_key:"customer-data"},seedAdmin.id);realFile.created_at=new Date(realProject.created_at);records.push(realProject,realTask,realFile);
- const snapshot=JSON.stringify([realProject.data,realTask.data,realFile.data]),ids=records.map(r=>r.id).sort(),response=await request("/api/seed","POST",{},seedAdmin),body=await response.json();expect(response.status).toBe(201);expect(body.already_seeded).toBe(true);expect(body.credentials).toHaveLength(10);expect(marker.data.version).toBe(4);expect(marker.data.relationship_migration.task_ids).toHaveLength(plan.tasks.length);expect(marker.data.relationship_migration.project_ids.length).toBeGreaterThanOrEqual(4);expect(records.map(r=>r.id).sort()).toEqual(ids);expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(snapshot);
- for(const name of ["试点单位签约","设备安装联调"]){const parent=records.find(r=>r.kind==="tasks"&&r.data.name===name&&r.id!==realTask.id)!,owner=users.find(u=>u.id===parent.data.owner_id)!,credential=body.credentials.find((c:any)=>c.username===owner.username)!,login=await localLogin(owner.username,credential.password),token=(await login.json()).access_token,assignment=records.find(r=>r.kind==="task_assignments"&&r.data.task_id===parent.id&&r.data.user_id===owner.id)!;expect((await app.request(`/api/tasks/${parent.id}`,{headers:{authorization:`Bearer ${token}`}})).status).toBe(200);expect((await app.request(`/api/task_assignments/${assignment.id}`,{headers:{authorization:`Bearer ${token}`}})).status).toBe(200);}
- expect((await request("/api/seed","POST",{},seedAdmin)).status).toBe(201);expect(JSON.stringify([realProject.data,realTask.data,realFile.data])).toBe(snapshot);
+test("legacy v4 without provenance/manifest is never repaired by name or inferred graph",async()=>{
+ await runDemoSeed();const marker=records.find(r=>r.kind==="seed")!;delete marker.data.relationship_migration;delete marker.data.provenance;
+ const source=records.find(r=>r.kind==="projects")!;records.push(row("legacy-v4-real-project","projects",{...source.data},seedAdmin.id),row("legacy-v4-real-file","files",{name:"customer-data.csv",object_key:"customer-data",project_id:"legacy-v4-real-project"},seedAdmin.id));
+ await expectSeedRefusedUnchanged();await expectSeedRefusedUnchanged();
 });
 test("T3: role downgrade and department transfer invalidate pending approval authority",async()=>{
  const seeded=await runDemoSeed(),credentials=seeded.credentials as {username:string;password:string}[],cred=(name:string)=>credentials.find(x=>x.username===name)!,dept=users.find(u=>u.username==="demo.zhangwei")!,centerAccount=users.find(u=>u.username==="demo.wangjianguo")!,org=records.find(r=>r.kind==="orgs"&&r.data.name==="研发部")!,otherOrg=records.find(r=>r.kind==="orgs"&&r.data.name==="项目部")!;
@@ -332,9 +338,35 @@ test("T3: role downgrade and department transfer invalidate pending approval aut
  expect((await binding(centerAccount.id,"member",org.id)).status).toBe(200);expect((await decision(centerApproval.id,"demo.wangjianguo")).status).toBe(403);expect(records.find(r=>r.id===centerApproval.id)!.data.status).toBe("pending");expect(audits.filter(a=>a.v.includes("approval.decision"))).toHaveLength(1);
 });
 
-// ---- review round 14: seed recovery/idempotency, load list, center-level approvals, credentials ----
+test("B0: authenticated unknown API is JSON404, including scoped Portal accounts",async()=>{
+ for(const user of [center,{...member,portal_permissions:["nexusflow:task:read"]}]){
+  const response=await request("/api/not-registered","GET",undefined,user);expect(response.status).toBe(404);expect(response.headers.get("content-type")).toContain("application/json");const body=await response.json();expect(body).toMatchObject({error:"not found",code:"HTTP_404"});expect(body.request_id).toBe(response.headers.get("x-request-id"));
+ }
+});
+test("B0: preflight is read-only, tenant/role-scoped, and never claims same-name records",async()=>{
+ records.push(row("foreign","projects",{name:"智慧油田数据平台",org_id:"o2"},"u2","other-tenant"),row("same-name","projects",{name:"智慧油田数据平台",org_id:"o1",owner_id:"u1"}),row("legacy-marker","seed",{version:3}));
+ addAccount(seedAdmin);const snapshot=JSON.stringify({records,users,audits});
+ const response=await request("/api/admin/preflight","GET",undefined,seedAdmin),body=await response.json();expect(response.status).toBe(200);expect(body.read_only).toBe(true);expect(body.tenant_id).toBe("t1");expect(body.counts.projects).toBe(1);expect(body.warnings.some((w:any)=>w.code==="legacy_seed_provenance")).toBe(true);expect(body.provenance.ownership_verified).toBe(false);
+ expect(JSON.stringify({records,users,audits})).toBe(snapshot);expect(JSON.stringify(body)).not.toContain("foreign");
+ expect((await request("/api/admin/preflight","GET",undefined,member)).status).toBe(403);
+ records.push(row("outside-person","people",{name:"Outside",org_id:"o2",user_id:"u2"},"u2"));
+ const scoped=await (await request("/api/admin/preflight","GET",undefined,department)).json();expect(scoped.counts.people||0).toBe(0);expect(scoped.counts.seed||0).toBe(0);
+});
+test("B0: disabled/production/wrong-tenant seed writes refuse without changing data or credentials",async()=>{
+ const original={enabled:process.env.DEMO_SEED_ENABLED,tenant:process.env.DEMO_SEED_TENANT_ID};
+ try{
+  for(const [enabled,tenant] of [["false","t1"],["true","local"],["true","production"],["true","different"]]){
+   process.env.DEMO_SEED_ENABLED=enabled;process.env.DEMO_SEED_TENANT_ID=tenant;await expectSeedRefusedUnchanged();
+  }
+  const response=await request("/api/seed/status","GET",undefined,seedAdmin);expect(response.status).toBe(200);expect(await response.json()).toEqual({seeded:false});
+ }finally{process.env.DEMO_SEED_ENABLED=original.enabled;process.env.DEMO_SEED_TENANT_ID=original.tenant;}
+});
+test("B0: shared write audit carries request metadata and strips sensitive patch fields",async()=>{
+ const created=await request("/api/tools","POST",{name:"audit",password:"secret",token:"secret"}),body=await created.json();expect(created.status).toBe(201);
+ const audit=audits.find(a=>a.v[3]==="tools.create")!.v[6];expect(audit.request_id).toBe(created.headers.get("x-request-id"));expect(audit.tenant_id).toBe("t1");expect(audit.object_id).toBe(body.id);expect(audit.after.name).toBe("audit");expect(audit.after).not.toHaveProperty("password");expect(audit.after).not.toHaveProperty("token");
+});
+// ---- review round 14: isolated seed, load list, center-level approvals, credentials ----
 const seededCounts=()=>({people:records.filter(r=>r.kind==="people").length,projects:records.filter(r=>r.kind==="projects").length,orgs:records.filter(r=>r.kind==="orgs").length,tasks:records.filter(r=>r.kind==="tasks"&&r.data.category).length,tools:records.filter(r=>r.kind==="tools").length,conflicts:records.filter(r=>r.kind==="conflicts").length});
-const seedKeyPairs=()=>records.filter(r=>r.data?.seed_key).map(r=>`${r.kind}:${r.data.seed_key}`).sort();
 
 test("R14-S1: seeding an empty database creates the full demo set with usable credentials",async()=>{
  records=[];users=[];const seeded=await runDemoSeed();
@@ -346,30 +378,21 @@ test("R14-S1: seeding an empty database creates the full demo set with usable cr
  const before=seededCounts();await runDemoSeed();expect(seededCounts()).toEqual(before);
 });
 
-test("R14-P0-1: seed repairs records wiped while demo accounts survive and rebinds the same accounts",async()=>{
- const first=await runDemoSeed(),accountIds=()=>users.filter(u=>u.username.startsWith("demo.")).map(u=>u.id).sort(),idsBefore=accountIds();
- records=[]; // simulate DELETE FROM nexusflow.records; users remain, some with empty password_hash
+test("R14-P0-1: missing marker cannot reclaim surviving demo accounts",async()=>{
+ await runDemoSeed();const accountIds=()=>users.filter(u=>u.username.startsWith("demo.")).map(u=>u.id).sort(),idsBefore=accountIds();
+ records=[]; // Memory-only damage simulation; never a server cleanup command.
  for(const account of users.filter(u=>u.username.startsWith("demo.")))account.password_hash="";
- const repaired=await runDemoSeed();
- expect(seededCounts()).toEqual({people:10,projects:6,orgs:6,tasks:15,tools:9,conflicts:3});
- expect(repaired.credentials).toHaveLength(10);
- expect(accountIds()).toEqual(idsBefore);
- const credential=(repaired.credentials as any[]).find(c=>c.username==="demo.zhangwei")!;
- expect((await localLogin(credential.username,credential.password)).status).toBe(200);
- const count=records.length;await runDemoSeed();expect(records.length).toBe(count);
+ await expectSeedRefusedUnchanged();expect(records).toHaveLength(0);expect(accountIds()).toEqual(idsBefore);
 });
 
-test("R14-P0-2: repeat seed reuses seed keys, restores partially deleted rows, and never duplicates",async()=>{
+test("R14-P0-2: incomplete seed refuses repair without mutating surviving records",async()=>{
  await runDemoSeed();
- const baseline=seedKeyPairs(),doomed=new Set([...records.filter(r=>r.kind==="tasks"&&r.data.seed_key).slice(0,2),...records.filter(r=>r.kind==="tools"&&r.data.seed_key).slice(0,1),...records.filter(r=>r.kind==="people"&&r.data.seed_key).slice(0,1)].map(r=>r.id));
+ const doomed=new Set([...records.filter(r=>r.kind==="tasks"&&r.data.seed_key).slice(0,2),...records.filter(r=>r.kind==="tools"&&r.data.seed_key).slice(0,1),...records.filter(r=>r.kind==="people"&&r.data.seed_key).slice(0,1)].map(r=>r.id));
  records=records.filter(r=>!doomed.has(r.id));
  const survivingIds=records.map(r=>r.id).sort();
- await runDemoSeed();
- expect(seededCounts()).toEqual({people:10,projects:6,orgs:9,tasks:15,tools:9,conflicts:3});
- expect(seedKeyPairs()).toEqual(baseline);
+ await expectSeedRefusedUnchanged();
  for(const id of survivingIds)expect(records.some(r=>r.id===id)).toBe(true);
- for(let i=0;i<3;i++){const body=await runDemoSeed();expect(body.credentials).toHaveLength(10);}
- expect(seedKeyPairs()).toEqual(baseline);
+ for(let i=0;i<3;i++)await expectSeedRefusedUnchanged();
 });
 
 test("R14-P1-1: load list returns per-person load, supports org filtering, and matches conflict totals",async()=>{
@@ -407,7 +430,7 @@ test("R14-P2: every seed rotates and returns usable credentials",async()=>{
  for(const credential of second.credentials as any[])expect((await localLogin(credential.username,credential.password)).status).toBe(200);
 });
 
-test("R14-X1: upgrading a legacy deployment without seed_key reuses natural keys instead of duplicating",async()=>{
+test("R14-X1: legacy seed without seed_key refuses natural-key repair and preserves loads",async()=>{
  await runDemoSeed();
  const countBy=(kind:string)=>records.filter(r=>r.kind===kind).length;
  const snapshot=()=>({task_assignments:countBy("task_assignments"),conflicts:countBy("conflicts"),tools:countBy("tools"),inbox:countBy("inbox"),mentions:countBy("mentions"),dispatch:countBy("dispatch"),approvals:countBy("approvals")});
@@ -417,11 +440,10 @@ test("R14-X1: upgrading a legacy deployment without seed_key reuses natural keys
  for(const record of records)if(record.data)delete record.data.seed_key;
  expect(records.some(r=>r.data?.seed_key)).toBe(false);
  const loadBefore=(await (await request("/api/load","GET",undefined,seedAdmin)).json()).items.reduce((sum:number,item:any)=>sum+item.hours,0);
- const body=await runDemoSeed();
- expect(body.already_seeded).toBe(true);
+ await expectSeedRefusedUnchanged();
  expect(snapshot()).toEqual(before);
- expect(records.filter(r=>r.data?.seed_key).length).toBeGreaterThan(0);
+ expect(records.filter(r=>r.data?.seed_key)).toHaveLength(0);
  const loadAfter=(await (await request("/api/load","GET",undefined,seedAdmin)).json()).items.reduce((sum:number,item:any)=>sum+item.hours,0);
  expect(loadAfter).toBe(loadBefore);
- await runDemoSeed();expect(snapshot()).toEqual(before);
+ await expectSeedRefusedUnchanged();expect(snapshot()).toEqual(before);
 });
