@@ -1,17 +1,15 @@
 .DEFAULT_GOAL := help
-.PHONY: help deploy deploy-build preflight api-check test status health logs
+.PHONY: help deploy preflight api-check test status health logs
 DEPLOY_HOST ?= nexusflow
 DEPLOY_PORT ?= 8089
 REMOTE_ROOT ?= /opt/nexusflow
 export DEPLOY_HOST DEPLOY_PORT REMOTE_ROOT
 
 help:
-	@printf 'targets: deploy (clean pushed main only), preflight (read-only), deploy-build, api-check/test (server attachment), status health logs\n'
+	@printf 'targets: deploy (clean pushed main only), preflight (read-only), api-check/test (server attachment), status health logs\n'
 # All local build operations exist only inside this release entrypoint.
 deploy:
 	./scripts/deploy.sh
-deploy-build:
-	./scripts/build-linux.sh
 preflight:
 	./scripts/preflight.sh
 # No local tests, typecheck, or service. Use the deployed immutable attachment.

@@ -2,6 +2,13 @@
 """Minimal server-only checks; no service, DB, release or credential access."""
 import importlib.util,pathlib,subprocess,tempfile,shutil,socket,threading,time
 root=pathlib.Path(__file__).resolve().parents[2]
+checks=(root/'scripts/server-checks.sh').read_text()
+assert 'exec env -i ' in checks and 'for app in apps/api cli; do' in checks
+assert 'for test_file in tests/*.test.ts; do bun test "$test_file"; done' in checks
+assert '&& bun test)' not in checks
+makefile=(root/'Makefile').read_text()
+assert 'deploy-build' not in makefile and './scripts/build-linux.sh' not in makefile
+assert 'deploy:\n\t./scripts/deploy.sh' in makefile
 spec=importlib.util.spec_from_file_location('server_env',root/'scripts/server-env.py')
 module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
 with tempfile.TemporaryDirectory() as directory:
@@ -100,4 +107,4 @@ finally:
     for connection in connections: connection.close()
 for script in (root/'scripts').glob('*.sh'):
     subprocess.run(['bash','-n',str(script)],check=True)
-print('release checks: PASS (environment parsing, container backup identity, GET guard, clean-main guards, binary+commit rollback, stalled-health timeout/retry/failure status, shell syntax)')
+print('release checks: PASS (environment parsing, container backup identity, GET guard, clean-main guards, binary+commit rollback, stalled-health timeout/retry/failure status, per-file test contract, deploy-only build entry, shell syntax)')

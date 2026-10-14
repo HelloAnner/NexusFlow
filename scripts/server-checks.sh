@@ -17,7 +17,10 @@ if find . -name '.env' -o -name '.env.local' | grep -q .; then echo 'BLOCKED: do
 for app in apps/api apps/web cli; do
  (cd "$app" && bun node_modules/typescript/bin/tsc --noEmit)
 done
-for app in apps/api cli; do (cd "$app" && bun test); done
+for app in apps/api cli; do
+ (cd "$app"
+  for test_file in tests/*.test.ts; do bun test "$test_file"; done)
+done
 python3 scripts/check-read-safety.py .
 python3 scripts/tests/release_test.py
 SH
