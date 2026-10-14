@@ -8,6 +8,7 @@ process.env.DEMO_SEED_ENABLED="true";process.env.DEMO_SEED_TENANT_ID="t1";
 process.env.JWT_SECRET = "review-only-secret-at-least-32-bytes";
 const root = new URL("../src", import.meta.url).pathname;
 type Row = { id:string; kind:string; tenant_id:string|null; created_by:string; data:Record<string,any>; updated_at:Date; created_at:Date; xmin:string };
+let sqlWrites:string[]=[];
 let records:Row[] = [], users:any[] = [], audits:any[] = [], failRevoke=false, beforeNextBegin:(()=>Promise<void>)|null=null, nextXmin=0, activeXmin:string|null=null;
 const cache=new Map<string,string>(), sets=new Map<string,Set<string>>();
 const redis:any={status:"ready", get:async(k:string)=>cache.get(k)??null,
@@ -27,6 +28,7 @@ function equalFilter(items:any[],q:string,v:any[],field:string) {
 }
 const sql:any=async(strings:TemplateStringsArray,...v:any[])=>{
   const q=strings.map((s,i)=>s+(i<v.length?`$${i}`:"")).join("");
+  if(/^(INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|TRUNCATE)\b/i.test(q.trim()))sqlWrites.push(q);
   if(v.some(x=>x===undefined))throw Error("UNDEFINED_VALUE");
   let candidates:any[]=q.includes("nexusflow.users")&&!q.includes("nexusflow.records")?users:records;
   const tenant=/tenant_id IS NOT DISTINCT FROM \$(\d+)/.exec(q), admin=/AND \(\$(\d+) OR tenant_id/.exec(q);
@@ -87,7 +89,7 @@ function row(id:string,kind:string,data:any,creator="u1",tenant:string|null="t1"
 function task(patch:any={}){return {name:"Task",type:"market",owner_id:"u1",org_id:"o1",member_ids:[],start_date:"2026-06-01",end_date:"2026-06-01",daily_hours:2,status:"draft",all_day:false,...patch};}
 function addAccount(user:any){const account={...user,status:"active",portal_id:user.portal_permissions===null?null:"portal-review"};users=users.filter(u=>u.id!==user.id);users.push(account);}
 async function request(path:string,method="GET",body?:any,user=center){addAccount(user);const token=await createSession(user);return app.request(path,{method,headers:{authorization:`Bearer ${token}`,"content-type":"application/json"},...(body===undefined?{}:{body:JSON.stringify(body)})});}
-beforeEach(()=>{Object.assign(config,initialConfig);records=[row("c1","orgs",{name:"Center",type:"center"}),row("o1","orgs",{name:"One",type:"department",parent_id:"c1"}),row("o2","orgs",{name:"Two",type:"department",parent_id:"c1"})];users=[{...member,status:"active",portal_id:null},{...member,id:"u2",username:"two",org_id:"o2",status:"active",portal_id:null}];audits=[];cache.clear();sets.clear();failRevoke=false;beforeNextBegin=null;nextXmin=0;activeXmin=null;globalThis.fetch=blockFetch as unknown as typeof fetch;});
+beforeEach(()=>{Object.assign(config,initialConfig);records=[row("c1","orgs",{name:"Center",type:"center"}),row("o1","orgs",{name:"One",type:"department",parent_id:"c1"}),row("o2","orgs",{name:"Two",type:"department",parent_id:"c1"})];users=[{...member,status:"active",portal_id:null},{...member,id:"u2",username:"two",org_id:"o2",status:"active",portal_id:null}];audits=[];sqlWrites=[];cache.clear();sets.clear();failRevoke=false;beforeNextBegin=null;nextXmin=0;activeXmin=null;globalThis.fetch=blockFetch as unknown as typeof fetch;});
 afterAll(()=>{globalThis.fetch=previousFetch;for(const [key,value] of [["DEMO_SEED_ENABLED",seedEnvironment.enabled],["DEMO_SEED_TENANT_ID",seedEnvironment.tenant]]){if(value===undefined)delete process.env[key!];else process.env[key!]=value;}});
 
 test("R1: deny unknown-owner orgless departmental read and allow NULL-tenant assigned task",async()=>{
@@ -151,6 +153,74 @@ test("R8: conflict resolve works only after actual conflict cleared",async()=>{
 test("R9: conflict force operates and is time limited",async()=>{
  records.push(row("task-1","tasks",task({daily_hours:9,status:"in_progress"})),row("f1","conflicts",{task_id:"task-1",person_id:"u1",type:"workload_overload",status:"open"}));
  expect((await request("/api/conflicts/f1/force","POST",{reason:"approved exception"})).status).toBe(200);const issue=records.find(r=>r.id==="f1")!.data;expect(issue.status).toBe("forced");expect(Date.parse(issue.forced_until)).toBeGreaterThan(Date.now());
+});
+function forceFixture(until:string|undefined){
+ records=records.filter(r=>!["force-task","force-person","force-row"].includes(r.id));
+ records.push(row("force-person","people",{name:"Person",user_id:"u1",org_id:"o1",status:"leave",daily_standard_hours:8}),row("force-task","tasks",task({status:"in_progress"})),row("force-row","conflicts",{task_id:"force-task",person_id:"u1",type:"person_unavailable",status:"forced",force_reason:"old exception",forced_until:until}));
+}
+test("B0 v4: expired/invalid force GET projections are open, valid force is warning; no SQL writes",async()=>{
+ for(const until of [new Date(Date.now()-1000).toISOString(),"invalid",undefined,new Date(Date.now()+86400000).toISOString()]){
+  forceFixture(until);const snapshot=JSON.stringify({records,audits});let riskCount=0;
+  for(const path of ["/api/conflicts","/api/load/conflicts","/api/home","/api/reports/conflicts?from=2026-06-01&to=2026-06-01","/api/gantt?risk_only=true","/api/gantt/summary"]){
+   const response=await request(path);expect(response.status).toBe(200);const body=await response.json();
+   if(path==="/api/gantt/summary")expect(body.open_risk).toBe(riskCount);
+   else if(path.startsWith("/api/gantt?"))expect(body.items.some((x:any)=>x.id==="force-task")).toBe(true);
+   else{
+    const items=body.items||body.risk_radar||body.payload.items;if(path==="/api/conflicts")riskCount=items.length;
+    const issue=items.find((x:any)=>x.id==="force-row");expect(issue).toBeDefined();
+    const valid=Date.parse(String(until))>Date.now();expect(issue.status).toBe(valid?"forced":"open");expect(issue.severity).toBe(valid?"warning":"blocking");
+   }
+   expect(JSON.stringify({records,audits})).toBe(snapshot);expect(sqlWrites).toEqual([]);
+  }
+ }
+});
+test("B0 v4: expired/invalid force can be renewed without a preceding GET; active force cannot",async()=>{
+ for(const until of [new Date(Date.now()-1000).toISOString(),"invalid",undefined]){
+  forceFixture(until);const next=new Date(Date.now()+86400000).toISOString();
+  const response=await request("/api/conflicts/force-row/force","POST",{reason:"new exception",forced_until:next});expect(response.status).toBe(200);
+  const saved=records.find(r=>r.id==="force-row")!;expect(saved.data).toMatchObject({status:"forced",force_reason:"new exception",forced_until:next});expect(Number.isFinite(Date.parse(saved.data.force_expired_at))).toBe(true);
+  const snapshot=JSON.stringify({records,audits}),writes=sqlWrites.length;
+  expect((await request("/api/conflicts/force-row/force","POST",{reason:"repeat"})).status).toBe(404);
+  expect(JSON.stringify({records,audits})).toBe(snapshot);expect(sqlWrites).toHaveLength(writes);
+ }
+});
+test("B0 v4: rejected conflict actions leave expired records and updated_at untouched",async()=>{
+ forceFixture("invalid");const snapshot=JSON.stringify({records,audits});
+ for(const [path,body,user,status] of [
+  ["/api/conflicts/force-row/force",{reason:"no authority"},department,403],
+  ["/api/conflicts/force-row/resolve",{reason:"no authority"},member,403],
+  ["/api/conflicts/force-row/force",{reason:" "},center,400],
+  ["/api/conflicts/force-row/force",{reason:"invalid expiry",forced_until:"invalid"},center,400],
+  ["/api/conflicts/force-row/resolve",{reason:"still blocked"},center,409],
+  ["/api/tasks/force-task/action",{action:"reschedule",daily_hours:2},center,409],
+  ["/api/tasks/force-task/action",{action:"not-an-action"},center,400],
+ ] as const){
+  expect((await request(path,"POST",body,user)).status).toBe(status);expect(JSON.stringify({records,audits})).toBe(snapshot);expect(sqlWrites).toEqual([]);
+ }
+});
+test("B0 v4: force checks the effective state again under lock before any write",async()=>{
+ forceFixture("invalid");let snapshot="";
+ beforeNextBegin=async()=>{records.find(r=>r.id==="force-row")!.data.forced_until=new Date(Date.now()+86400000).toISOString();snapshot=JSON.stringify({records,audits});};
+ expect((await request("/api/conflicts/force-row/force","POST",{reason:"racing renewal"})).status).toBe(409);
+ expect(JSON.stringify({records,audits})).toBe(snapshot);expect(sqlWrites).toEqual([]);
+});
+test("B0 v4: schedule reconciliation cannot revive a force that expired before its lock",async()=>{
+ forceFixture(new Date(Date.now()+86400000).toISOString());records.find(r=>r.id==="force-person")!.data.status="active";records.find(r=>r.id==="force-task")!.data.daily_hours=9;records.find(r=>r.id==="force-row")!.data.type="workload_overload";
+ const expired=new Date(Date.now()-1000).toISOString();beforeNextBegin=async()=>{records.find(r=>r.id==="force-row")!.data.forced_until=expired;};
+ expect((await request("/api/tasks/force-task/action","POST",{action:"reschedule",daily_hours:9})).status).toBe(200);
+ expect(records.find(r=>r.id==="force-row")!.data).toMatchObject({status:"open",forced_until:expired});
+});
+test("B0 v4: resolve and validated schedule reconciliation handle expired/invalid force in their transactions",async()=>{
+ for(const until of [new Date(Date.now()-1000).toISOString(),"invalid"]){
+  forceFixture(until);records.find(r=>r.id==="force-task")!.data.status="done";
+  let snapshot=JSON.stringify({records,audits}),writes=sqlWrites.length;
+  expect((await request("/api/conflicts/force-row/force","POST",{reason:"already cleared"})).status).toBe(409);
+  expect(JSON.stringify({records,audits})).toBe(snapshot);expect(sqlWrites).toHaveLength(writes);
+  expect((await request("/api/conflicts/force-row/resolve","POST",{reason:"schedule cleared"})).status).toBe(200);expect(records.find(r=>r.id==="force-row")!.data.status).toBe("resolved");
+  forceFixture(until);records.find(r=>r.id==="force-person")!.data.status="active";records.find(r=>r.id==="force-task")!.data.daily_hours=9;records.find(r=>r.id==="force-row")!.data.type="workload_overload";
+  expect((await request("/api/tasks/force-task/action","POST",{action:"reschedule",daily_hours:9})).status).toBe(200);
+  expect(records.find(r=>r.id==="force-row")!.data.status).toBe("open");expect(Number.isFinite(Date.parse(records.find(r=>r.id==="force-row")!.data.force_expired_at))).toBe(true);
+ }
 });
 test("R10: drafts absent from live risk and profile-ID maps to account load",async()=>{
  records.push(row("task-1","tasks",task({daily_hours:9})),row("person-1","people",{name:"One",org_id:"o1",user_id:"u1",daily_standard_hours:8}));
@@ -307,7 +377,7 @@ test("Q4: new load risks appear, cleared risks disappear, and expired force retu
  await runDemoSeed();const profile=records.find(r=>r.kind==="people"&&r.data.name==="王建国")!,accountId=String(profile!.data.user_id),parent=records.find(r=>r.kind==="tasks"&&r.data.owner_id===accountId&&r.data.status==="in_progress")!;
  expect((await request(`/api/people/${profile.id}`,"PATCH",{daily_standard_hours:1},seedAdmin)).status).toBe(200);
  let home=await (await request("/api/home","GET",undefined,seedAdmin)).json(),list=await (await request("/api/conflicts","GET",undefined,seedAdmin)).json();expect(list.items.some((x:any)=>x.task_id===parent.id&&x.type==="workload_overload")).toBe(true);expect(home.stats.open_conflicts).toBe(list.items.length);expect(home.risk_radar).toEqual(list.items);
- const saved=row("expired-force","conflicts",{task_id:parent.id,person_id:accountId,type:"workload_overload",status:"forced",forced_until:new Date(Date.now()-1000).toISOString()});records.push(saved);list=await (await request("/api/load/conflicts","GET",undefined,seedAdmin)).json();expect(records.find(r=>r.id===saved.id)!.data.status).toBe("open");expect(list.items.find((x:any)=>x.id===saved.id)?.status).toBe("open");
+ const saved=row("expired-force","conflicts",{task_id:parent.id,person_id:accountId,type:"workload_overload",status:"forced",forced_until:new Date(Date.now()-1000).toISOString()});records.push(saved);const savedBefore=JSON.stringify(saved),writesBefore=sqlWrites.length;list=await (await request("/api/load/conflicts","GET",undefined,seedAdmin)).json();expect(JSON.stringify(records.find(r=>r.id===saved.id))).toBe(savedBefore);expect(sqlWrites).toHaveLength(writesBefore);expect(list.items.find((x:any)=>x.id===saved.id)?.status).toBe("open");
  expect((await request(`/api/people/${profile.id}`,"PATCH",{daily_standard_hours:8},seedAdmin)).status).toBe(200);list=await (await request("/api/conflicts","GET",undefined,seedAdmin)).json();expect(list.items.some((x:any)=>x.task_id===parent.id&&x.type==="workload_overload")).toBe(false);
 });
 test("Q5: legacy seed refusal preserves unowned rows and later same-name user data",async()=>{
