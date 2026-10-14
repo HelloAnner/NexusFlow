@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { api, apiBase } from "./api";
+import { api, apiBase, ApiError } from "./api";
 
 export type SessionUser = { id: string; username: string; name: string; role: string };
 
@@ -29,7 +29,8 @@ export const useAuth = create<AuthState>((set) => ({
       };
       set({ user, checked: true });
       return user;
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError && error.code === "SESSION_CHANGED") return useAuth.getState().user;
       set({ user: null, checked: true });
       return null;
     }
