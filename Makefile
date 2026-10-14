@@ -1,29 +1,26 @@
 .DEFAULT_GOAL := help
-.PHONY: help install build api-check test deploy-build deploy status health logs
+.PHONY: help deploy deploy-build preflight api-check test status health logs
 DEPLOY_HOST ?= nexusflow
 DEPLOY_PORT ?= 8089
-DEPLOY_BINARY ?= dist/linux-x86_64/nexusflow
+REMOTE_ROOT ?= /opt/nexusflow
+export DEPLOY_HOST DEPLOY_PORT REMOTE_ROOT
 
 help:
-	@printf 'targets: install build api-check test deploy-build deploy status health logs\n'
-install:
-	cd apps/api && bun install
-	cd cli && bun install
-build: deploy-build
-api-check:
-	cd apps/api && bunx tsc --noEmit
-	cd cli && bunx tsc --noEmit
-test:
-	cd apps/api && bun test
-	cd cli && bun test
+	@printf 'targets: deploy (clean pushed main only), preflight (read-only), deploy-build, api-check/test (server attachment), status health logs\n'
+# All local build operations exist only inside this release entrypoint.
+deploy:
+	./scripts/deploy.sh
 deploy-build:
 	./scripts/build-linux.sh
-deploy: deploy-build
-	DEPLOY_HOST=$(DEPLOY_HOST) DEPLOY_PORT=$(DEPLOY_PORT) DEPLOY_BINARY=$(DEPLOY_BINARY) ./scripts/deploy.sh
+preflight:
+	./scripts/preflight.sh
+# No local tests, typecheck, or service. Use the deployed immutable attachment.
+api-check test:
+	@test -n "$(COMMIT)" || { echo 'COMMIT=<40-char deployed SHA> required'; exit 1; }
+	ssh $(DEPLOY_HOST) 'bash $(REMOTE_ROOT)/validation/$(COMMIT)/source/scripts/server-checks.sh $(REMOTE_ROOT)/validation/$(COMMIT)'
 status:
 	ssh $(DEPLOY_HOST) 'sudo systemctl status nexusflow --no-pager'
 health:
-	curl -fsS http://101.200.138.250:$(DEPLOY_PORT)/nexusflow/healthz
-	curl -fsS http://101.200.138.250:$(DEPLOY_PORT)/nexusflow/readyz
+	ssh $(DEPLOY_HOST) 'curl -fsS http://127.0.0.1:$(DEPLOY_PORT)/nexusflow/healthz'
 logs:
 	ssh $(DEPLOY_HOST) 'sudo journalctl -u nexusflow -n 100 --no-pager'

@@ -1,19 +1,28 @@
 #!/usr/bin/env bun
 import { parseArgs,option } from "./args";
-import { commandRequest } from "./commands";
+import { build,environmentClient } from "./client";
+import { verifyB0 } from "./verify";
 
 export async function main(argv=process.argv.slice(2)) {
- const args=parseArgs(argv);if(!args.command||args.command==="help"||args.options.help===true){help();return 0;}
- const root=(process.env.NEXUSFLOW_URL||"http://127.0.0.1:8089").replace(/\/+$/,"");const prefix=(process.env.NEXUSFLOW_BASE_PATH||"/nexusflow").replace(/^\/+|\/+$/g,"");const base=prefix?`${root}/${prefix}`:root;
- if(args.command==="auth"&&args.action==="login")return login(base);
- const request=commandRequest(args);const url=base+request.path;const headers=new Headers({accept:"application/json"});const token=process.env.NEXUSFLOW_TOKEN;if(token)headers.set("authorization",`Bearer ${token}`);
- let body:BodyInit|undefined;
- if(request.upload){const file=await Bun.file(request.upload).exists().then(ok=>ok?Bun.file(request.upload!):null);if(!file)throw Error(`file not found: ${request.upload}`);const form=new FormData();form.set("file",file,file.name);form.set("category",option(args,"category"));for(const k of ["task-id","project-id"])if(option(args,k))form.set(k.replace("-","_"),option(args,k));body=form;}
- else if(request.body!==undefined){headers.set("content-type","application/json");body=JSON.stringify(request.body);}
- const response=await fetch(url,{method:request.method,headers,body,signal:AbortSignal.timeout(30000)});
- if(request.download){if(!response.ok)throw Error(`${response.status}: ${await response.text()}`);await Bun.write(request.download,response);console.log(`downloaded ${request.download}`);return 0;}
- const text=await response.text();if(!response.ok)throw Error(`${response.status}: ${text}`);let result:unknown=text;try{result=JSON.parse(text);}catch{}console.log(args.options.json===true?JSON.stringify(result):JSON.stringify(result,null,2));return 0;
+ const args=parseArgs(argv);
+ if(!args.command||args.command==="help"||args.options.help===true){help();return 0;}
+ const client=environmentClient();let result:unknown;
+ if(args.command==="version"&&args.options.local===true)result=build;
+ else if(args.command==="verify") {
+  if(!["b0","list"].includes(args.action))throw Error("verify only supports b0");
+  result=await verifyB0(client,option(args,"commit",build.version),{username:process.env.NEXUSFLOW_USER||process.env.SUPER_ADMIN_USERNAME||"",password:process.env.NEXUSFLOW_PASSWORD||process.env.SUPER_ADMIN_PASSWORD||""});
+ } else if(args.command==="auth"&&args.action==="login") {
+  const user=await client.login(process.env.NEXUSFLOW_USER||prompt("Username: ")||"",process.env.NEXUSFLOW_PASSWORD||prompt("Password: ")||"");
+  const file=option(args,"token-file");
+  if(file){const {writeFile}=await import("node:fs/promises");await writeFile(file,client.token,{mode:0o600,flag:"wx"});}
+  result={user,authenticated:true,...(file?{token_file:file}:{})};
+ } else result=await client.command(args);
+ console.log(args.options.json===true?JSON.stringify(result):JSON.stringify(result,null,2));return 0;
 }
-async function login(base:string){const username=process.env.NEXUSFLOW_USER||prompt("Username: ")||"";const password=process.env.NEXUSFLOW_PASSWORD||prompt("Password: ")||"";const response=await fetch(`${base}/api/auth/login`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({username,password})});const text=await response.text();if(!response.ok)throw Error(`${response.status}: ${text}`);const result=JSON.parse(text) as {access_token:string};console.log(`export NEXUSFLOW_TOKEN='${result.access_token}'`);return 0;}
-function help(){console.log(`nexusflow <auth login|register|logout|home|gantt|orgs|people|projects|tasks|dispatch|approvals|load|conflicts|files|inbox|reports|tools|config|admin> <action>\nActions: list/show/create/update/delete; tasks assign|assignments|publish|action; task-assignments list|show|update|requirements|action; visibility_grants create|list|show, visibility-grants revoke; dispatch submit|confirm; approvals decision; conflicts resolve|force; files upload|download|rollback|versions; reports export; inbox read|complete; config publish|versions; admin audit|delegations; health; seed\nSet NEXUSFLOW_URL, NEXUSFLOW_BASE_PATH, NEXUSFLOW_TOKEN. Use --json for compact JSON.`);}
-if(import.meta.main)main().catch(e=>{console.error(`nexusflow: ${e instanceof Error?e.message:String(e)}`);process.exitCode=1});
+function help(){console.log(`nexusflow <auth|version|verify|home|gantt|orgs|people|projects|tasks|dispatch|approvals|load|conflicts|files|inbox|reports|tools|config|admin> <action>
+Actions: list/show/create/update/delete; auth login|register|logout|me; tasks assign|assignments|publish|action; task-assignments list|show|update|requirements|action; visibility_grants create|list|show, visibility-grants revoke; dispatch submit|confirm; approvals decision; conflicts resolve|force; files upload|download|rollback|archive|versions; reports export; inbox read|complete; config publish|versions; admin preflight|audit|users|delegations|user-status|user-binding; health [ready]; seed [status]
+version: public service commit; version --local: compiled CLI commit.
+verify b0 --commit SHA: read regression, temporary admin session; no seed or business writes.
+Set NEXUSFLOW_URL, NEXUSFLOW_BASE_PATH, NEXUSFLOW_TOKEN. --json for compact JSON.
+Login uses NEXUSFLOW_USER/PASSWORD; --token-file PATH saves a private token without printing it.`);}
+if(import.meta.main)main().catch(e=>{console.error(`nexusflow: ${e instanceof Error?e.message:"command failed"}`);process.exitCode=1});
