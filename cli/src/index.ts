@@ -11,8 +11,10 @@ export async function main(argv=process.argv.slice(2)) {
  else if(args.command==="verify") {
   if(!["b0","list"].includes(args.action))throw Error("verify only supports b0");
   result=await verifyB0(client,option(args,"commit",build.version),{username:process.env.NEXUSFLOW_USER||process.env.SUPER_ADMIN_USERNAME||"",password:process.env.NEXUSFLOW_PASSWORD||process.env.SUPER_ADMIN_PASSWORD||""});
- } else if(args.command==="auth"&&args.action==="login") {
-  const user=await client.login(process.env.NEXUSFLOW_USER||prompt("Username: ")||"",process.env.NEXUSFLOW_PASSWORD||prompt("Password: ")||"");
+ } else if(args.command==="auth"&&["login","register"].includes(args.action)) {
+  const user=args.action==="login"
+   ?await client.login(process.env.NEXUSFLOW_USER||prompt("Username: ")||"",process.env.NEXUSFLOW_PASSWORD||prompt("Password: ")||"")
+   :await client.command(args);
   const file=option(args,"token-file");
   if(file){const {writeFile}=await import("node:fs/promises");await writeFile(file,client.token,{mode:0o600,flag:"wx"});}
   result={user,authenticated:true,...(file?{token_file:file}:{})};
@@ -24,5 +26,5 @@ Actions: list/show/create/update/delete; auth login|register|logout|me; tasks as
 version: public service commit; version --local: compiled CLI commit.
 verify b0 --commit SHA: read regression, temporary admin session; no seed or business writes.
 Set NEXUSFLOW_URL, NEXUSFLOW_BASE_PATH, NEXUSFLOW_TOKEN. --json for compact JSON.
-Login uses NEXUSFLOW_USER/PASSWORD; --token-file PATH saves a private token without printing it.`);}
+Login uses NEXUSFLOW_USER/PASSWORD; login/register --token-file PATH saves a private token without printing it.`);}
 if(import.meta.main)main().catch(e=>{console.error(`nexusflow: ${e instanceof Error?e.message:"command failed"}`);process.exitCode=1});

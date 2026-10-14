@@ -75,7 +75,7 @@ sudo systemctl restart nexusflow
 systemctl is-active --quiet nexusflow
 PHASE=health
 for attempt in $(seq 1 45); do
- if curl -fsS "http://127.0.0.1:$PORT/nexusflow/healthz" >/dev/null; then break; fi
+ if curl -fsS --connect-timeout 2 --max-time 5 "http://127.0.0.1:$PORT/nexusflow/healthz" >/dev/null; then break; fi
  [[ $attempt != 45 ]] || exit 1
  sleep 1
 done

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Minimal server-only checks; no service, DB, release or credential access."""
-import importlib.util,pathlib,subprocess,tempfile,shutil
+import importlib.util,pathlib,subprocess,tempfile,shutil,socket,threading,time
 root=pathlib.Path(__file__).resolve().parents[2]
 spec=importlib.util.spec_from_file_location('server_env',root/'scripts/server-env.py')
 module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
@@ -70,6 +70,34 @@ with tempfile.TemporaryDirectory() as directory:
         marker=service/'DEPLOYED_COMMIT'
         assert marker.read_text()=='old commit' if previous_marker else not marker.exists()
         assert 'BINARY_RESTORED' in (evidence/'STATUS').read_text()
+# Real curl against an isolated socket that accepts connections but never responds.
+# Keep production timeout flags; shorten only the retry count and inter-attempt sleep.
+health=text[text.index('PHASE=health\n'):text.index('PHASE=b0-verifier\n')]
+assert '--connect-timeout 2 --max-time 5' in health
+health=health.replace('seq 1 45','seq 1 2').replace('$attempt != 45','$attempt != 2').replace('sleep 1','sleep 0')
+listener=socket.socket(); listener.bind(('127.0.0.1',0)); listener.listen(); listener.settimeout(0.2)
+stop=threading.Event(); connections=[]
+def accept_without_response():
+    while not stop.is_set():
+        try: connection,_=listener.accept(); connections.append(connection)
+        except socket.timeout: pass
+worker=threading.Thread(target=accept_without_response); worker.start()
+try:
+    with tempfile.TemporaryDirectory() as directory:
+        evidence=pathlib.Path(directory); (evidence/'backup').mkdir()
+        (evidence/'backup/nexusflow').write_text('old binary')
+        (evidence/'nexusflow').write_text('new binary')
+        shell='set -eu\nROOT="$1"; DIR="$ROOT"; BACKUP="$ROOT/backup"; PORT="$2"; COMMIT=synthetic; SWAPPED=1\nsudo(){ return 0; }; systemctl(){ return 0; }\n'+failure+'\ntrap failed EXIT\n'+health
+        started=time.monotonic()
+        run=subprocess.run(['bash','-c',shell,'check',directory,str(listener.getsockname()[1])],stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=16)
+        assert run.returncode!=0 and time.monotonic()-started<16
+        assert len(connections)==2, 'health retry did not advance after stalled response'
+        assert 'FAILED phase=health' in (evidence/'STATUS').read_text()
+        assert 'BINARY_RESTORED' in (evidence/'STATUS').read_text()
+        assert (evidence/'nexusflow').read_text()=='old binary'
+finally:
+    stop.set(); worker.join(); listener.close()
+    for connection in connections: connection.close()
 for script in (root/'scripts').glob('*.sh'):
     subprocess.run(['bash','-n',str(script)],check=True)
-print('release checks: PASS (environment parsing, container backup identity, GET guard, clean-main guards, binary+commit rollback, shell syntax)')
+print('release checks: PASS (environment parsing, container backup identity, GET guard, clean-main guards, binary+commit rollback, stalled-health timeout/retry/failure status, shell syntax)')

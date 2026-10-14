@@ -8,18 +8,24 @@ import { mkdtemp,readFile,stat,rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 const commit="a".repeat(40);
-test("login saves a private token only when requested, never logs the token",async()=>{
- const directory=await mkdtemp(join(tmpdir(),"nf-cli-check-"));const tokenFile=join(directory,"session");
- const server=Bun.serve({port:0,fetch(){return Response.json({access_token:"synthetic-private-session",user:{id:"test-user",role:"super_admin"}});}});
+test("login and register save private tokens only when requested, never log tokens",async()=>{
+ const directory=await mkdtemp(join(tmpdir(),"nf-cli-check-"));
+ const server=Bun.serve({port:0,fetch(request){return Response.json({access_token:"synthetic-private-session",token_type:"bearer",user:{id:"test-user",role:"member"}},{status:new URL(request.url).pathname==="/api/auth/register"?201:200});}});
  const keys=["NEXUSFLOW_URL","NEXUSFLOW_BASE_PATH","NEXUSFLOW_USER","NEXUSFLOW_PASSWORD"];
  const old=keys.map(k=>process.env[k]);const log=console.log;const output:string[]=[];
  try{
   process.env.NEXUSFLOW_URL=`http://127.0.0.1:${server.port}`;process.env.NEXUSFLOW_BASE_PATH="";process.env.NEXUSFLOW_USER="synthetic";process.env.NEXUSFLOW_PASSWORD="synthetic";
   console.log=(value:unknown)=>{output.push(String(value));};
-  await main(["auth","login","--token-file",tokenFile,"--json"]);
+  for(const action of ["login","register"]){
+   const args=action==="login"?["auth","login"]:["auth","register","--username","synthetic","--display-name","Synthetic","--password","synthetic-password","--invitation-token","synthetic-invitation"];
+   const tokenFile=join(directory,action);
+   await main([...args,"--token-file",tokenFile,"--json"]);
+   expect(await readFile(tokenFile,"utf8")).toBe("synthetic-private-session");
+   expect((await stat(tokenFile)).mode&0o777).toBe(0o600);
+   await main([...args,"--json"]);
+  }
   expect(output.join("")).not.toContain("synthetic-private-session");
-  expect(await readFile(tokenFile,"utf8")).toBe("synthetic-private-session");
-  expect((await stat(tokenFile)).mode&0o777).toBe(0o600);
+  expect(output.join("")).not.toContain("access_token");
   process.env.NEXUSFLOW_URL="http://synthetic:private@127.0.0.1";
   expect(()=>environmentClient()).toThrow("without credentials/query/hash");
  }finally{console.log=log;keys.forEach((k,i)=>{if(old[i]===undefined)delete process.env[k];else process.env[k]=old[i];});server.stop(true);await rm(directory,{recursive:true,force:true});}
