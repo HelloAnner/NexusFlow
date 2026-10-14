@@ -1,0 +1,48 @@
+NexusFlow 后端真实功能发布基线 B0P v1
+====================================
+确认：用户于2026-10-14确认 docs/backend-real-function-plan.txt，并明确开始；现Bun/Hono/Next、design.pen与业务规则不重写。
+实际起始 main / origin/main：5c46266cb6efd2f9f5fba47aacadc45a66fff2aa；origin/HEAD -> origin/main。
+方案调研的c646cc5是历史来源，不是本轮发布起点。服务器当前运行SHA未验证。
+B0P是文档候选，非生产发布。当前无push/部署/服务器业务PASS记录，不宣布B0或13模块已全真。
+
+职责与不可越界
+--------------
+B0P worker：仅本worktree修改/提交 docs/function-coverage.txt、docs/backend-real-function-acceptance.txt、本文件并保持干净。
+主协调者：独占全局main集成/push/make deploy/服务器验收通道；worker不得push任何分支、集成main或部署。
+禁止修改任何AGENTS.md或已确认方案；不删存量数据，不写生产业务数据/seed，不打印.env/口令/token/票据。
+其他worktree只读；不创建/控制Herdr agent、不直接prompt其他agent；交接结果由主协调者路由。
+本地只编辑/Git；不运行独立build/test/typecheck/start。服务器单测及CLI测试仅隔离目录/数据范围。
+
+串行发布门禁（协调者执行，本基线未执行）
+--------------------------------------
+功能worktree提交且干净
+  -> fetch，核origin/HEAD，干净main ff-only同步origin/main
+  -> 已依赖切片必须部署且服务器PASS，再rebase功能分支到最新main
+  -> 复核当前功能范围，main merge --ff-only
+  -> main push origin main（不推功能分支、不force）
+  -> HEAD=origin/main且main干净；记录备份/迁移预检/旧二进制身份
+  -> main make deploy
+  -> ssh nexusflow隔离目录：版本/单测/typecheck/真实CLI正向拒绝回读/健康门禁
+  -> FAIL回功能worktree修复重走闭环；PASS后安全清理已交付worktree/临时分支
+依赖以已确认PLAN切片表为准；本文件不复制整份依赖图。B0P文档本身不需要写业务数据或以seed验收。
+C0抽取仅等价移文件；集成后领域owner更新coverage证据路径，不把未集成代码作为当前已实现证据。
+
+数据与回滚
+----------
+每次业务发布前保存PG备份与对象元数据/引用清单、服务旧二进制及匹配commit；只报告路径/校验摘要，不泄密。
+迁移增量、可重入；先隔离旧数据预检。归属不明、同名真实记录、唯一性冲突或不可逆变更即阻塞，不自动认领/删除。
+禁止调用生产seed创建/修复/凭据轮换；隔离demo仍需可信provenance/seed_key/版本，保留人工配置。
+发布失败保留worktree及候选；回滚代码需与数据库兼容，不用危险“还原整个库”覆盖上线后的真实业务。
+基线deploy脚本只有替换二进制/restart/healthz+readyz；readyz当前写删S3/清理队列，没有commit身份与备份门禁。13a/B0须补齐后方能按只读探针标准发布验收。
+
+发布记录模板（每次一行，配acceptance同切片同SHA）
+----------------------------------------------
+切片 | coverage IDs | feature commit | 起始main/集成main | push结果 | make deploy命令/结果 | server运行SHA/资源身份 | 验收结果/acceptance附件 | 时间(ISO+时区) | 备份/迁移/风险/回滚状态
+B0P | 三份txt基线 | 待本地提交SHA | 起始5c46266/未集成 | NOT_RUN（worker禁止push） | NOT_RUN（协调者通道） | 未验证 | NOT_RUN（只有静态来源核对） | 未发布 | 未写生产/未删数据/未调用seed；多数业务pending
+占位 | 待填写 | 待填写 | 待填写 | NOT_RUN | NOT_RUN | 待填写 | NOT_RUN | 未发布 | 待填写
+
+最后核对
+--------
+最终业务交付必须：范围内改动及修复全部commit、包含于main和origin/main且二者一致、服务器同版本通过；全功能CLI覆盖与拒绝回读证据齐全。
+已真实能力不自动成为服务器PASS；未运行填NOT_RUN，缺外部条件填BLOCKED，失败填FAIL，不以健康200/mock/导航成功替代。
+文档handoff只用IMPLEMENTATION_READY B0P v1 + commit SHA + 条目数/覆盖方法/缺口/外部阻塞；不是FINAL_PASS。

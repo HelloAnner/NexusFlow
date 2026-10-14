@@ -1,0 +1,299 @@
+NexusFlow 功能/控件追踪基线 B0P v1
+=================================
+确认：用户于2026-10-14确认 docs/backend-real-function-plan.txt 的现Bun/Next栈、design.pen与业务规则，并明确开始。
+实际起始 main = origin/main = 5c46266cb6efd2f9f5fba47aacadc45a66fff2aa；origin/HEAD -> origin/main。
+方案内旧调研基线 c646cc5 不替代本清单代码基线。此清单仅静态追踪，服务器业务、单测、typecheck均未运行，无任何PASS。
+B0不等于13模块全部真实；每条已真实仅表示源码具备所列窄能力，不表示完整领域/页面/服务器已验收。
+仅主协调者可集成、push、从干净main make deploy。B0P只提交本worktree三份txt；不改AGENTS/方案/代码/design.pen，不删除存量数据、不写生产业务数据/seed。
+
+读法与出处
+----------
+行格式：稳定ID | 设计出处 | 页面/控件或需求 | 当前API | 持久化/事件 | 当前CLI；待补CLI | 正向/拒绝/回读检查 | 依赖切片 | 状态 | 代码证据
+API均相对同源 /nexusflow，未另写前缀。无=当前无专用实现，不把设计API当现有API。CRUD=GET集合/GET:id/POST集合/PATCH:id，删除另列。
+CLI省略产品命令 nexusflow；create/update的JSON及动作参数须按源码传入。补:表示未有CLI，不是可执行命令。通用CLI能发请求不等于业务规则已实现。
+检查列采用 正: / 拒: / 读:；每行均另受验收文档G0-G8约束：权限、非法输入、持久化、联动、审计、重复/并发/故障。
+状态：已真实=窄后端/纯本地交互有实现；未接通=现控件不调用真实能力/仅选中态；假数据=生产展示或提交用虚构值；未实现=必做需求无实现；待服务器验收=候选交付已接通待实测（本基线无服务器候选验收结论，未使用此状态）。
+静态枚举、图标、色彩、合法工具注册表、纯展开/密码显隐不是fake；静态“次数/最近使用/业务ID/预测日/成功提示”是fake。
+显式隔离demo是测试输入来源，不是生产事实或PASS。当前seed无生产写保护、会按自然键认领/修复并轮换凭据；本任务不调用seed。
+
+F01..F13 = docs/对应目录/function-design.md；T01..T13 = 同目录/technical-design.md；引用§为标题章节。
+01 organization-personnel；02 permission；03 task-management；04 dispatch-collaboration；05 load-conflict；06 resource-library；07 home-dashboard；08 config-center；09 notification-report；10 tool-center；11 project-management；12 gantt-search；13 admin-auth。目录前缀分别为01-..13-。
+P00..P16 = docs/pages/00-design-principles.md、01-global-shell.md、02-home.md、03-inbox.md、04-my-work.md、05-projects.md、06-project-detail.md、07-task-detail.md、08-team.md、09-schedule.md、10-conflicts.md、11-files.md、12-reports.md、13-tools.md、14-settings.md、15-admin.md、16-task-create.md；PO=docs/pages/organization.md；O=docs/origin-prd.md；PLAN=已确认方案。
+A=apps/api/src/router.ts；R=apps/api/src/records.ts；P=apps/api/src/permissions.ts；AU=apps/api/src/auth.ts；L=apps/api/src/load.ts；DB=apps/api/src/db.ts；ST=apps/api/src/storage.ts；DS=apps/api/src/demo-seed.ts。
+W=apps/web/app；S=apps/web/components/shell.tsx；U=apps/web/components/ui.tsx；D=apps/web/lib/data.ts；H=apps/web/lib/home.ts；WA=apps/web/lib/auth.ts；C=cli/src/commands.ts；CI=cli/src/index.ts。
+代码证据均基于5c46266。C0等价抽取后，owner维护证据新路径/符号并保留旧基线；未集成domains代码不得用于宣称实现。计划归属：01 org/people；02 permissions；03 tasks/assignments/worklogs/milestones；04 dispatch/approvals/meetings；05 load/conflicts；06 files/storage；07 home/shell；08 config；09 inbox/reports/jobs；10 tools；11 projects；12 gantt/search；13 auth/admin/invitations/scripts。
+
+公共底座与全局控件
+------------------
+B0-001 | PLAN§4/6 | 所有列表解包、真实空集、加载/错误重试 | 各GET集合返回{items} | 不写；缓存 | 现:各list --json；补:分页/DTO校验 | 正:空库显示暂无；拒:503不转demo；读:响应与列表一致 | B0 | 假数据 | D:7-12；W/projects/team/files/tools/inbox normalize
+B0-002 | PLAN§4/6；T07§5 | 切换账号/租户/Portal清缓存 | /api/auth/me | QueryClient/本地token；未按用户分key | 现:auth me/logout；补:会话切换检查 | 正:A退出B进入；拒:A缓存不露给B；读:B列表仅B可见 | B0,13a,02a | 未实现 | providers.tsx；D；WA；W/page.tsx queryKey
+B0-003 | PLAN§3/7 | 未知API JSON404 | 未匹配GET落静态首页 | 无；静态资源 | 补:verify api-404 | 正:合法GET为JSON；拒:未知GET/POST404；读:content-type非HTML | B0 | 未实现 | A:22,86-87
+B0-004 | PLAN§6 | DTO边界、分页排序、错误码 | 通用CRUD仅q，专用DTO不统一 | records JSONB；Zod部分校验 | 现:list --q；补:page/sort/filter与错误退出码 | 正:分页相邻无丢重；拒:非法字段/范围；读:total/页大小一致 | B0 | 未实现 | A:77-82；R:11-24；C generic；CI
+B0-005 | PLAN§6审计 | tenant/actor/action/object/time/IP/request-id/before-after/reason/result脱敏 | /api/admin/audit | audit现仅部分字段/摘要；无统一请求契约 | 现:admin audit；补:审计字段筛选 | 正:一次写一事务审计；拒:失败留拒绝记录不留密钥；读:请求ID关联 | B0,02a,13a | 未实现 | A:addAudit；R:create/update；DB:audit
+B0-006 | PLAN§4/6 | 隔离demo标记/seed预检/生产拒绝 | GET /api/seed/status；POST /api/seed无保护 | seed_key、自然键修复、密码轮换 | 现:seed status；禁用:seed其他动作；补:provenance预检 | 正:只读状态；拒:生产seed写/同名认领；读:真实人/人工URL/凭据完全不变 | B0 | 未实现 | A:74-75,seedRecordId/ensureDemoData/issueDemoCredentials；C seed
+B0-007 | PLAN§6/8 | 迁移预检、备份、重入不删未知数据 | 无迁移预检API | migrate改租户/索引；现存记录保留要求 | 补:admin migration preflight/status | 正:隔离旧库重复迁移；拒:归属不明阻塞；读:ID/关联/原字段不丢 | B0,13a | 未实现 | DB:migrate；scripts/deploy.sh
+B0-008 | PLAN§8 | 版本提交身份/CLI验收附件 | 无/version；health仅服务名 | 构建嵌入静态资源；未嵌commit | 现:health；补:version/verify | 正:二进制/API/资源提交一致；拒:非push候选不能发布；读:实际server SHA | B0,13a | 未实现 | A:24；scripts/build-linux.sh；Makefile
+B0-009 | P00§3.1/5 | 所有详情关闭/固定/拖宽/返回/未保存保护、键盘/移动抽屉 | 无统一详情API/面板 | 个人偏好待补 | 补:preferences；业务CLI复用各show | 正:返回保留筛选；拒:未保存不静默丢；读:真实对象ID/偏好 | 03c,11b,12a,07b | 未实现 | W仅甘特单popover/Inbox选中，无通用面板
+B0-010 | PLAN§8 | 产品CLI help/JSON/参数/退出码/HTML识别/超时 | 当前CLI通用fetch | 无；输出JSON或字符串 | 现:help与--json；补:完整领域help/pagination/verify | 正:每动作help可达；拒:HTML200不能成功；读:失败非0且不打印敏感值 | B0,13a | 未实现 | C；CI:response JSON catch及login输出token需安全捕获
+UI-S01 | P01§2/3；F07§2 | 图标栏Logo/Home/Inbox/Projects/My Work/Load/Team/Files/Tools导航 | 路由/、/inbox、/projects、/my-work、/load、/team、/files、/tools | 无；本地路由 | 现:home/各list；补:导航目标与权限字段 | 正:逐入口目标；拒:无权限不能经深链；读:业务数据非导航成功替代 | 07b,02b | 已真实 | S:NAV/IconRail（只计路由动作，落地页另列）
+UI-S02 | P01§2.3/3.1 | Inbox 3 / MyWork17角标 | 无角标查询 | 固定数；需聚合 | 补:home badges | 正:审批完成角标下降；拒:查询失败隐藏非0；读:inbox/tasks对账 | 07a,07b,09a | 假数据 | S:NAV badge
+UI-S03 | P01§4/7.1 | 每页Sidebar“搜索或跳转”输入、⌘K、命令/最近对象 | 无/api/search；输入无处理器 | 最近访问/权限缓存待补 | 补:search/suggest/recent | 正:四类中文检索+导航命令；拒:撤权旧结果；读:真实target ID | 12a,07b | 未接通 | S:SidebarFrame input
+UI-S04 | P01§2.3 | 图标栏铃铛 | 无调用/跳转 | 无；待接inbox | 现:inbox list；补:badges | 正:打开真实队列；拒:他人待办；读:未读数一致 | 09a,07b | 未接通 | S:IconRail Bell button
+UI-S05 | P01§2.3/3.3 | 图标栏Settings按钮、头像Profile/偏好/快捷键 | 无；头像为span | 用户/偏好待补 | 现:auth me；补:preferences/profile | 正:设置分个人/管理员；拒:员工全局写；读:偏好持久 | 13c,08c,07b | 未接通 | S:Settings button/avatar span
+UI-S06 | P01§2.1/3.2/3.4 | 工作区切换、最近项目、Reports/Admin导航、折叠/帮助 | 无页面或控件 | 偏好/角色入口待补 | 补:role-entry/preferences/recent | 正:合法范围切换/报告可达；拒:切换不扩权；读:菜单与权限一致 | 07b,13c,09b,02b | 未实现 | S固定8项无Reports/Admin/切换
+UI-S07 | P01§2.3/4/5 | +New菜单任务/项目/休假/出差/上传/邀请与快捷键 | 现首页只链接/dispatch/new | 复用各领域事实；菜单无 | 现:tasks/projects/files/invitations create；补:quick-actions | 正:预填上下文；拒:无创建权；读:新对象真实回读 | 07b,04a,11a,13b | 未实现 | S；W/page.tsx新建Link
+UI-S08 | P01§7.1；P00§5 | SideSection各标题展开/收起（全页复用） | 无需API | React本地open，非业务事实 | 无需业务CLI；补:偏好如持久化 | 正:展开收起；拒:折叠不清数据；读:再展开仍同对象 | B0 | 已真实 | U:SideSection（本地交互未浏览器验收）
+
+M01 组织与人员
+--------------
+M01-001 | O§1.1；F01§2；T01§3；PO§3 | 组织树公司/二级/中心/部门/工作室、选择/展开 | GET /api/orgs/tree（别名/org/tree） | records:orgs ->children；无事件缓存 | 现:orgs tree/org tree | 正:五层建树；拒:越租户；读:parent/children一致 | 01a,02a | 已真实 | A:29-30,orgTree；R:orgs；P:orgs
+M01-002 | F01§2.2；T01§2/3；PO§6/8 | 新建根/下级、编辑名称编码/负责人/副职/监督/默认审批/说明 | CRUD /api/orgs（部分passthrough） | orgs/audit；审批人实际取账号角色 | 现:orgs create/update/show；补:字段校验/负责人绑定 | 正:字段保存后审批候选；拒:重复编码/非管理范围；读:字段及审计 | 01a,02a | 未实现 | R:orgs仅name/type/parent/enabled；A:createApproval
+M01-003 | F01§2.3；PO§6 | 移动组织/层级防环/历史组织快照 | PATCH parent_id明确拒绝；无move | 待:组织路径/历史快照/权限失效 | 补:orgs move/history | 正:移动只影响新口径；拒:移入子孙/祖先越权；读:旧任务快照不变 | 01a,02a | 未实现 | R:updateRecord parent_id guard
+M01-004 | F01§2.3；T01§5；PO§3.3 | 组织停用、引用检查删除/取消/原因 | PATCH enabled可存；DELETE orgs禁止 | orgs/audit；禁新关联校验缺失 | 现:orgs update/delete；补:disable/precheck | 正:停用历史仍查；拒:有下级/人/任务/资料/配置引用删除；读:停用不可新关联 | 01a,02a | 未实现 | R:create关联只orgExists；deleteRecord
+M01-005 | F01§3.1；T01§3；PO§4/7/9 | 人员新增/基础详情姓名组织/工号/等级/工时/状态 | CRUD /api/people，不是设计/api/users | people/audit；user_id与账号组织验证 | 现:people create/show/update/list | 正:建人改基础字段；拒:不存在组织/非法工时；读:people show/audit | 01a,02a | 已真实 | R:people/create/update；P:people（仅当前schema）
+M01-006 | F01§3.1/6；T01§2；PO§7 | 唯一账号-档案、工号、登录绑定、Portal自动档案 | PATCH /api/admin/users/:id/binding部分；Portal不建people | users/people/audit；缺唯一档案约束 | 现:admin user-binding；补:people bind/precheck | 正:1账号1档案；拒:重复绑定/自行提权；读:两边组织/角色一致 | 01a,13a,02a | 未实现 | AU:portalCallback；R:people；DB索引仅users
+M01-007 | F01§3.2；O§1.2/1.3；PO§7.2 | 多系统角色、管理/专业等级、默认首页角色 | users单role，people title自由字段 | 待:角色关系/历史/默认视角 | 现:admin user-binding；补:people roles/levels | 正:等级与权限分离；拒:自扩角色；读:身份筛选与me一致 | 01a,02a,08c | 未实现 | DB:users role；shared roles；R:people
+M01-008 | F01§3.3；T01§3；P08§8 | 技能分组/同义词/启停/人数、人员选择器绑定 | people.skills数组；无/api/skills | 待:字典/绑定/audit | 现:people update skills；补:skills CRUD/status/stats | 正:同义词检索；拒:停用标签新选/非字典值；读:历史标签和计数 | 01a,08a | 未实现 | R:people skills z.array(string)
+M01-009 | F01§3.1/6；T01§2 | 多工作室归属与有效期/进退历史 | people任意studio_ids可存，无关系动作 | 待:membership有效期/快照/审计 | 补:people memberships/history | 正:两工作室加入退出；拒:停用组织/重叠归属；读:旧署名保留 | 01a,02a | 未实现 | R:passthrough；DS:studio_ids仅demo
+M01-010 | F01§4；O§1.3；T01§1 | 人员项目身份/负责工作/加入退出/有效归属 | projects member_ids/people.projects仅数组 | 待:单一项目成员事实/历史 | 补:people projects/history（消费projects members） | 正:入项调身份退出；拒:双事实不同步；读:Team与项目同历史 | 11a,01b | 未实现 | R:projects；DS:people.projects字符串
+M01-011 | F01§5/6；T01§5；P08§8 | 在岗/出差/培训/休假/离职禁派发、日标准工时 | PATCH people status；load读取部分状态 | people；任务状态驱动/期间规则缺失 | 现:people update/load；补:availability/calendar | 正:休假期间不可派；拒:离职待审候选；读:容量/历史署名 | 01a,05a,03a | 未实现 | R:people允许0h/无培训；A:personLoad；activeUsers仅账号状态
+M01-012 | F01§6；T01§4；PO§11 | 可管理字段范围、敏感修改原因/人删除保护 | people PATCH部分拦绑定；DELETE禁止 | people/users/audit；字段权限/原因不全 | 现:people update/delete,admin user-status/binding；补:impact | 正:范围内非敏感编辑；拒:祖先越权/无原因角色修改；读:审计前后及无副作用 | 02a,01a,13c | 未实现 | R:updateRecord；P:canWriteRecord
+UI-T01 | P08§2/6；F01§2/3 | Team单位层级/部门/工作室SideItem、组织树节点/箭头 | 页面只GET /api/people；未调orgs/tree | ORG_TREE/固定数86/部门数 | 现:orgs tree,people list；补:Team org筛选 | 正:真实树选择下级；拒:不可见节点；读:人员org_id匹配 | 01a,01b | 假数据 | W/team:TeamSidebar/ORG_TREE
+UI-T02 | P08§6；F01§3.3 | Team搜索姓名/技能、技能全部/前后端/Python/Go/报告/PPT/需求/运维按钮 | SearchBox无绑定；技能本地筛demo | 需真实技能字典/分页 | 现:people list --q；补:skills/filter | 正:组合检索；拒:停用技能新派；读:结果与CLI同集合 | 01b,01a | 假数据 | W/team:SKILLS/setSkill/normalize；U:SearchBox
+UI-T03 | P08§7；F01§3/4/5 | Team人员行/档案任务负载项目技能资料审计；统计在编/借调/过高 | people {items}被当数组；load默认50/职称工程师 | fake补字段/项目名；无详情click | 现:people show/load；补:person tabs/contributions | 正:真实稀疏字段为--；拒:私密字段；读:工时/项目/历史同事实 | 01b,05b,02b | 假数据 | W/team:normalize/table/header
+UI-T04 | P08§4/7；F13§3 | Team邀请成员、派任务/查看日程/调整授权；Grid/List/Workload/Calendar | 邀请按钮无handler；其余无入口 | 待:邀请/路由上下文/偏好 | 现:invitations create；补:people candidates/views | 正:邀请与预填人员；拒:越范围邀请/调配；读:真实归属及日程 | 13b,01b,04a,07b | 未接通 | W/team:UserPlus button；无视图控件
+
+M02 权限与数据范围
+------------------
+M02-001 | F02§2/4；T02§3 | 会话、租户及组织树范围后端过滤 | 所有受保护API；me | users/records/role_delegations/grants | 现:auth me/admin delegations/各list | 正:部门树范围；拒:双租户/副职未分管；读:API集合不含越界ID | 02a,13a | 已真实 | P:orgWithin/canReadRecord；AU:currentUser/portalAllows
+M02-002 | F02§3/5；T02§4；P14§10 | 角色动作矩阵CRUD/启停/高风险原因、权限me/check | 无/api/roles或permissions/check | 待:role/action/字段矩阵、审计 | 补:roles/actions/permissions me/check | 正:发布差异矩阵；拒:员工派发/SA默批；读:即时生效与审计impact | 02a,08a,13c | 未实现 | P:硬编码managers/allowedAction；无权限页
+M02-003 | F02§4.1；T02§4 | 本人/本部/分管/中心/自定义多中心组织范围 | PUT /api/admin/users/:id/delegations仅副职 | role_delegations/org树；中心主任当前全租户 | 现:admin delegations；补:data-scope/impact | 正:同租户多中心隔离；拒:中心越另一中心；读:负载报表人员同范围 | 02a,02b | 未实现 | A:39；P:orgWithin
+M02-004 | F02§4.2；T02§4；P06§8.1 | 项目view/edit授权创建/撤销/到期 | CRUD /api/visibility_grants；POST :id/revoke | grants/audit；schema仅person、view/edit | 现:visibility-grants create/list/show/revoke | 正:view到期/撤销；拒:越权grant；读:旧会话视图失权 | 02a,11a | 已真实 | R:visibility_grants；A:42；P:grant（窄能力）
+M02-005 | F02§4.2/4.3；F11§3.3 | 组织/角色/任务指定授权、下载/参与/上传/成员/报表动作 | 无project/:id/visibility-grants；通用grant仅person | 待:对象/subject/action/有效期/继承 | 补:grants subject/actions/expiry/impact | 正:任务最小上下文授权；拒:不能因此扩整个隐藏项目；读:各对象继承 | 11a,02b | 未实现 | R:grant schema；P:canProjectAction
+M02-006 | F02§5；PLAN§2 | 普通项目成员默认只看/个人分工，不自动edit/dispatch | canProjectAction member总为true | 需共享鉴权约束全部入口 | 现:各create/action；补:permissions check | 正:成员填自己分工；拒:项目PATCH/派发/他人进度；读:拒绝对象不变 | 02a,03a,11a | 未实现 | P:canProjectAction；A:tasks/action；R:update
+M02-007 | F02§4.3；T02§3/5 | 隐藏/指定/个人事项、字段裁剪、敏感读审计 | 隐藏项目部分过滤；个人事项无独立规则 | 待:任务visibility/字段/敏感read audit | 补:visibility/field-scope/audit permission | 正:本人及直属看私事；拒:搜索报表通知漏标题；读:敏感访问原因/IP | 02a,02b,12a,09b | 未实现 | P:canReadRecord；A:home/report；R:tasks passthrough
+M02-008 | F02§6；PLAN§2/6 | 跨部门资源审批/候选范围/生效状态统一 | dispatch/submit与审批现有；动作/PATCH仍旁路 | task/assignment/dispatch/audit联动 | 现:dispatch submit/approvals decision；补:scope preview | 正:待加入仅预估；拒:管理者动作越编辑范围；读:确认前无正式占用 | 02a,04a,05a | 未实现 | A:54-61；P:canEditTask；L:状态排除
+M02-009 | T02§6；PLAN§6 | 权限版本缓存失效、撤权所有历史/导出/通知一致 | 会话每次读users；撤权只部分继承 | 待:版本key/任务授权源复核 | 现:grant revoke/auth me；补:impact/history权限 | 正:撤权旧token；拒:旧下载/报表快照/suggest；读:所有消费者一致 | 02b,09b,12a,07b | 未实现 | AU:currentUser；P:grant；D缓存key
+M02-010 | F02§7；T02§7；P14§10 | 权限审计筛动作对象关键字、详情before/after、导出 | GET /api/admin/audit仅500条/范围不完整 | audit；权限/拒绝/sensitive read缺 | 现:admin audit；补:permission audit filters/detail/export | 正:授权原因回读；拒:日志越租户/隐含泄露；读:结果与请求关联 | 02a,02b,09b | 未实现 | A:45；R:审计；无权限工作台
+
+M03 任务全生命周期与我的工作
+----------------------------
+M03-001 | O§2；F03§2/3；T03§4；P16§3 | 任务草稿CRUD、类型/日期/负责人/成员、自动分工 | CRUD /api/tasks；GET/POST tasks/:id/assignments | tasks/task_assignments/audit同事务 | 现:tasks create/show/update/assignments | 正:草稿建分工；拒:无效日期/类型/人员；读:tasks和自动分工一致 | 03a,01a,11a,08a | 已真实 | R:create tasks；A:52-53（窄schema）
+M03-002 | F03§3；O§2.2；T03§2 | 编号/子类型/级别/优先级/可见性/验收人/预计总工时/成果要求 | tasks passthrough可存部分，无完整验证 | 待:领域schema/不可变模板快照 | 现:tasks create/update；补:estimate/requirements | 正:20h预计保存；拒:负数/非法验收人/自改服务字段；读:show/模板版本 | 03a,08b,02a | 未实现 | R:tasks schema/passthrough
+M03-003 | F03§4；T03§3；PLAN§2 | 发布/确认后才正式进行中，负责人/成员确认 | POST tasks/:id/publish；action confirm | tasks直接in_progress，分工pending_confirmation | 现:tasks publish/action --action confirm | 正:所有相关确认后生效；拒:提前正式占用/重复确认；读:状态/负载/待办一致 | 04a,03b,05a | 未实现 | A:56-57；现有动作不能满足确认边界
+M03-004 | F03§5；T03§4；P07§5 | 分工新增/日期投入/全天/必需成果要求 | tasks/:id/assignments；task_assignments/:id/action reschedule/set_deliverables | task_assignments/tasks.member_ids/audit | 现:tasks assign,task-assignments update/requirements | 正:草稿分工调投入；拒:越任务日期/重复成员/非法类别；读:assignments及负载 | 03a,05a | 已真实 | A:53-54；R:task_assignments
+M03-005 | F03§5.1/6；P07§5 | 分工名称/类型/协作人/权重/指定验收人、换人/取消/拆分 | 无专用change-member/progress | 待:分工领域动作/资源重协调 | 补:assignments change-member/collaborators/split/cancel | 正:换人保留旧贡献；拒:跨部门无审批；读:历史及两人负载 | 03b,04a,05a | 未实现 | R:assignment schema；A:54 action集合
+M03-006 | F03§5.2；P07§5；P04§7 | 成员接收分工 | POST task_assignments/:id/action confirm | active/confirmed_by/at/audit | 现:task-assignments action --action confirm | 正:本人确认；拒:他人/非pending；读:show confirmed字段 | 03b,04a | 已真实 | A:54
+M03-007 | F03§5.2；P07§5；P04§7 | 分工提交文本成果+上传文件、负责人确认/退回 | task_assignments/:id/action submit/accept/return | result/file_ids/审核时间、审计 | 现:task-assignments action --action submit/accept/return --result/--file-ids/--reason | 正:上传退回重提；拒:他人文件/缺资料/重复review；读:结果与文件/审计 | 03b,06a,08b | 已真实 | A:54（指定验收/事务重检缺口另列）
+M03-008 | F03§5.3；T03§2/4 | 分工进度/阻塞、手动总进度及工时加权汇总 | task/action report只改任务总进度 | tasks.progress/worklogs；无分工加权 | 现:tasks action --action report；补:assignments progress/weights | 正:两分工权重汇总；拒:成员改整体/归档PATCH；读:总进度与分工公式 | 03b,02a | 未实现 | A:56 report；R:update tasks未拦progress
+M03-009 | F03§5.3；PLAN M03b/M05b | 工时填报与确认、已确认投入（区别预计投入） | task/action report创建worklogs；无confirm | worklogs未确认，不得用于精确预测 | 现:tasks action --action report --hours；补:worklogs confirm/list | 正:报8h确认后计入；拒:重复确认/负工时；读:预计20/确认8/剩余12 | 03b,05b | 未实现 | A:56；C:tasks action；L仅预计量
+M03-010 | F03§3.3；O§2.2；P07§4/6 | 里程碑创建/责任人/资料/状态/时间线 | generic /api/milestones无领域关系验证 | records:milestones；未完整消费 | 补:milestones CRUD/actions/results | 正:阶段要求截止确认；拒:任务外日期/越权；读:任务/甘特里程碑一致 | 03b,08b,12a | 未实现 | collections含milestones；P默认读拒；C无milestones命令
+M03-011 | F03§6；O§3.1；P07§9/12 | 概述与字段版本/原因/前后差异、重大变更再审批 | tasks PATCH有audit before/after，无专用版本/确认 | audit；待:change versions/approval | 现:tasks update/admin audit；补:tasks history/change/versions | 正:两版概述回读；拒:无原因重大成员变更；读:旧版与确认人不覆盖 | 03a,03b,04a | 未实现 | R:updateRecord；A:tasks reschedule
+M03-012 | F03§4；T03§4；P07§10 | 暂停/预计恢复/恢复/取消/阻塞风险 | 无tasks pause/resume/cancel动作 | 待:状态/负载/待办/审计 | 补:tasks action pause/resume/cancel | 正:暂停恢复减占用；拒:非法转移/无原因；读:任务历史与负载 | 03b,05a | 未实现 | A:56 switch无这些动作
+M03-013 | F03§7；T03§4；P07§10 | 提交验收/管理者验收/退回 | tasks/:id/action submit_acceptance/accept/return | tasks状态/审计/通知；检查未完成分工及部分类别 | 现:tasks action --action submit_acceptance/accept/return | 正:验退重提；拒:未完成分工/非管理者；读:状态审计inbox | 03b,06b,08b | 已真实 | A:56（现窄验收，不含指定验收规则）
+M03-014 | F03§7；F06§6；PLAN§6 | 指定验收人/资料已确认最新版本/风险事务重检 | accept仅canManage，未冻结资料版本/风险 | 待:验收记录/固定版本/事务重检 | 补:tasks acceptance/precheck | 正:指定人验收；拒:并发改资料/高风险未解/旧成果；读:冻结file版本和review | 03b,06b,05b | 未实现 | A:56 accept及事务仅重检分工
+M03-015 | F03§7；P07§14 | 完成后归档并联动资料 | tasks/:id/action archive | tasks.archived、files.status archived/audit | 现:tasks action --action archive | 正:done归档；拒:未done/无权限；读:任务/关联资料状态 | 03b,06b | 已真实 | A:56 archive（只计状态联动）
+M03-016 | F03§7；P07§14 | 归档档案/只读所有入口、基础概述/分工/工时/审批/版本/风险日志快照 | GET task与各list散数据；无archive snapshot | 待:不可变档案/锁定全部PATCH | 补:tasks archive-snapshot/history | 正:归档后历史可读；拒:通用PATCH progress/summary；读:固定验收与资料版本 | 03c,06b,05b | 未实现 | R:update无archived guard；A:archive只状态
+M03-017 | P07§3/4/8/9/12/14 | 任务真实详情标题内联/Overview/Subtasks/Timeline/Files/Approvals/Activity/Risk/Archive | 无/tasks/:id网页；API GET task可用 | 复用任务/审批/风险，不造字段 | 现:tasks show/assignments；补:detail聚合/available_actions | 正:真实ID打开各tab；拒:撤权/失效对象；读:概览异常与各源对账 | 03c,05b,06b,12a | 未实现 | W无任务详情；A:通用GET与conflicts
+M03-018 | P07§4/12；P00§2.3 | 评论/@提及/编辑冲突及保存恢复 | task report.note识别@用户名；无评论线程 | mentions/inbox仅task更新；待comments | 现:tasks action report --note；补:tasks comments | 正:评论提及送本人；拒:隐藏上下文外泄/失焦失败假保存；读:线程与通知 | 03b,09a,02b | 未实现 | A:createMentions；W无评论组件
+UI-W01 | P04§3/10；O§5 | MyWork今天/本周/下周/已完成、项目/休假/学习SideItem | 发GET /api/tasks但结果不用；SideItem无handler | MY_TASKS/固定身份/计数/项目 | 现:tasks list/show；补:tasks mine/date/type filters | 正:账号真实工作范围；拒:另一账号任务；读:选择筛选与CLI一致 | 03c,09a | 假数据 | W/my-work:MyWorkSidebar/useData被丢弃
+UI-W02 | P04§4/6/11 | MyWork清单/日历/统计、List/Table/Board/Timeline/Calendar、筛选分组排序/保存 | 当前三个button无handler；其他无控件 | 待:真实列表/个人偏好/saved filters | 补:tasks views/group/sort/preferences | 正:同集多视图；拒:Board非法状态回滚；读:筛选URL及偏好 | 03c,12a,07b | 未接通 | W/my-work:PageHeader buttons
+UI-W03 | P04§7；P07§5 | 填报阶段成果/textarea/附件/存草稿/提交负责人确认 | 无handler；固定成果文本及两附件 | fake report/defaultValue；待真实result草稿 | 现:task-assignments action submit；补:result draft/attachments | 正:编辑绑定本人分工；拒:缺资料不假成功；读:结果文本文件review | 03b,06a,09a | 未接通 | W/my-work:textarea/Paperclip/button
+UI-W04 | P04§5；F03§5.3；O§5 | 个人任务行/完成框、本周排程/32h40h/投入分布 | 无绑定；完成框span不可点击 | MY_SCHEDULE/MY_DISTRIBUTION固定值 | 现:tasks list,load person；补:worklogs confirmed/个人聚合 | 正:同人真实日期和工时；拒:未知工时不默认32；读:负载/分工/工时同源 | 03c,05b | 假数据 | W/my-work:TaskRow/WeekSchedule/Distribution
+UI-W05 | P04§7/8/12 | 批量导出/关注、清除筛选/全部/无任务引导 | 当前无控件 | 待:个人关注/导出/范围检查 | 补:tasks batch/export/follow | 正:兼容批量逐项结果；拒:混入无权任务；读:导出集合/偏好 | 03c,09b,02b | 未实现 | W/my-work无批量/Empty路径
+
+M04 派发与审批协同
+------------------
+M04-001 | O§3.1；F04§2/5；T04§4 | 标准派发草稿/提交与部门->中心审批 | CRUD /api/dispatch；POST :id/submit；approvals/:id/decision | dispatch/tasks/approvals/inbox/audit事务 | 现:dispatch create/show/submit,approvals decision | 正:同部/跨部逐级；拒:目标组织不符/重复submit；读:task/审批列表 | 04a,03a,05a | 已真实 | R:dispatch；A:58-61,decideApprovalWorkflow（窄流程）
+M04-002 | O§3.1.1；F04§2.3；T04§5 | 后补原发起人确认 | dispatch.workflow supplemental；POST :id/confirm | founder_confirmed_at/audit/inbox | 现:dispatch create/confirm/show | 正:负责人补填原发起人确认；拒:伪requester/他人confirm；读:原内容与时间 | 04a,03a | 已真实 | R:dispatch original requester；A:60
+M04-003 | F04§2.1/2.2/4/5；PLAN§2 | 直接派发确认、项目负责人内容确认不替代资源审批 | task publish直接in_progress；审批最终直接in_progress | 缺确认边界/项目确认独立记录 | 补:dispatch owner/project confirm | 正:资源审批+项目确认+相关人员确认；拒:SA静默兜底；读:正式量直到确认后 | 04a,02a,03b,05a | 未实现 | A:publish/decideApprovalWorkflow
+M04-004 | F04§2.4；O§2任务含个人事项 | 个人工作/学习/休假/简单出差记录 | tasks create仅自派可用；无专用个人流程 | tasks/visibility/state/capacity待补 | 现:tasks create；补:dispatch personal-record | 正:本人记录直属可见；拒:越范围个人内容；读:状态/负载/日历 | 03a,04a,05a,02a | 未实现 | R:member可自派；P无个人visibility规则
+M04-005 | F04§3.1；T04§4；P16§4 | 负载/候选预览、技能/项目推荐理由、隐藏授权 | 无/api/dispatch/preview（设计路径） | 实时预览不得写正式占用 | 补:dispatch preview/candidates | 正:真实候选空档；拒:未参与日期误报/无权上下文；读:容量/权限与提交重检一致 | 04a,05a,01a,11a | 未实现 | A无preview路由；W/dispatch固定CONFLICTS
+M04-006 | F04§3；T04§2/7 | 协调单编号/详情/内容版本/冲突摘要/审批历史 | GET /api/dispatch/:id、approvals/:id只有记录 | 待:协调聚合/版本/history | 现:dispatch/approvals show；补:coordination detail/history | 正:每版内容与审批绑定；拒:改版沿用旧批准；读:对象/版本/负载一致 | 04a,05a | 未实现 | A generic/R:dispatch；W/inbox fake详情
+M04-007 | F04§3.2；T04§3/4 | 同意/拒绝需意见、重复决策拒绝 | POST /api/approvals/:id/decision approved/reason | 审批/兄弟cancel/任务draft或published/audit | 现:approvals decision --approved true/false --reason | 正:拒绝重提；拒:重复/他人/无拒因；读:兄弟状态及审计 | 04a,02a | 已真实 | A:61,decideApprovalWorkflow（关inbox另列）
+M04-008 | F04§3.2；T04§4；P03§4/5 | 调投入/周期后同意、推荐人员、转交、升级 | 无adjust/recommend/transfer/escalate | 待:审批动作/版本/通知 | 补:approvals adjust/recommend/transfer/escalate | 正:调整复检后批准；拒:空意见/非授权上级；读:新人员日期与历史 | 04a,05a,02a | 未实现 | A:decision仅boolean
+M04-009 | O§3跨部门会议；F04§3.3；T04§4 | 会议时间/参会人/事项/结论/后续/纪要 | 无meeting-records | 待:meetings/files/audit | 补:meetings create/list/show | 正:纪要附真实资料；拒:会议替代审批；读:结论/附件校验和 | 04a,06a | 未实现 | A collections无meetings
+M04-010 | F04§6.1；P07§10 | 撤回草稿/待协调/待确认、关闭兄弟待办 | 无withdraw；DELETE仅无引用可能可用 | 待:dispatch/tasks/approvals/inbox事务 | 补:dispatch withdraw/resubmit | 正:撤回重提；拒:生效后直接撤回；读:旧审批待办全关闭 | 04a,09a | 未实现 | R:deleteRecord引用保护；A无withdraw
+M04-011 | F04§6.2；F03§6 | 生效后成员/日期/投入变更再次协调/确认 | tasks reschedule部分实现，无change流程 | 待:变更版本/资源审批/通知 | 现:tasks action reschedule；补:dispatch change | 正:变更跨部重新审；拒:旧批准复用；读:日期/分工/占用/审批一致 | 04a,03b,05b | 未实现 | A:56 reschedule/54 assignment
+M04-012 | F04§5；PLAN§6 | 最终批准时人员/状态/占用/授权事务内并发重检 | 最终decision不算当前冲突/不等成员确认 | 待:事务锁/幂等/生效events与inbox关单 | 补:dispatch effective/status | 正:等待时新增冲突阻断；拒:两并发均生效；读:拒后批准/负载不变 | 04a,05a,02a,09a | 未实现 | A:decideApprovalWorkflow
+UI-D01 | P16§4/6/9；F04§2 | 派发Sidebar科研/市场/出差/文职/党建/学习/休假；标准/后补；两草稿 | Sidebar无handler；草稿时间/名固定 | fake草稿/流程；待真实类型及draft | 现:config list,dispatch list/show；补:templates/drafts resume | 正:类型/后补实际入请求；拒:停用类型；读:保存草稿ID/模式 | 04a,08b,03a | 未接通 | W/dispatch:DispatchSidebar
+UI-D02 | P16§4步骤1；F03§3 | 类型9按钮/名称/项目/概述/负责人/起止输入 | POST /api/dispatch发送固定name/project/owner/dates，无task_id/requester/workflow | type与mode入state，其余输入不入请求；假自动保存 | 现:tasks create,dispatch create；补:真实表单draft/autosave | 正:编辑全部字段回读；拒:缺必填保留输入；读:show逐字段及版本 | 04a,03a,08b | 假数据 | W/dispatch:submit与uncontrolled inputs
+UI-D03 | P16§4步骤2/3；F04§3.1 | 成员X移除/添加成员、分工角色/每日/全天/日期/成果 | 无handler，MEMBERS固定 | 待:真实人员/分工草案 | 现:tasks assign/task-assignments update；补:candidates/change-member | 正:增删分工；拒:无资源权/超日期；读:成员集合与分工 | 04a,01a,05a | 未接通 | W/dispatch:MEMBERS/X/add button
+UI-D04 | P16§4/8；F04§2/3 | 派发方式部门内/跨部门单选、冲突检测/系统建议/审批确认卡 | mode仅随固定POST；CONFLICTS/APPROVALS固定 | 需后端自动判跨部，不信任client mode | 补:dispatch preview/approval-preview | 正:预览实际跨部链；拒:client inner绕审批；读:负载/审批人与真实用户 | 04a,05a,02a | 假数据 | W/dispatch:setMode/CONFLICTS/APPROVALS
+UI-D05 | P16§5/8/9；F04§5 | 返回/取消、存草稿、确认派发/提交失败恢复 | 返回router.back可用；存草稿无；submit第二请求失败吞后跳inbox | 待:步骤ID/保存状态/操作ID | 现:dispatch submit/show；补:dispatch draft/recovery | 正:成功回读后导航；拒:第二步503仍留恢复入口；读:无假“已保存/已通知3人” | 04a,B0,09a | 未接通 | W/dispatch:submit catch/footer/header
+UI-D06 | P16§3/4/6 | 快速创建/五步向导模板、步进返回/重检/发布状态通知预览 | 当前单页非五步；无quick dialog | 待:真实draft+template snapshot | 补:tasks quick-create/dispatch step/draft | 正:跨步骤改日期重新预览；拒:陈旧preview；读:模板/步骤/通知收件人 | 04a,08b,03a | 未实现 | W/dispatch全文
+
+M05 负载与冲突
+--------------
+M05-001 | F05§3；T05§4 | 本人/人员单日真实工时、容量、隐藏占用计总 | GET /api/load；GET /api/load/:personId | PG tasks/assignments/people现算，不是固定表 | 现:load list/person,people load --date | 正:同日4+5=9/8；拒:他人/越范围；读:容量与可见tasks摘要 | 05a,01a,02a | 已真实 | A:loadList/personLoad；L（完整口径另列）
+M05-002 | F05§2/3；PLAN§2 | 正式/草稿/待协调/待确认预估区分、ratio/locked来源统一 | load/home/report共用部分L；pending算正式/普通8h锁 | 待:生效占用/预估DTO、零容量 | 现:load person/home/reports list；补:load preview/calendar | 正:普通8h不锁/全天锁；拒:未确认占正式；读:3消费者同ratio | 05a,04a,03b | 未实现 | L:calculateDailyLoads无ratio；A:personLoad/home
+M05-003 | F05§3/4；T05§4 | 区间日历/候选预览、日期边界与容量/workday/节假日 | load单日；无workload/calendar/preview | 待:Asia/Shanghai日历、假期/不可用区间 | 补:load calendar/preview,capacity/workdays | 正:闰日/相邻日/候选仅参与日；拒:非法日期/负容量；读:每日构成及合计 | 05a,01a,08a | 未实现 | A:calculateTaskConflicts；L:rangeDays
+M05-004 | F05§4 | 出差/培训/休假兼容规则、隐藏授权/跨部审批风险等级 | person_unavailable统一阻断；overload仅warning | 待:可用性规则/高风险发布门禁 | 补:conflicts rules/preview | 正:出差相关工作可接；拒:4+5/全天+1不能仅警告发布；读:原因/严重程度 | 05a,04a,08c | 未实现 | A:calculateTaskConflicts
+M05-005 | F05§7/8；T05§4 | 冲突查询/详情、稳定ID/日期区间/处理历史/重算 | GET /api/conflicts、load/conflicts实时算；GET :id仅saved | saved conflicts/动态issues；GET过期豁免写状态 | 现:conflicts list/show,load conflicts；补:recalculate/history | 正:同占用重复查询ID稳定；拒:GET写业务/日期变化复用；读:saved与live一致 | 05a,05b,13a | 未实现 | A:conflicts/applyForceOverrides/reconcileTaskConflicts
+M05-006 | F05§6/7；T05§4 | 原冲突消除后标记解决（有原因） | POST /api/conflicts/:id/resolve | conflicts/audit；当前重新算同人同type | 现:conflicts resolve --reason | 正:调期再resolve；拒:仍冲突/非管理者；读:show status/audit | 05a,05b | 已真实 | A:62（只计当前窄动作）
+M05-007 | F05§6；PLAN M05 | 限期强制原因、对象+日期+占用版本指纹、到期/调期失效 | POST :id/force部分；按task/person/type匹配 | conflicts/audit/inbox；无指纹 | 现:conflicts force --reason；补:--forced-until/fingerprint/history | 正:带原因限期；拒:无权/空原因/调期旧豁免；读:force与通知/到期 | 05a,05b,02a | 未实现 | A:63/applyForceOverrides；C未传forced_until
+M05-008 | F05§6；P10§5/8 | 调人/日期/投入/拆分/延截止/估计/升级/取消/推荐影响 | tasks/assignment reschedule部分；无推荐批量 | 待:真实候选预览/处理日志 | 现:tasks action reschedule；补:conflicts recommend/batch/transfer | 正:建议展示新增冲突/审批；拒:高风险忽略；读:动作后源与负载一致 | 05b,03b,04a | 未实现 | A:54/56/62-63
+M05-009 | F05§7；P10§7/11 | 批量resolve/force/转交/忽略、原因/部分失败 | 单条resolve/force可复用；无批量产品CLI | 待:逐项结果/兼容检查/审计 | 补:conflicts batch | 正:同动作多条逐项结果；拒:高风险忽略/混选越权；读:失败项原状成功项历史 | 05b,02b | 未实现 | C单条；W/load按钮无handler
+M05-010 | F03§5.3；F05§3.1；PLAN M05b | 截止风险剩余工时/容量/预测日期/延期/未知工时null | 无forecast | 待:03a estimate+03b确认投入+工作日容量统一服务 | 补:load forecast --person/task/assignment | 正:20-8=12>3日×2=6，第6工作日完成；拒:缺预计工时造日期；读:03c/04/07/09/12同结果 | 05b,03b,04a | 未实现 | L/A无forecast；甘特demo forecast不是实现
+M05-011 | F05§8；PLAN§6 | 发布/最终审批并发容量重检、人员状态/分工变化重算 | 发布/reschedule先算事务外；审批最后不重算 | 待:锁/重检/操作幂等/统一占用 | 补:load recalculate/concurrency check | 正:人员变化重算；拒:并发同日均占满；读:实际正式量/审计 | 05a,04a,03b | 未实现 | A:publish/decision/reschedule
+UI-L01 | P08§5/6；P10§3/4 | Load部门4项/冲突过载饱和空闲锁定5项/热力图列表SideItem | GET load/conflicts结果丢弃；sidebar无handler | 固定计数/LOAD_MATRIX/LOAD_CONFLICTS | 现:load list/conflicts；补:org/status/views | 正:组合filter与真实计数；拒:越范围人员；读:负载/冲突集 | 05b,01b | 假数据 | W/load:LoadSidebar/useData
+UI-L02 | P09§3/5；T05§7 | 前后日期箭头/区间、导出 | 无handlers | 固定6/22-7/5；待真实区间及授权导出 | 补:load calendar/export | 正:前后两周/导出当前集；拒:非法区间；读:导出日期和过滤一致 | 05b,09b | 未接通 | W/load:PageHeader buttons
+UI-L03 | P09§5/6；P10§5 | 热力图单元格/人员点击、冲突协调排程/联系上级 | 矩阵span无handler；两button无handler | 假任务构成/影响；待真实详情/处理 | 现:load person,conflicts show；补:conflicts escalate/recommend | 正:点日看任务来源再协调；拒:隐藏来源标题；读:处理后同日容量 | 05b,04a,12a | 未接通 | W/load:matrix/conflict cards
+UI-L04 | P10§3/4/6/11 | 独立冲突中心筛选排序分组/多选/统计反筛/详情/历史 | 无/conflicts网页；API部分可复用 | 待:队列/趋势/来源联动 | 补:conflicts filters/stats/history/batch | 正:统计反筛与列表一致；拒:过期忽略/不可兼容批量；读:解决历史保留 | 05b,09a,02b | 未实现 | W仅/load固定队列
+
+M06 资料库
+----------
+M06-001 | O§2.2；F06§3；T06§2/4 | 真实上传大小/格式/类别/关联任务项目 | POST /api/files/upload multipart | S3对象+records files/audit；size_bytes/object_key | 现:files upload FILE --category --task-id/--project-id | 正:真实字节上传；拒:超限/非法格式/归档父；读:files show/下载比对 | 06a,03a,11a,02a | 已真实 | A:67；ST:objectRequest（预签直传不是当前实现）
+M06-002 | F06§5/7；T06§4/5 | 下载当前/历史资料源对象鉴权、归档下载审计 | GET /api/files/:id/download | S3 GET/audit file.download | 现:files download ID --out FILE | 正:旧版下载；拒:撤权下载；读:sha256与原字节/审计 | 06a,02b | 已真实 | A:72；P:files
+M06-003 | F06§4；P11§6 | 同名同关联对象新版本/版本列表 | 重复multipart upload；GET files/:id/versions | version_group/version_number/previous_id、DB唯一索引 | 现:files upload/versions/show | 正:两版均保留；拒:并发重复version/归档组；读:旧对象下载 | 06a | 已真实 | A:67/69；DB:records_file_version_idx
+M06-004 | F06§4；P11§6/9 | 回滚新增版（原因）非覆盖旧版 | POST files/:id/rollback | 新S3对象/新files版/audit | 现:files rollback ID --version-id --reason | 正:v2回v1生成v3；拒:不同组/归档/空原因；读:v3字节=v1，v2仍在 | 06a | 已真实 | A:70
+M06-005 | F06§4/7；P11§11 | 单文件归档锁定 | POST files/:id/archive | files.archived/audit | 现:files archive --reason | 正:active归档；拒:非上传者/无权/重归档；读:show与下载状态 | 06a,06b | 已真实 | A:68（所有父锁另列）
+M06-006 | F06§3/4；T06§3；P11§8/11 | 稳定资料身份/最新current版本、校验和/版本说明 | files每版一个id，列表所有版；无持久sha256 | 待:resource身份/current_version/sha256 | 现:files versions；补:files latest/meta | 正:列表只当前身份；拒:篡改size/hash；读:新旧版关联稳定 | 06a | 未实现 | A:67/69；R:files
+M06-007 | F06§3/5；T06§3/4；P11§8 | 多项目/任务/直接分工link及可见交集 | 上传单project_id/task_id；无link/assignment_id | 待:links/scope/audit | 补:files link/unlink/scope | 正:资料关联分工且源相同；拒:资料可见大于源；读:关联回读/授权交集 | 06a,02a | 未实现 | A:67；R:files schema
+M06-008 | F06§2/6；T06§4；P11§11 | 资料类型/属性、阶段/最终成果提交确认退回、必需清单 | files arbitrary is_*可存但无完整actions | 待:成果状态/review/requirements snapshot | 补:files results/confirm/return/check-requirements | 正:确认最新成果参与验收；拒:旧版/未确认最终；读:缺失清单与任务一致 | 06b,03b,08b | 未实现 | A:report files及assignment submit；无文件review接口
+M06-009 | F06§4/7；PLAN M06b | 验收冻结版本/父任务项目归档所有写锁、授权补充/重新打开 | 上传校验部分父状态；rollback/archive/PATCH缺统一父锁 | 待:固定验收版本/档案关系/重开授权 | 补:files acceptance-snapshot/reopen | 正:验收版不变；拒:归档父所有写/并发归档；读:task/project快照版本 | 06b,03b,11b | 未实现 | A:67-70；R:files PATCH
+M06-010 | P11§7/9/11；T06§7 | 预览/元信息/fallback/复制链接/关联跳转 | 无preview-meta专用；download可复用 | 待:安全预览审计/签名短期链接 | 补:files preview-meta/link-resolve | 正:图片或明确下载fallback；拒:危险HTML/iframe权限；读:元信息真实 | 06a,02b | 未实现 | W/files无详情预览；ST只GET
+M06-011 | P11§3/8/10；PLAN M06 | 收藏、回收站软删恢复、保留30天/引用保护 | DELETE files禁止；无trash/restore/favorite | 待:软删/引用/个人favorite/清理任务 | 补:files favorite/trash/restore | 正:自删可恢复；拒:成果引用硬删/撤权恢复；读:版本及原字节未丢 | 06a,02b | 未实现 | R:deleteRecord；W/files sidebar
+M06-012 | PLAN M06/§6 | 上传/回滚提交后回读失败不可误删已提交对象、孤儿补偿审计 | 当前try含getRecord，catch DELETE对象 | storage_cleanup待审计/提交标记 | 补:files operation-status/cleanup preflight | 正:注入回读失败仍可恢复；拒:已提交对象被补偿删除；读:元数据及字节同时在 | 06a,B0 | 未实现 | A:67/70/queueObjectCleanup/retryObjectCleanup
+UI-F01 | P11§3/4/5 | 全部/个人报告/整体报告/PPT/申报/数据/纪要、项目/收藏/回收站导航，目录含代码仓库 | sidebar与目录无handler；GET files {items}被忽略 | FILES/1284及类别数固定；代码资料仅预留非必做引擎 | 现:files list；补:files folder/owner/project/category/favorites/trash filters | 正:真实目录/计数；拒:不可见项目；读:目录集等CLI集 | 06a,06b | 假数据 | W/files:FilesSidebar/directory/normalize
+UI-F02 | P11§6/9；F06§3 | 搜索文件/上传人、上传按钮、拖拽多文件队列/同名新版本 | SearchBox/Upload无handler；队列未有 | 待:真实multipart提交/失败恢复 | 现:files upload/list --q；补:upload queue/version/meta | 正:多文件逐项结果；拒:超限保留失败项；读:成功file ID/大小/hash | 06a | 未接通 | W/files:PageHeader；U:SearchBox
+UI-F03 | P11§4/5 | 类型全部/Word/PPT/PDF/Excel/数据按钮、按上传时间排序、List/Grid/Timeline | filter state不参与files.map；sort仅span；其他无 | 待:服务端筛选/视图偏好 | 现:files list --q；补:format/category/sort/view | 正:过滤结果真实减少；拒:清空无demo补；读:count/order | 06a | 未接通 | W/files:setFilter/files.map
+UI-F04 | P11§5/7/11 | 文件名/所属任务/下载图标/大小时间上传人、详情版本链接范围成果日志 | 下载仅icon/行无click；fake字段 | FILES字段补齐；待真实详情 | 现:files show/download/versions/archive；补:detail tabs | 正:点击真实file ID；拒:下载失败不假成功；读:字节/元信息/日志 | 06a,06b | 假数据 | W/files:normalize/table
+UI-F05 | P11§2/6/9 | 新建文件夹/目录展开、多文件描述类型关联/上传进度/离页提示 | 当前无控件 | 待:目录组织/上传queue，不替代业务文件事实 | 补:files folders/queue | 正:可组织真实资料；拒:引用越权/离页丢上传；读:目录及上传状态 | 06a | 未实现 | W/files全文
+
+M07 首页及全局工作台
+--------------------
+M07-001 | F07§2/4；T07§2/3；P02§4/6/7/8 | 首页主聚合、真实任务/风险/项目/人员负载来源 | GET /api/home；/api/projects；/api/tools | PG实时聚合；首页本身不存事实 | 现:home --json | 正:有数据/空库/失败；拒:越范围；读:源task/conflict/project/load对账 | 07a,05b,09a | 已真实 | A:home；W/page.tsx三Query（仅数据来源已真）
+M07-002 | F07§4；P02§4/5/6；PLAN M07 | 今日行动/截止/逾期/审批准确全量聚合、排序去重 | home先截8且过滤掉逾期，today_due冒充待办 | 待:统一todo/未截断计数/截止风险 | 现:home；补:home stats/focus | 正:>8条及逾期优先；拒:以截止数代todo；读:计数等源全量过滤 | 07a,09a,05b | 未实现 | A:home；H:focusRows；W/page statCards
+M07-003 | F07§3/5；T07§3/4；P02§14 | 六类角色视角/默认组件/多角色切换/SA管理入口 | home只有固定响应；无widgets/role-view | 待:已发布layout/角色视角偏好 | 补:home layout/widgets/role-view | 正:员工/负责人/部门/中心/SA/待审各屏；拒:视角扩实际权限；读:layout版本与配置 | 07a,08c,13c,02b | 未实现 | A:home；W固定布局；H:super_admin映射中心领导
+M07-004 | F07§2/4；P02§6/10 | Focus处理/打开/稍后/转交、Inbox Triage筛审批/填报/验收/冲突/批量 | 当前Focus仅类目Link，不带object id；无轻动作 | 待:target/actions/SLA/队列同步 | 现:inbox list/业务actions；补:home focus/actions | 正:处理对应事项从focus消失；拒:代处理无原因；读:todo/源对象/角标同步 | 07a,09a,04a | 未实现 | H:focusRows route；W/page focusList
+M07-005 | P02§7；F07§2；T07§2 | 7日时间线任务/里程碑/冲突/日期点击及14天平移 | home.timeline真实任务；当前只有hover | 待:真实target/日期filter/里程碑；不造预测 | 现:home/gantt；补:home timeline | 正:点日/条定位；拒:无工时不造预测；读:与12a/05b同日期 | 07a,12a,05b | 未实现 | W/page bars；H:timelineBars
+M07-006 | P02§8；F07§2/3 | Risk Radar高/中/低、2x2资料/审批/资源/延期/推荐动作 | home.risk_radar仅冲突issues | 待:分类真实来源/推荐可执行目标 | 现:home/conflicts list；补:home risk/actions | 正:四类风险可定位；拒:缺数据当正常0；读:去重计数/影响对象 | 07a,05b,09a,06b | 未实现 | A:home；H:riskGroups；W/page advice
+M07-007 | P02§9；F07§3 | 项目脉搏进度/里程碑/风险/成员/本周变化/排序 | 当前GET projects直接progress字段 | 待:权限统计/风险/里程碑同口径 | 现:projects list/show；补:home projects-pulse | 正:风险项目置顶；拒:缺progress默0误事实；读:11b统计及任务完成率 | 07a,11b,05b | 未实现 | W/page projectsQ/project cards；A:generic projects
+M07-008 | P02§11；F07§2/3 | Quick Dock新任务/项目/甘特/报表/上传/冲突/工具固定 | 当前只若干路由+tools列表入口 | 待:quick_actions/个人pins/权限 | 现:各领域CLI；补:home quick-actions/tools pins | 正:固定取消同步；拒:停用工具还可开；读:首页与工具页同个人事实 | 07a,10b,07b,13c,09b | 未实现 | W/page shortcut工具只/tools
+M07-009 | P02§12；T07§3 | Activity动态对象/操作者/时间、项目/人员/风险筛选、最近访问 | 无home recent-activities | 待:权限裁剪audit->feed/访问历史 | 现:admin audit（不是普通feed）；补:home activity/recent | 正:写动作产生可见动态；拒:隐藏源泄露；读:对象ID/时间/actor | 07a,02b | 未实现 | A:home无activities；W/page无动态
+M07-010 | P02§13；F07§3；T07§5 | 管理者迷你热图真实ratio/全天/零容量、点人点日 | home team_load_7d daily没有ratio；W缺值num为0 tooltip | 待:统一05a DTO/目标ID/权限组件 | 现:home/load person；补:home team-load | 正:普通8h不超载、0容量明确；拒:未知ratio=0；读:各人员日量一致 | 07a,05b,01b | 未实现 | L:calculateDailyLoads；A:home；W/page team-load
+UI-H01 | P02§4/11；F07§3 | 首页新建/侧栏派发/工作/上传/工具/动态项目行、铃铛 | 已Link/router到dispatch/my-work/files/tools/项目plan/inbox | 本地路由；下游真假独立记录 | 现:home/各list；补:quick-actions/目标ID | 正:目标真实UUID；拒:无权深链；读:落地页真实对象非HTML兜底 | 07b,12a,04a | 未接通 | W/page HomeSidebar/新建/Bell/project cards（部分目标未真）
+UI-H02 | P02§6/8 | 顶部风险提示3链接/焦点行/风险组/“去负载与冲突” | 到类目/load/inbox/my-work，不带筛选/对象 | 真实来源但无精确定位 | 现:home；补:target/filter metadata | 正:点某风险定位其ID；拒:失权对象入口；读:落地筛选与来源一致 | 07a,07b,12a | 未接通 | H:focusRows/riskGroups；W/page Links
+UI-H03 | P02§15；T07§6 | 首页各模块/全页错误点击重试、空态/骨架 | GET home/projects/tools refetch；无demo catch | Query状态，本地交互 | 现:home/projects list/tools list；补:verify faults | 正:局部503可重试；拒:错误转演示；读:恢复后真响应 | B0,07a | 已真实 | W/page Module/ErrorBox/retryAll（未服务器/浏览器运行）
+UI-H04 | P01§2.3；P02§4 | 头像菜单打开/关闭/遮罩、“我的工作”/退出 | menu React/Link；logout吞API失败 | token/user清空，但服务会话可能在 | 现:auth logout/me；补:failure recovery | 正:菜单可关退出回读；拒:503不能假退出；读:旧token失效/缓存清 | 13a,07b | 未接通 | W/page menu/logout；WA:logout
+UI-H05 | P02§4/5/10/14 | Live Chips点击/Signal Strip趋势/角色切换/Triage批量/高风险原因 | 当前Stats只是Card；其余控件无 | 待:真实统计/授权布局 | 补:home stats/layout/triage | 正:每指标带筛选目标；拒:失败数字显示--；读:源指标与筛选列表 | 07a,07b,09a | 未实现 | W/page StatCard非click，无Signal/Triage/role switch
+
+M08 配置中心
+------------
+M08-001 | F08§3/8；T08§4 | task_types草稿/发布/版本、创建任务消费已发布类型 | CRUD /api/config；POST :id/publish；GET :id/versions | config/config_versions/audit；published->新draft | 现:config create/update/publish/versions/show | 正:草稿不影响类型/发布生效；拒:非法类型码/并发发布；读:版本与新task允许类型 | 08a,02a,13a | 已真实 | R:config/allowedTaskTypes；A:36-37（仅单key）
+M08-002 | F08§2/8；T08§3；P14§3/8 | 多namespace目录/组织vs全局范围、草稿校验/影响预览/停用/回滚/比较 | config仅task_types；无modules/disable/rollback | 待:不可变版本/范围/原因/审计 | 补:config modules/draft/validate/preview/disable/rollback/versions | 正:停用禁新选历史可查；拒:范围外配置/陈旧版本；读:回滚新增版 | 08a,02a | 未实现 | R:config key literal；A:publish
+M08-003 | F08§2.1；T08§5；P14§3 | 脱敏只读运行状态/版本/依赖延迟、刷新 | healthz/readyz部分；readyz写删探测/清理 | 待:只读依赖结果，不显示密钥 | 现:health（ready有副作用禁用）；补:config runtime/version | 正:只读状态；拒:展示secret/GET改数据；读:依赖故障不影响业务记录 | 08a,13a | 未实现 | A:25；ST:probeStorage；无配置页
+M08-004 | F08§2/3；P14§7 | 组织层级/人员字段/技能工作状态、任务父子类型/启停/负载状态/审批资料规则 | people/task_types部分；无结构化dict | 待:字典/consumer/版本 | 补:config org/person/task-types/skills dictionaries | 正:类型休假驱动状态；拒:停用选入；读:历史旧名称 | 08a,01a,03a,05a | 未实现 | shared固定taskTypes/roles/fileCategories；R
+M08-005 | F08§2.2；F11§2/3；P14§7 | 项目类型/级别/状态/成员身份/隐藏范围/资料归档规则 | projects passthrough；无消费配置 | 待:project配置版本/快照 | 补:config projects/preview | 正:新项目加载发布项；拒:草稿规则生效；读:项目快照/归档precheck | 08a,11a,11b | 未实现 | R:projects schema；A:project action
+M08-006 | F08§4；T08§2；P14§5/8；P16§6 | 任务/分工模板、字段必填默认可编辑角色/列表、里程碑/资料/验收 | task required_categories任意字段，未模板consumer | 待:任务模板不可变snapshot | 补:config templates/validate/publish/preview | 正:新任务填默认/旧快照不改；拒:缺必需资料；读:task template版本 | 08b,03a,06a | 未实现 | R:tasks；A:submit_acceptance
+M08-007 | F08§5；T08§1；P14§5/7 | 跨部/超载/全天/隐藏/重大变更/强制审批规则及人源/超时升级 | 审批硬编码部门+中心 | 待:按类型/风险发布consumer | 补:config approval-rules/preview | 正:发布规则实际改新审批链；拒:SA默认业务审批；读:审批快照/来源 | 08c,04a,05b,09a | 未实现 | A:createApproval/decideApprovalWorkflow
+M08-008 | F08§6；P14§5/7 | 延期/分工/审批超时/资料/成果/超载/退回提醒对象渠道风险待办 | 无alert-rules consumer | 待:提醒任务/retry/published配置 | 补:config alert-rules/validate/preview | 正:提前N日提醒；拒:草稿告警生效/重复发送；读:通知规则版 | 08c,05b,09a | 未实现 | A无提醒扫描
+M08-009 | F08§7/7.2；F07§5；P14§7 | 首页组件/顺序/时间范围/菜单/快捷/默认视图筛选/多角色 | 无view_config consumer | 待:角色layout/个人覆盖/权限交集 | 补:config home/views/role-entry | 正:发布布局07a消费；拒:菜单配置扩权限；读:首页layout版本 | 08c,07a,13c | 未实现 | W/S固定；A:home固定
+M08-010 | F08§7.1；F13§3/4；P14§3 | 邀请有效期次数/批量/字段/已有账号/审核人/默认首页、失效引用 | invitations只role/org/expiry一次使用 | 待:策略版本/注册consumer | 补:config invitations/validate/preview | 正:模板停用旧链接失效；拒:组织/角色/项目停用注册；读:审核与入组一致 | 08c,13b,01a,11a | 未实现 | A:invitations；AU:register
+UI-C01 | P14§2/3/4/8/9/10；F08§2 | Settings菜单12类/搜索/编辑取消重置/保存draft/校验影响/publish/version/audit | 无/settings或/config页面；S设置无handler | 待:领域配置，不能用JSON存储冒充实际消费 | 现:config CRUD/publish；补:所有namespace CLI | 正:每类生效范围可读；拒:保存失败不清输入；读:版本审计与consumer | 08a,08b,08c,13c,07b | 未实现 | W目录无设置页
+
+M09 通知、待办与报表
+--------------------
+M09-001 | F09§2/3；T09§4 | 本人消息查询、标已读与有原因complete | GET /api/inbox；POST :id/read/complete | inbox.read_at/status/completion字段/audit部分 | 现:inbox list/show/read/complete --reason | 正:本人已读/complete；拒:他人ID/无原因；读:read_at与status不同 | 09a,02a | 已真实 | A:34-35；P:inbox（complete不是业务批准）
+M09-002 | F09§4；T09§3 | 派发/审核/验退/强制事件发送通知 | 领域actions调用addInbox/notifyMembers | inbox/mentions；部分同事务/部分事后 | 现:业务actions/inbox list | 正:现有action收件；拒:重复事件/他人查看；读:source_id对应真实对象 | 09a,04a,03b | 已真实 | A:addInbox/notifyMembers/createMentions（只列现有事件）
+M09-003 | F09§2/3；P03§3/7/12 | 统一待办目标类型ID/action_url/动作/截止风险、源对象撤权及失效解释 | inbox仅source_id/type无target type/action_url；源不重检 | 待:权限裁剪目标/可用动作 | 补:inbox filters/actions/target | 正:直达task/approval锚点；拒:撤权消息漏名称；读:source可用权限 | 09a,02b | 未实现 | A:addInbox；P:inbox只user_id；W/inbox normalize
+M09-004 | F09§2/4；PLAN M09 | 业务动作事务自动关闭待办；read不代表complete | decision不关闭approval inbox；complete独立标消息 | 待:业务/待办同事务 | 现:inbox complete仅消息动作；补:业务自动关闭 | 正:批准后角标减少；拒:单complete冒充批准/重复执行；读:源批准与队列关闭一致 | 09a,04a,03b,06b | 未实现 | A:decision/addInbox/complete/home审批数
+M09-005 | P03§5/6/10/13/14；F09§2 | 批量已读/完成/审批拒绝忽略/稍后、原因/失败明细/筛选 | 现单条API；无batch/snooze | 待:逐项结果/提醒时间/队列去重 | 补:inbox batch/snooze/filters | 正:部分成功只移成功项；拒:他人/高风险忽略；读:成功/失败对象及原因 | 09a,04a | 未实现 | C单条；W/inbox仅本地filter
+M09-006 | P03§8/13；T09§6；F08§6 | 通知偏好站内/邮件/短信/事件/Home、可靠提醒重试 | 无preferences/提醒任务 | 待:个人偏好/PG jobs/渠道投递 | 补:inbox preferences/reminders/retry | 正:偏好只影响未来；拒:重复提醒/假渠道发送；读:job状态及收件结果 | 09a,08c | 未实现 | A无preferences/jobs（邮件短信需外部输入）
+M09-007 | F09§5/6；T09§4；P12§10 | 五类真实聚合task-overview/people-load/files/conflicts/projects | GET /api/reports/:type（from/to/date） | PG实时payload非前端造统计 | 现:reports list TYPE（日期选项当前未传）；补:query --from/--to | 正:五类型隔离数据对账；拒:未知type/非法日期；读:payload/period/data_scope | 09b,11b,05b,06b | 已真实 | A:report；C reports list仅type
+M09-008 | T09§2/4；P12§10 | 同权限聚合JSON快照保存与导出 | POST reports/:type/export | records:reports+audit；不是真Excel/PDF | 现:reports export TYPE --from/--to --out | 正:JSON内容对账；拒:非法周期；读:reports show保存ID/payload | 09b,02b | 已真实 | A:49-50；C:reports export（快照权限另列）
+M09-009 | F09§5/6；P12§3/8 | 中心/部门/个人周期、完成率/负载率/延期/重点/协调通过率及时率/资料完整率/风险趋势 | 当前五类缺完整指标，files计数量不是必需已确认比 | 待:统一分母/周期/快照与forecast/协调历史 | 补:reports metrics/query/definitions | 正:每指标手算对账；拒:草稿/取消错误分母；读:03/05/06/11源同口径 | 09b,05b,11b,06b | 未实现 | A:report switch
+M09-010 | T09§6；P12§6/9；PLAN M09 | 真Excel/PDF/图片与异步export状态/失败重试/通知/可下载文件 | 当前export同步JSON；无job/status/download | 待:PG导出任务/S3产物/不可变快照 | 补:reports export --format/status/retry/download | 正:文件可开/内容对账后通知；拒:撤权下载/未生成假成功；读:job/file/hash/version | 09b,09a,06b,02b | 未实现 | A:50仅JSON；C --out保存response
+M09-011 | F09§7；T09§5；P12§9 | 历史快照/导出重新校验源权限，分享不扩权 | reports记录read按created_by/manager，不重检源 | 待:快照source scope/download敏感审计 | 补:reports snapshot/scope/permissions | 正:撤权旧快照不漏；拒:分享给无权账号；读:内容裁剪与审计 | 09b,02b | 未实现 | P:reports分支；A:report export
+UI-I01 | P03§3/4；F09§2 | Inbox SideItem全部/审批/指派/@提及/冲突/系统/项目/归档及头部17未读 | GET inbox {items}被丢弃；sidebar无handler | INBOX/actor/time/detail流转附件固定 | 现:inbox list；补:inbox filters/counts | 正:真实消息分类/项目；拒:失败回demo；读:未读/源ID对账 | 09a,B0 | 假数据 | W/inbox:InboxSidebar/normalize
+UI-I02 | P03§3/7 | 全部/审批/指派/@提及/系统filter、消息选择/预览 | React筛demo/选id，无真实detail获取 | selected state；fake详情带actor/meta/附件/概述 | 现:inbox show/approvals show；补:target-detail | 正:选真实ID看源；拒:失权源脱敏；读:审批链与真实记录 | 09a,04a,02b | 假数据 | W/inbox:setFilter/setSelectedId/selected.detail
+UI-I03 | P03§4/10 | 审批意见input、通过/驳回/转交他人 | 无handlers/意见未入请求 | 待:approval动作/原因/转交历史 | 现:approvals decision；补:transfer | 正:意见保存后回读；拒:空拒因/重复决策；读:审批/inbox状态一致 | 04a,09a | 未接通 | W/inbox:input/Check/X/transfer按钮
+UI-I04 | P03§5/13/14 | 全部标为已读（header/sidebar）、批量/稍后/设置/已处理/时间筛选 | 两已读按钮无handler；其他控件无 | 待:batch/偏好/提醒，不能假complete | 现:inbox read/complete；补:batch/preferences/snooze | 正:批量部分失败保留项；拒:其他账号ID；读:未读数/完成原因 | 09a,07b | 未接通 | W/inbox:header/sidebar；无批量控件
+UI-R01 | P12§2/3/4/5/7/10 | 报表库/我的Dashboard/新建复制、周期组织项目人员筛选、Widget配置/下钻/分享 | 无/reports网页；API五类存在 | 待:个人layout/filter/真实聚合 | 现:reports list/export/show；补:dashboards/widgets/query | 正:同筛选多widget/复制不改模板；拒:分享扩权；读:口径/更新时间/源列表 | 09b,07b,02b | 未实现 | W无reports/page.tsx
+UI-R02 | P12§6/9/10 | 生成下载/导出PDF-Excel-图片-JSON、进度失败重试 | 无页面；JSON API仅现有能力 | 待:授权产物/job文件 | 现:reports export --out；补:format/status/download | 正:有效文件可下载；拒:失败清空旧快照/未完成通知；读:筛选、时间戳、内容 | 09b,09a | 未实现 | A:50；W无报表页
+
+M10 工具台
+----------
+M10-001 | O§4；F10§2/3；T10§4 | 工具目录CRUD、静态合法注册表允许保留 | GET /api/tools空时demoTools；通用CRUD | tools/audit；静态name/category/icon可用，url#不可用 | 现:tools list/show/create/update/delete | 正:目录稀疏/空集明确；拒:静态目录算使用成功；读:稳定注册ID/配置项 | 10a,08a,02a | 已真实 | A:33；R generic；DS:demoTools（仅目录存在）
+M10-002 | F10§3/5；T10§4/5；P13§6/8 | 启停排序、URL协议/域白名单、角色组织人员可见 | tools无schema/visibility规则；GET忽略q | 待:工具配置/安全校验/审计 | 现:tools update/list --q（q现忽略）；补:visibility/status/resolve | 正:配置HTTPS/禁用立即隐藏；拒:javascript/越权URL；读:配置/可见目录一致 | 10a,02a,13a | 未实现 | A:33；P:tools全可读；R无tools schema
+M10-003 | F10§3/5/6；T10§4/6；P13§5/7 | 实际打开/内嵌安全fallback/来源使用记录 | 无resolve/usage；注册url全部# | 待:真实入口解析/usage log/审计；外部可用性单列 | 补:tools resolve/open-record/history | 正:配置真实入口实际跳转；拒:未配置显不可用/危险iframe；读:真实使用记录非虚构执行 | 10a,13a,02a | 未实现 | DS:url #；W/tools按钮无handler
+M10-004 | F10§6；P13§3/5/9 | 本人收藏/固定首页/取消固定/最近使用及统计 | 无favorite/pin/history | 待:个人偏好/usage聚合 | 补:tools favorite/pin/history/stats | 正:固定07a/07b同步；拒:不可见工具常用区；读:本人次数等记录 | 10a,10b,07b | 未实现 | W/tools recent/usage来自TOOLS
+M10-005 | F10§4/5；T10§4/5；P13§9 | 任务推荐/任务项目资料context授权传递/敏感访问审计 | 无tools/:id/context；静态推荐无 | 待:03c上下文/工具授权/安全文件交换 | 补:tools recommend/context | 正:授权工具获必要字段；拒:隐藏项目给未授权工具/用户；读:context来源ID/访问审计 | 10b,03c,02b | 未实现 | A无context；P工具可见不等任务可见
+M10-006 | P13§9；O§4；PLAN§2 | 外部工具实际服务与结果对象回写边界 | 无结果回写；入口依赖管理员配置 | 外部产物非NexusFlow自研9引擎；回写需真实对象授权 | 补:tools integration/result-link（有实际产物时） | 正:配置服务外部证据；拒:假次数/弹已打开当执行；读:有产物时file/task ID | 10b,06b,03c | 未实现 | DS与W/tools仅目录；外部地址/授权协议待提供
+UI-O01 | P13§2/4/7 | 工具Sidebar全部/常用/智能体/收藏/最近4项/智能体4项、搜索 | sidebar/SearchBox无handler；少于9项回TOOLS | TOOLS静态业务统计/最近记录fake | 现:tools list --q（后端忽略）；补:filters/history | 正:少量目录不补9工具；拒:查询失败造使用数据；读:分类/本人真实记录 | 10a,B0 | 假数据 | W/tools:ToolsSidebar/data.length/recent
+UI-O02 | P13§5/7 | 最近卡点击、全部工具“打开”按钮/固定/取消 | Card cursor但无click；打开无handler；pin未有 | 待:入口/使用记录/个人pins | 补:tools resolve/open-record/pin | 正:点击真实入口；拒:#不成功；读:history/首页固定一致 | 10a,10b,07b | 未接通 | W/tools:recent Card/button
+UI-O03 | P13§6/8 | 管理名称图标分类URL/open mode/fallback/域/sandbox/visibility/sort/启停影响确认 | 当前无管理入口/表单 | 待:安全目录配置/audit | 现:tools create/update；补:tools validate/preview/status | 正:改配置保留人工URL；拒:危险协议/未授权组织；读:工具配置/使用影响 | 10a,08a,02a | 未实现 | W/tools全文；A tools generic
+
+M11 项目管理
+------------
+M11-001 | F11§2/3；T11§3；P05§3 | 项目列表/详情/新建基础字段 | CRUD /api/projects；q通用过滤 | projects/audit；owner/org/member验证 | 现:projects list/show/create/update | 正:planning项目真实回读；拒:未知人/组织/非法状态；读:ID/owner/member一致 | 11a,01a,02a | 已真实 | R:projects；P:projects（窄字段）
+M11-002 | F11§3.1；P05§3/4 | 项目编号/类型级别/分管领导/日期/概述/成果、字段范围 | passthrough可存，无完整schema/唯一编号/配置 | 待:编号/字段规则/config消费 | 现:projects create/update；补:projects metadata/requirements | 正:合法字段+配置；拒:重复编号/view-only修改；读:字段审计/新旧值 | 11a,08a,02a | 未实现 | R:projects schema/update；P:manager写旁路
+M11-003 | F11§3.2/7；T11§3；P06§4/8.1 | 成员添加/身份职责/组织快照/加入退出/历史/批量导入推荐 | projects.member_ids数组；无members专用动作 | 待:project members单一事实/历史/预检 | 现:projects update member_ids部分；补:projects members/import/history | 正:成员入退无资源占用；拒:未完成任务移除不提示；读:人员01b一致 | 11a,01a,02a | 未实现 | R:projects；A无members路由
+M11-004 | F11§3.3/6；T11§3；P06§8.1 | 隐藏项目授权person/org/role、动作/原因/生效失效提示与撤销 | generic visibility_grants现person view/edit | 待:项目级授权/expiry/sensitive audit | 现:visibility-grants create/revoke；补:projects grants/impact | 正:到期后旧会话失权；拒:给超本人权动作；读:授权列表/日志 | 11a,02a,02b | 未实现 | A:42；R:grants；P:grant
+M11-005 | F11§4；P05§4/7 | start/pause/resume/complete/archive/restore状态原因 | POST /api/projects/:id/action | project状态/changed_by/at/reason/audit | 现:projects action --action start/pause/resume/complete/archive/restore | 正:按现转移表动作；拒:非法转移/无原因；读:status/audit | 11a,11b,02a | 已真实 | A:55（不是完整归档）
+M11-006 | F11§4/5/9；P05§7 | 取消、暂停阻止下游新发布、归档父锁全写入口 | 缺cancel；task publish不检project.status | 待:父状态统一门禁/通知/历史 | 补:projects cancel/precheck | 正:暂停已任务按规则处理；拒:暂停新发布/归档写；读:task/files保留 | 11b,03b,06b | 未实现 | A:project action/tasks publish；R:create tasks
+M11-007 | F11§8；P06§3/7/13 | 任务数进行/延期高风险/成员/本周投入/资料完整率/成果完成率 | 无projects/:id/stats；report projects仅总数active | 待:权限统计/风险摘要/forecast | 补:projects stats/risks | 正:各指标源对账；拒:不可见明细反推；读:task/load/files/conflicts同口径 | 11b,03c,05b,06b | 未实现 | A:report；W/projects fake progress/成员
+M11-008 | F11§9；P06§9/13 | 归档预检任务/资料/风险/查看授权、不可变档案/恢复 | action archive仅校验项目status | 待:成员/任务/文件/gantt/stats/grants快照 | 补:projects archive-precheck/archive-snapshot/restore | 正:全部合规再archive；拒:未完成任务/缺资料/风险/无归档人；读:快照版本与下游锁 | 11b,03c,05b,06b | 未实现 | A:55
+M11-009 | T11§6；P05§4；P06§3-8/13 | 项目空间概览/任务/成员/甘特/资料/风险/设置/授权/日志，真实ID深链 | 仅/projects/:id/plan网页；通用API可查部分 | 待:详情聚合/日志/关联filter | 现:projects show/tasks list/files list；补:projects detail/tasks/files/history | 正:真实UUID每tab有源；拒:刷新首页兜底；读:各源同项目 | 11b,12a,06b,03c | 未实现 | W/projects/[id]/plan；A无project tasks专用路由
+M11-010 | P05§4.1/6；PLAN M11 | 项目内批量任务操作、包含任务资料切换、归档不硬删 | 无批量；DELETE project固定拒绝 | 待:兼容动作逐项/历史保留 | 现:projects delete拒绝；补:projects batch-tasks/files include-task | 正:批量有逐项结果；拒:硬删除/无权task；读:失败对象不变 | 11b,03c,06b | 未实现 | R:deleteRecord；W无项目空间
+UI-P01 | P05§3/5；F11§2/4 | Sidebar全部/我负责参与收藏、进行待启已完逾期、公司处中心 | 无handler，固定count | PROJECTS/静态状态数 | 现:projects list；补:owner/member/favorite/status/level | 正:每项真实过滤；拒:空集补demo；读:行数与过滤CLI | 11a,B0 | 假数据 | W/projects:ProjectsSidebar/normalize
+UI-P02 | P05§3.3 | 搜索名称负责人/新建项目、类型全部科研市场出差文职党建学习休假、级别3按钮 | SearchBox/New无handler；type/level本地筛demo | fake补字段；类型目前误用任务类型非项目配置 | 现:projects list --q/create；补:project-type/status/owner/org/visibility filters | 正:服务端组合筛选/新建；拒:非法项目类型；读:真实字段与配置 | 11a,08a | 未接通 | W/projects:PageHeader/TYPES/LEVELS
+UI-P03 | P05§2.1/5；P06§10 | 项目行->预览/切换/进入空间、负责人点击、风险点击 | 当前行直接router到/projects/id/plan | fakeUUID/p1，成员三“成”/更新等补值 | 现:projects show；补:detail/stats/target | 正:真实UUID/后退恢复选中；拒:混造成员风险；读:真实成员/进度/更新时间 | 11b,12a | 假数据 | W/projects:normalize/table/router；W/plan生成demo id
+UI-P04 | P05§3/4；P06§9/13 | List/Table/Board/Gallery/Timeline与筛选清空排序、编辑/归档取消归档/删除确认 | 当前只有表格/类型级别；其余无 | 待:视图偏好/状态precheck，禁止硬删存量 | 现:projects action；补:views/filter/precheck | 正:同集视图/归档确认；拒:非法Board转移/硬删；读:状态和历史不丢 | 11b,07b,02b | 未实现 | W/projects全文
+
+M12 甘特与搜索
+--------------
+M12-001 | F12§2/7；T12§4；P09§10 | 真实gantt tasks查询、日期项目负责人组织状态risk_only过滤 | GET /api/gantt；GET /api/gantt/summary | PG任务/冲突实时聚合；无完整缓存 | 现:gantt list --start/--end/--project-id/--owner-id/--org-id/--status/--risk-only | 正:当前支持过滤回读；拒:非法日期/无权；读:items/data_scope_applied | 12a,02a | 已真实 | A:46-47；C:gantt（仅任务维度）
+M12-002 | F12§2/3/5；T12§4；P09§3/10 | 四维任务/人员/部门/项目、日周月季度+现阶段刻度、筛选一致summary | 现gantt仅任务；summary无同筛选 | 待:统一items/readonly/risk/target DTO | 补:gantt dimensions/range/granularity/summary filters | 正:季度跨年边界/刻度/合计；拒:过滤items但summary全量；读:各维同源 | 12a,03c,05b,11b | 未实现 | A:46-47；C无dimension/granularity
+M12-003 | F12§3/4；P09§3/8 | 项目/任务/分工/里程碑/状态/冲突审批资料/截止风险条 | 当前只返回task字段 | 待:多对象风险/预测来自05b，不用demo | 补:gantt items/inspector | 正:条/点真实对象定位；拒:隐藏项目标题/无估计伪日期；读:与task/forecast一致 | 12a,03c,05b,06b,11b | 未实现 | A:gantt；W/gantt demo GANTT_GROUPS
+M12-004 | F12§5/6；T12§7；P09§3/6/9 | 详情/hover/展开收组/只读/隐藏完成/风险筛、URL真实UUID刷新 | 现网页静态params仅p1..p10；无UUID壳 | 待:任意ID路由资源/目标权限 | 现:gantt/projects show；补:deep-link verify/target metadata | 正:UUID深链刷新资源；拒:HTML首页替代项目页；读:资源身份/对象ID | 12a,B0,13a | 未实现 | W/plan/page.tsx；A:静态兜底
+M12-005 | F12§5二期；P09§6/7；PLAN M12 | 受控任务/分工调期、批量影响预览 | tasks/assignment reschedule部分；无甘特操作 | 待:变更意图后端权限/负载/审批复检 | 现:tasks action reschedule/task-assignments update；补:gantt change-preview/batch | 正:调期后负载一致；拒:只读/冲突直接生效；读:任务分工和审批 | 12a,04a,05b | 未接通 | W/gantt“调整计划”无handler；A:54/56
+M12-006 | P09§4/5；P04§4 | 日历月周/负载矩阵、点日期预填/单元格来源 | 无Schedule独立页/日历 | 待:统一甘特/容量消费，不造业务值 | 补:gantt calendar/load/date-context | 正:日历/甘特同任务日期；拒:无权限个人休假；读:日期和人员来源 | 12a,05b,07b | 未实现 | W仅固定项目甘特与load假矩阵
+M12-007 | F12§5二期；P09§9/10 | 当前筛选导出JSON包/图片PDF | 无gantt export；CLI只JSON打印 | 待:generated_at/filter/dimension/granularity/items产物 | 补:gantt export --format | 正:当前过滤集导出；拒:默认越权全量；读:内容/筛选/时间戳 | 12a,09b,02b | 未实现 | C:gantt；W/gantt无export
+M12-008 | O§1.3/2/4；F12§8/9/10；T12§4 | 全局四类对象检索/类型范围/中文召回/排序/真实跳转 | 无/api/search；generic q仅JSON substring单集合 | 待:PG search索引/权限过滤（不新增集群） | 补:search query --type/scope | 正:编号精确/中文名/技能/资料；拒:隐藏/私事/撤权；读:target与详情一致 | 12a,02b,03c,11b,06b | 未实现 | A:78 q；C无search
+M12-009 | F12§9/11；T12§4/6；P01§4/7.1 | 搜索建议/最近对象/索引更新重建/缓存权限版本 | 无suggest/reindex/recent | 待:索引/短缓存/事件失效 | 补:search suggest/reindex/status/recent | 正:对象改名即命中；拒:撤权旧建议；读:索引/源更新时间 | 12a,02b,07b | 未实现 | A无search路由；S输入无handler
+M12-010 | T12§1/4；P00§2.5；P04§4；P09§10 | 保存个人筛选/共享视图/URL范围恢复 | 无saved-filters | 待:个人filters/布局不扩权 | 补:saved-filters create/list/update/delete | 正:刷新恢复筛选；拒:共享提升权限；读:filters及同scope items | 12a,07b,02b | 未实现 | C domains不含saved-filters；W无保存
+UI-G01 | P05§4；P06§3/4/7/8；P09§3 | 甘特Sidebar收藏3/进行中4/阶段4/待启动2/已完成组 | SideItem无handler；GET /projects返回对象却.find | 固定项目名/计数/阶段；.find可能抛错 | 现:projects list/show；补:projects plan/dimension | 正:目录导航真实项目；拒:响应对象当数组；读:真实项目ID和阶段 | 12a,11b,B0 | 假数据 | W/gantt:GanttSidebar/projects.find；D
+UI-G02 | P06§2/9；P05§4 | 分享/更多、概览计划成员问题资料动态6tabs | 无handlers；7/12/3固定徽标 | 待:真实项目空间/分享不扩权 | 现:projects show；补:projects tabs/share | 正:各tab加载对应源；拒:分享扩权/无权成员；读:计数来自真实记录 | 11b,12a,02b | 未接通 | W/gantt:header/tab buttons
+UI-G03 | P09§3.1/3.4；F12§2/5 | 周/月/阶段按钮、回到今天、筛选 | scale仅选中态；另外两button无handler | GANTT_START/TODAY_DAY/TOTAL固定 | 补:gantt granularity/range/filters | 正:粒度实际改变刻度；拒:演示日期作今天；读:真实时区/窗口 | 12a,05b | 未接通 | W/gantt:setScale/ticks；demo.ts日期
+UI-G04 | P09§3/6；F12§3/5 | 任务行/SVG条选中、浮层owner/计划/预测/阻塞/打开RW/调整计划 | GET projects/:id/tasks不存在；选中demo task，按钮无handler | GANTT_GROUPS/forecast Day140为fake | 现:gantt/projects/tasks show；补:inspector/target/forecast | 正:真实任务打开/取消选中；拒:缺预计量造预测；读:owner/日期/05b风险 | 12a,03c,05b | 假数据 | W/gantt:safeGroups/selectedTask.popover；demo.ts
+UI-G05 | P09§3/7/9；F12§5 | 树展开/收起、日期范围/今天平移、risk/隐藏已完、缩放/导出 | 当前无控件（仅scale/今天空按钮） | 待:窗口/过滤/偏好/真实导出 | 补:gantt range/filters/export/preferences | 正:过滤与汇总同范围；拒:无权拖拽；读:URL/导出与items | 12a,09b,07b | 未实现 | W/gantt全文
+
+M13 账号、SA后台与交付入口
+--------------------------
+M13-001 | T13§1/3；PLAN M13 | 本地登录/Redis会话/JWT/HttpOnly Cookie、me | POST /api/auth/login；GET /api/auth/me | users/bcrypt；Redis session/user-sessions；JWT sid | 现:auth login/me（输出敏感值须安全捕获） | 正:启用本地账户me；拒:错误凭据/停用/过期sid；读:身份租户与PG一致 | 13a,02a | 已真实 | AU:login/createSession/currentUser；W/login受控表单
+M13-002 | T13§1/3；P01§7；PLAN M13 | 真实退出失败恢复/多账号缓存清理/旧token失效 | POST /api/auth/logout；WA吞失败跳转 | Redis删除sid/Cookie；前端可能伪成功 | 现:auth logout/me；补:sessions status | 正:logout后旧token拒绝；拒:Redis故障仍显退出成功；读:server session与缓存 | 13a,B0 | 未接通 | AU:logout；WA:logout
+M13-003 | F13§8；PLAN M13 | 登录/注册限频、失败次数锁定/安全审计 | 无限频/失败审计 | 待:认证结果/可信IP/request-id/审计 | 补:auth security-status/admin login-audit | 正:失败阈值限流；拒:攻击枚举/泄密；读:脱敏拒绝审计 | 13a,02a,B0 | 未实现 | AU:login/register；DB无failed_login_count
+M13-004 | PLAN M13；T13§1 | Portal真实换票/本地token和Cookie共存安全切换 | GET /auth/portal/callback；auth me | users portal identity/scopes；Redis/Cookie | 现:auth me；补:auth portal verify/switch | 正:Portal票据换me；拒:旧Bearer遮新Cookie/无scope；读:账号无重复绑定 | 13a,02a | 未实现 | AU:portalCallback/currentUser Bearer优先；WA:absorbPortalToken
+M13-005 | F13§3；T13§4；P15§6 | 单次邀请生成、hash存储/过期/撤销 | POST /api/invitations；POST :id/revoke；GET集合/详情 | records invitations token_hash，列表删hash；audit | 现:invitations create/list/show/revoke | 正:一次生成撤销；拒:越组织/超30日/非法角色；读:脱敏列表/状态 | 13b,01a,02a | 已真实 | A:43-44；R:invitations隐藏hash（单次窄邀请）
+M13-006 | F13§3.1/3.2；T13§3；P15§6 | 五类邀请模板CRUD/复制/停用/字段/工作室/项目身份/职责 | 无templates/links模型，现一次invite | 待:template/link版本/关联生效/审计 | 补:invitations templates/links/usage | 正:员工管理项目临时模板；拒:停用关联引用；读:默认组织/角色/项目/有效期 | 13b,01a,11a,08a | 未实现 | A:invitations；AU:register
+M13-007 | F13§3.3/4.4/8；T13§4/5 | token不可枚举/次数并发/只一次明文展示/复制脱敏/状态失效解释 | 当前UUID组合/hash/单次used；无max_uses/link摘要 | 待:次数锁/引用失效/使用审计/过期原因 | 现:invitations show/revoke；补:invitation resolve/status/usage | 正:N次并发仅N成功；拒:过期/耗尽/停用org-role-project；读:使用次数/审计 | 13b,08c,02a | 未实现 | A:44；AU:register只active/expiry
+M13-008 | F13§4.1/4.2；T13§5 | 单次注册建账户人员/主组织角色、消费invite | POST /api/auth/register | users/people/invite used/audit同PG事务；Redis会话事后 | 现:auth register（参数须安全捕获） | 正:合法邀请注册；拒:无邀请/重复login/短密码；读:账号/档案各一/invite used | 13b,01a,13a | 已真实 | AU:register（待审/项目等另列）
+M13-009 | F13§4.1/4.2；T13§8 | 邀请摘要/动态注册字段、手机号邮箱/工号/专业技能、模板自动工作室项目与默认入口 | 无/register页面/API摘要；register仅四字段 | 待:注册表单/全量入组事务/配置快照 | 补:invitations resolve/register fields/bindings | 正:模板默认不可用户改；拒:篡改角色组织；读:账号档案成员layout一致 | 13b,01a,11a,08a | 未实现 | AU:register；W只有/login
+M13-010 | F13§4.3；T13§5；PLAN M13 | 账号工号联系重复匹配、已有账号绑定/冲突SA队列 | 当前重复username拒绝；无已有账号bind | 待:可信账号验证/唯一性/申请审计 | 补:auth bind-invitation/admin duplicates | 正:原账号补项目不建档；拒:未验证账号认领；读:账户人员ID保留 | 13b,01a,11a | 未实现 | AU:register；DB:username唯一
+M13-011 | F13§4.2/7.9；T13§3/5；P15§7 | 待审核/完善资料/审核状态、通过拒绝要求补充/批量 | 无admin registrations/actions；users active直开 | 待:registration申请/pending数据隔离/通知 | 补:reviews list/approve/reject/request-info/batch/status | 正:待审->补充->通过；拒:待审业务数据/无拒因；读:审核人理由/初始归属 | 13b,01a,08a,02a | 未实现 | AU:register active；P无pending角色；W无审核页
+M13-012 | PLAN M13/§6；T13§5 | 注册PG已提交但Redis会话失败可恢复/幂等，不重复消费邀请建档 | register catch统一409可能谎称整体失败 | 待:operation ID/registered_not_logged_in/recovery | 补:auth register-recovery/status | 正:注入Redis故障安全恢复；拒:重复建档/二次消费；读:账号档案各1 invite使用1 | 13b,13a | 未实现 | AU:register事务后createSession仍在同catch
+M13-013 | F13§5；T13§3；P15§5/11 | 账号列表/禁用锁定解锁，角色组织绑定、副职分管/强制撤会话 | GET admin/users；PATCH :id/status/binding；PUT delegations | users/people/role_delegations/audit；Redis撤session | 现:admin users/user-status/user-binding/delegations | 正:禁用后me失效；拒:非法role/无原因/越tenant；读:PG与档案/审计 | 13a,02a,01a | 已真实 | A:38-41；AU:revokeUserSessions（UI另列）
+M13-014 | F13§2/5/8；P15§11 | 密码重置/主动强退/解绑/人员合并/误注册修正/预览二次确认 | 无专用reset/sessions/revoke/unbind/merge | 待:安全动作/原因/无数据丢失/审计 | 补:admin password/sessions/bindings/merge-precheck | 正:有因修正保留历史；拒:无因SA/自提权；读:账户历史署名/旧token失效 | 13c,13b,02b | 未实现 | A只有status/binding；AU无UI重置入口
+M13-015 | F13§6/7；P15§2/3/9 | 独立SA首页/10菜单/返回前台/全量人员分组/影响预览 | 无/admin网页/dashboard API | 待:账号邀请审核配置审计聚合；SA与业务角色分离 | 现:admin users/audit；补:admin dashboard/impact | 正:每菜单真实管理动作；拒:SA默批/菜单扩权；读:聚合源对账 | 13c,07a,08c,13b | 未实现 | W无admin；S无Admin入口
+M13-016 | F13§8；P15§8/11/12；T13§7 | 安全/登录/操作/审批配置审计筛选详情导出与系统监控 | GET admin/audit有限500；health无metrics | 待:脱敏filters/读审计/运行状态，不自造监控数 | 现:admin audit/health；补:admin audit query/export/security/runtime | 正:按actor/object/time追踪；拒:导出无权/泄密；读:导出及敏感审计 | 13c,02b,09b,13a | 未实现 | A:45,24-25；W无监控页
+M13-017 | PLAN§6/8；F08§2.1 | health/ready只读，GET不清理业务/对象、构建身份 | GET healthz已只读；readyz PUT/DELETE探测并retry清理 | 待:只读探针/版本/cleanup专用任务 | 现:health；禁止基线health ready生产验收；补:health readonly/version | 正:依赖故障503；拒:探针写删对象/清理；读:业务与对象元数据不变 | 13a,B0 | 未实现 | A:25；ST:probeStorage；scripts/deploy.sh两探针
+M13-018 | PLAN§8；T13§1 | 单二进制API+静态资源统一deploy、备份/门禁/旧版本回滚身份 | scripts当前编译嵌资源/scp/restart/health-ready | 服务器/PG/对象备份记录待补；只有协调者运行 | 补:version/verify/release-status | 正:干净main同SHA部署验收；拒:未push/脏main/危险迁移；读:服务commit与资源同版本 | 13a,B0,JOIN | 未实现 | Makefile；scripts/build-linux.sh/deploy.sh无git/version/备份门禁
+UI-A01 | T13§3；PLAN M13 | 登录用户名/密码输入/Enter提交/loading/errors/重试焦点 | POST auth/login、GET auth/me | 真实受控输入/token/session；不默认凭据 | 现:auth login/me | 正:合法登录安全next；拒:401/403/503明示/外站next；读:me身份 | 13a | 已真实 | W/login:submit/safeNext/loginError；WA:login
+UI-A02 | T13§1；P00§5 | 登录密码眼睛显隐 | 无需API | React showPwd，本地显示态非fake | 无需业务CLI | 正:切显隐值不变；拒:按钮不提交form；读:登录成功身份一致 | B0 | 已真实 | W/login:Eye button type=button
+UI-A03 | PLAN M13；T13§1 | 登录Portal外链、已有会话安全next/Portal吸收 | 外链真实Portal；GET me；本地token优先问题另列 | Session/Cookie；前端清URL token | 现:auth me；补:auth portal verify | 正:外链/安全返回；拒:恶意next/旧Bearer；读:真实Portal角色scope | 13a,02a | 已真实 | W/login:Portal anchor/useEffect（仅静态外链/会话检测已具备；SSO冲突见M13-004，不宣称外部通过）
+UI-A04 | F13§4/7.9；P15§6/7 | 邀请打开/失效解释/注册表单/审核状态/补资料/联系管理员 | 当前均无页面；API register窄可用 | 待:真实模板摘要/申请/入组 | 现:auth register；补:reviews/status/profile | 正:邀请->待审->审核->角色首页；拒:失效链接/待审业务；读:模板/人员/申请一致 | 13b,13c,07b | 未实现 | W目录仅login
+UI-A05 | F13§5/8；P15§5/6/7/10/12 | SA新组织人/邀请生成复制停用/注册批审/重置强退/敏感原因确认/取消重置输入 | 无管理页面控件 | 待:真实CRUD/审计/部分失败/影响清单 | 现:admin/invitations/orgs/people窄CLI；补:admin完整actions | 正:每写动作回读后成功；拒:输入丢失/无因敏感动作；读:变更及审计 | 13c,13b,01a,02b | 未实现 | W无admin；C仅既有专用动作
+
+覆盖维护方法与边界
+------------------
+稳定追踪条目221条：13领域150条、当前/设计控件族61条、公共底座10条。模块分布：01=12，02=10，03=18，04=12，05=11，06=12，07=10，08=10，09=11，10=6，11=10，12=10，13=18。控件族合并重复渲染实例，条目数不是单个DOM数量或完成率。
+1. 需求来源已完整读取：O、13份F+13份T、docs/pages全部18份（00..16为17份，另organization为1份）。按章节拆成可验收动作/规则；同事实字段或枚举合并，不把每个渲染实例重复计数。
+2. 完整读取当前10个业务视图及登录，共11个page.tsx：/、inbox、my-work、projects、projects/[id]/plan、dispatch/new、team、load、files、tools、login。plan/page为包装，交互全文在gantt-client。清单不因“10页”计数口径漏掉登录。
+3. Shell、providers、ui、data/api/auth/home/demo/utils及后端router/records/permissions/auth/db/storage/load/config/index、shared、CLI args/commands/index均读；导航/SideItem/SideSection、按钮/输入/select/textarea/form、路由Link、SVG/card/图标等看似可点元素都查实际handler和数据来源。当前可操作声明静态定位278处（rg匹配行，非需求条数）。无handler、不起作用的filter及伪可点图标也入UI清单。
+4. 检查方法：每UI行列出的按钮族映射对应M行/API/CLI；所有枚举族名字在行内列明。组件展开不写业务事实，可标窄已真实；已接路由不等下游已真。无当前页面的必做需求仍列M或UI行，不因没有按钮而排除。
+5. 本清单不依赖C0未集成抽取，不修改已确认业务口径。P16轻度超载可继续的旧文案，以PLAN已确认“超载/全天不能仅警告发布”优先；SA默认不参与业务审批；CLI/API路径以当前代码为准，不把历史/resources/users/todos/notifications/dashboard路径当已实现。
+6. F12§5明确二期可做的拖拽/批量调期/PDF图片导出与P00建议库、能力画像/代码库预留，不据此新增框架或引擎；确认PLAN要求的受控调期/真实导出仍追踪，非必做增强不阻塞一期仅因未装建议库。
+7. 外部输入阻塞：可用工具URL/域白名单/授权上下文协议及外部服务可用证据；特殊节假日/工作日及出差培训兼容配置；审批兜底显式授权及缺审批人的业务口径；邮件短信渠道；Portal真实账号scope/测试票据与服务器隔离PG/Redis/S3资源；存量demo可信归属清单。未知值不得由agent编造，不阻止无这些依赖的切片实现。
+8. 每切片交付逐行补候选commit、真实命令/脱敏对象ID、拒绝后回读及联动/审计证据到acceptance；release记录主协调者集成/发布身份。所有子切片PASS后仍需JOIN全域复核，禁止把本基线当全系统完成。

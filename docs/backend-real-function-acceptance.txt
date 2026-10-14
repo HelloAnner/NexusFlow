@@ -1,0 +1,81 @@
+NexusFlow 后端真实功能验收基线 B0P v1
+====================================
+用户确认日期：2026-10-14，已确认现Bun/Hono/Next、design.pen及方案业务规则并明确开始。
+已确认方案：docs/backend-real-function-plan.txt（不修改）；追踪入口：docs/function-coverage.txt。
+实际起始 main = origin/main = 5c46266cb6efd2f9f5fba47aacadc45a66fff2aa；origin/HEAD -> origin/main。
+本基线仅源码/设计静态核对；服务器测试、单测、typecheck、CLI业务循环、浏览器点击及外部工具均未运行。没有PASS。
+“已真实”仅窄能力源码证据；“IMPLEMENTATION_READY B0P”仅三份文档可交主协调者，不表示业务验收或全系统完成。
+
+执行边界
+--------
+不改任何AGENTS.md，不删存量数据，不用seed替代真实流程，不打印.env/密码/token/Portal票据。
+B0P worker不push、不集成main、不部署、不写生产业务数据/seed；仅提交本worktree三份txt。其他worktree只读。
+主协调者从已push、干净且最新main执行make deploy；功能单测/typecheck/CLI全部在ssh nexusflow服务器隔离目录运行。
+本地禁止独立build/test/typecheck/start（含bun test/tsc）；make deploy也不由worker运行。
+测试先确认隔离PG数据库/租户、Redis前缀、S3桶/前缀及权限负例账号；生产现有库不得作为写入测试目标。
+隔离目录建议 /opt/nexusflow/verify/<slice>-<commit>，具体路径由协调者确认。固定版本Bun/源码/依赖快照，不安装全局运行时，不启第二生产服务。
+基线readyz会PUT/DELETE探测对象并执行storage_cleanup；旧conflicts GET可能更新过期强制记录。未修复前不能当生产只读检查调用。
+现CLI auth login输出token、邀请/注册/seed可能输出凭据；安全捕获到权限受控文件或内存，只报告脱敏字段；不要set -x，不把原始输出贴到证据。
+
+逐项门禁（所有coverage行继承）
+-----------------------------
+G0 版本：记录候选SHA、服务器运行SHA、API/CLI/资源身份；不把health200/HTML首页兜底当业务成功。
+G1 正向：真实CLI输入 -> DTO校验 -> 鉴权 -> 数据库事务/对象字节 -> 服务端成功回读；行内检查值必须来自实际输出。
+G2 拒绝：另一租户/同租户其他中心/view-only/撤权旧会话/非法输入/非法状态；记录预期HTTP或CLI非0，回读原对象无副作用。
+G3 回读：重查详情、列表、筛选与统计；文件比对真实字节/校验和；预估投入与已确认工时分开，禁止用默认数字补未知值。
+G4 联动：任务/分工/审批/负载/inbox/项目/资料/甘特/首页/报表按切片范围交叉对账；未开发消费者写NOT_RUN，不冒充PASS。
+G5 审计：tenant/actor/action/object/server time/IP/request-id/before-after/reason/result按脱敏共享契约核对；关键写和审计同事务。
+G6 可靠性：重复请求、并发状态/资源占用、PG/Redis/S3或提交后回读故障；无重复、无误删、无假成功且有安全恢复入口。
+G7 前端链路：仅记录按钮->真实API/DTO->回读、空/错/无权限处理和真实UUID页面资源源码证据；用户自行访问界面，不称已验证浏览器点击或像素。
+G8 数据安全：存量ID/关联/凭据/人工工具URL保持；seed写入口生产拒绝、同名真实对象不被认领，隔离demo不进入生产事实。
+
+代表闭环（测试数据仅专门隔离范围）
+--------------------------------
+A 组织/人员/项目 -> 标准派发 -> 部门/中心审批 -> 相关人员确认 -> 分工进度/工时确认 -> 上传两版 -> 成果退回重提 -> 指定验收 -> 归档。
+  核对任务/分工/资料固定版本/工时/正式负载/inbox/项目统计/审计；每步用产品CLI，不用通用JSON PATCH绕状态机。
+B 同人同日4h+5h阻断，全天+1h阻断，普通8h不锁；有权人限期强制带原因 -> 调期旧指纹失效 -> 到期失效；待审批只预估。
+  预计20h/确认8h/截止前3工作日每日剩2h：剩12h>可用6h；容量持续时第6工作日完成。无预计工时预测日必须null。
+C view-only直调PATCH/发布/下载，撤项目授权后旧会话tasks/gantt/search/inbox/reports/历史files同口径失权；个人事项及隐藏来源不泄露。
+D 注册PG提交后Redis会话故障：安全恢复回读账号1/档案1/邀请消费1；待审仍无业务范围。上传/回滚提交后回读故障不能DELETE已提交对象。
+这些是待执行场景，不是已完成记录；所需接口/CLI尚未实现时写BLOCKED并关联coverage ID/切片。
+
+服务器最小文档回归检查（只检查清单结构，不是业务验收）
+----------------------------------------------------
+执行位置：服务器隔离的本候选源码目录；命令本基线未运行。
+python3 - <<'PY'
+from pathlib import Path
+import re
+p = Path('docs/function-coverage.txt')
+rows = [line.split(' | ') for line in p.read_text().splitlines()
+        if re.match(r'^(B0-\d{3}|M\d{2}-\d{3}|UI-[A-Z]\d{2}) \| ', line)]
+assert rows, 'empty coverage'
+assert all(len(row) == 10 for row in rows), 'missing column'
+ids = [row[0] for row in rows]
+assert len(ids) == len(set(ids)), 'duplicate stable ID'
+assert {f'M{i:02}' for i in range(1, 14)} <= {s.split('-')[0] for s in ids}, 'missing domain'
+assert all(all(x.strip() for x in row) for row in rows), 'empty evidence'
+assert all(all(k in row[6] for k in ('正:', '拒:', '读:')) for row in rows), 'missing check'
+allowed = {'已真实', '未接通', '假数据', '未实现', '待服务器验收'}
+assert all(row[8] in allowed for row in rows), 'invalid status'
+assert all(not s.endswith('PASS') for s in ids), 'implementation is not PASS'
+assert len(list(Path('docs').glob('[0-1][0-9]-*/function-design.md'))) == 13
+assert len(list(Path('docs').glob('[0-1][0-9]-*/technical-design.md'))) == 13
+assert Path('docs/origin-prd.md').exists()
+for name in ('backend-real-function-acceptance.txt', 'backend-real-function-release.txt'):
+    assert Path('docs', name).exists()
+print('COVERAGE_STRUCTURE_OK', len(rows), 'rows; not a business PASS')
+PY
+上面只验证唯一ID/十列/13领域/检查/状态/文档存在。完整性还须reviewer逐章节、逐控件核对，不把条数当覆盖证明。
+源码既有API与CLI单测可由协调者在同隔离目录运行 bun test、bunx tsc --noEmit；必须先探测服务器运行时/依赖，不在本地运行。
+
+证据记录模板（每次一行；可另用脱敏附件路径）
+-----------------------------------------
+切片 | coverage IDs | commit | 服务器隔离目录/运行SHA | 命令（脱敏） | 预期/实际/正拒回读摘要 | 结果(PASS/FAIL/BLOCKED/NOT_RUN) | 时间(ISO+时区) | 风险/未验证边界/附件
+B0P | 全清单结构/按钮来源 | 待本地提交SHA | 未运行 | 上述服务器文档检查 | 未执行，不填通过 | NOT_RUN | 未执行 | 文档静态核对，13领域多数pending
+占位 | 待填写 | 待填写 | 待填写 | 待填写 | 待填写 | NOT_RUN | 未执行 | 待填写
+
+完成口径
+--------
+每切片只对实际通过的coverage ID记PASS；未实现/未接通/fake不能因健康检查成功升级。
+候选已真实但未部署测试仍NOT_RUN；缺外部输入写BLOCKED，列具体URL/规则/测试范围等，不输出敏感值。
+必须由协调者验收后更新状态/证据；模块子切片PASS不等模块完成。JOIN所有必做需求+全域CLI通过后才可申请FINAL_PASS。
