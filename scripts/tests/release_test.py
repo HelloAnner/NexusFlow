@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Minimal server-only checks; no service, DB, release or credential access."""
-import importlib.util,pathlib,subprocess,tempfile,shutil,socket,threading,time
+import importlib.util,pathlib,subprocess,tempfile,shutil,socket,threading,time,os,tarfile,io
 root=pathlib.Path(__file__).resolve().parents[2]
 checks=(root/'scripts/server-checks.sh').read_text()
 assert 'exec env -i ' in checks and 'for app in apps/api cli; do' in checks
@@ -9,6 +9,13 @@ assert '&& bun test)' not in checks
 makefile=(root/'Makefile').read_text()
 assert 'deploy-build' not in makefile and './scripts/build-linux.sh' not in makefile
 assert 'deploy:\n\t./scripts/deploy.sh' in makefile
+build=(root/'scripts/build-linux.sh').read_text()
+assert 'export COPYFILE_DISABLE=1' in build and 'TAR_FLAGS=(--no-xattrs)' in build
+assert 'if [[ $(uname -s) == Darwin ]]; then TAR_FLAGS+=(--disable-copyfile --no-acls --no-fflags); fi' in build
+assert 'git -C "$ROOT" archive --format=tar "$COMMIT" | gzip > "$OUT/source.tar.gz"' in build
+assert 'tar "${TAR_FLAGS[@]}" -czf "$OUT/dependencies.tar.gz"' in build
+assert not any('2>/dev/null' in line for line in build.splitlines() if 'tar ' in line)
+assert sum(line.startswith('scp -C ') for line in (root/'scripts/deploy.sh').read_text().splitlines())==2
 spec=importlib.util.spec_from_file_location('server_env',root/'scripts/server-env.py')
 module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
 with tempfile.TemporaryDirectory() as directory:
@@ -59,6 +66,22 @@ with tempfile.TemporaryDirectory() as directory:
     assert b'deploy only from main' in subprocess.run(guard,stderr=subprocess.PIPE,stdout=subprocess.PIPE).stderr
     git('checkout','-b','main')
     assert b'worktree is not clean' in subprocess.run(guard,stderr=subprocess.PIPE,stdout=subprocess.PIPE).stderr
+    # Native GNU tar + Git archive preserve files/links/execute bits, not host xattrs.
+    payload=repo/'payload'; payload.write_bytes(b'#!/bin/sh\nexit 0\n'); payload.chmod(0o755)
+    os.setxattr(str(payload),b'user.com.apple.provenance',b'synthetic-host-metadata')
+    (repo/'link').symlink_to('payload')
+    git('add','payload','link')
+    git('-c','user.name=B0 packaging check','-c','user.email=b0-check@example.invalid','commit','-m','isolated archive fixture')
+    source=subprocess.check_output(['git','-C',str(repo),'archive','--format=tar','HEAD'])
+    dependencies=repo/'dependencies.tar.gz'
+    subprocess.run(['tar','--no-xattrs','-czf',str(dependencies),'payload','link'],cwd=str(repo),env=dict(os.environ,COPYFILE_DISABLE='1'),check=True)
+    for archive in (tarfile.open(fileobj=io.BytesIO(source),mode='r:'),tarfile.open(str(dependencies),'r:gz')):
+        with archive:
+            assert set(archive.getnames())=={'payload','link'}
+            assert archive.extractfile('payload').read()==payload.read_bytes()
+            assert archive.getmember('payload').mode&0o111==0o111
+            assert archive.getmember('link').issym() and archive.getmember('link').linkname=='payload'
+            assert not any('xattr' in key or 'acl' in key or 'fflags' in key for member in archive for key in member.pax_headers)
 # Execute only the release failure function against disposable files and stubbed systemd.
 text=(root/'scripts/deploy.sh').read_text()
 failure=text[text.index('failed() {'):text.index('trap failed EXIT')]
@@ -107,4 +130,4 @@ finally:
     for connection in connections: connection.close()
 for script in (root/'scripts').glob('*.sh'):
     subprocess.run(['bash','-n',str(script)],check=True)
-print('release checks: PASS (environment parsing, container backup identity, GET guard, clean-main guards, binary+commit rollback, stalled-health timeout/retry/failure status, per-file test contract, deploy-only build entry, shell syntax)')
+print('release checks: PASS (environment parsing, container backup identity, GET guard, clean-main guards, binary+commit rollback, stalled-health timeout/retry/failure status, per-file test contract, deploy-only build entry, native metadata-free archive contract/content/mode/symlink, scp compression contract, shell syntax)')

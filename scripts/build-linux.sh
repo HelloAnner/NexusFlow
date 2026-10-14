@@ -7,6 +7,10 @@ OUT="$ROOT/dist/linux-x86_64"
 # Build only a committed archive, not files changed concurrently in a worktree.
 STAGE="$(mktemp -d)"; trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$OUT" "$STAGE/source"
+# GNU/BSD native flags: do not serialize host xattrs or AppleDouble resource forks.
+export COPYFILE_DISABLE=1
+TAR_FLAGS=(--no-xattrs)
+if [[ $(uname -s) == Darwin ]]; then TAR_FLAGS+=(--disable-copyfile --no-acls --no-fflags); fi
 case "$(uname -s)-$(uname -m)" in
  Darwin-arm64) ARCHIVE=bun-darwin-aarch64.zip;;
  Darwin-x86_64) ARCHIVE=bun-darwin-x64.zip;;
@@ -15,14 +19,15 @@ case "$(uname -s)-$(uname -m)" in
 esac
 "$ROOT/scripts/runtime.sh" "$STAGE/build-runtime" "$ARCHIVE"
 export PATH="$STAGE/build-runtime:$PATH"
-git -C "$ROOT" archive "$COMMIT" | tar -x -C "$STAGE/source"
+git -C "$ROOT" archive --format=tar "$COMMIT" | tar "${TAR_FLAGS[@]}" -x -C "$STAGE/source"
 python3 "$STAGE/source/scripts/check-read-safety.py" "$STAGE/source"
 for app in apps/api apps/web cli; do (cd "$STAGE/source/$app" && bun install --frozen-lockfile); done
 (cd "$STAGE/source/apps/web" && NEXUSFLOW_STATIC_EXPORT=1 NEXUSFLOW_BASE_PATH=/nexusflow bun run build)
 [[ -f "$STAGE/source/apps/web/out/index.html" ]] || { echo 'static export missing'; exit 1; }
 # Dependency attachment is used only for server tsc/tests (no native web build there).
-git -C "$ROOT" archive "$COMMIT" | gzip > "$OUT/source.tar.gz"
-(cd "$STAGE/source" && COPYFILE_DISABLE=1 tar -czf "$OUT/dependencies.tar.gz" apps/api/node_modules apps/web/node_modules cli/node_modules)
+# Git blobs, not staging files: source stays exact to COMMIT and has no host metadata.
+git -C "$ROOT" archive --format=tar "$COMMIT" | gzip > "$OUT/source.tar.gz"
+(cd "$STAGE/source" && tar "${TAR_FLAGS[@]}" -czf "$OUT/dependencies.tar.gz" apps/api/node_modules apps/web/node_modules cli/node_modules)
 python3 - "$STAGE/source/apps/web/out" "$STAGE/source/apps/api/src/web-assets.generated.ts" <<'PY'
 import base64,json,pathlib,sys
 root=pathlib.Path(sys.argv[1]); target=pathlib.Path(sys.argv[2])

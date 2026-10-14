@@ -10,8 +10,8 @@ COMMIT="$("$ROOT/scripts/require-main.sh")"
 DIR="$REMOTE/validation/$COMMIT"
 ssh "$HOST" "umask 077; mkdir -p '$DIR/runtime'"
 OUT="$ROOT/dist/linux-x86_64"
-scp "$OUT/"{nexusflow,nexusflow-cli,source.tar.gz,dependencies.tar.gz,COMMIT,BUILD_TIME,SHA256SUMS} "$HOST:$DIR/"
-scp "$OUT/runtime/bun" "$OUT/runtime/VERSION" "$HOST:$DIR/runtime/"
+scp -C "$OUT/"{nexusflow,nexusflow-cli,source.tar.gz,dependencies.tar.gz,COMMIT,BUILD_TIME,SHA256SUMS} "$HOST:$DIR/"
+scp -C "$OUT/runtime/bun" "$OUT/runtime/VERSION" "$HOST:$DIR/runtime/"
 ssh "$HOST" bash -s -- "$REMOTE" "$DIR" "$COMMIT" "$PORT" <<'SH'
 set -euo pipefail
 umask 077
