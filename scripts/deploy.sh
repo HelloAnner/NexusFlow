@@ -8,8 +8,10 @@ COMMIT="$("$ROOT/scripts/require-main.sh")"
 [[ $("$ROOT/scripts/require-main.sh") == "$COMMIT" ]] || { echo 'BLOCKED: main changed during build'; exit 1; }
 # Upload immutable attachments; the production binary is not touched until checks and backups pass.
 DIR="$REMOTE/validation/$COMMIT"
-ssh "$HOST" "umask 077; mkdir -p '$DIR'"
-scp -r "$ROOT/dist/linux-x86_64/"* "$HOST:$DIR/"
+ssh "$HOST" "umask 077; mkdir -p '$DIR/runtime'"
+OUT="$ROOT/dist/linux-x86_64"
+scp "$OUT/"{nexusflow,nexusflow-cli,source.tar.gz,dependencies.tar.gz,COMMIT,BUILD_TIME,SHA256SUMS} "$HOST:$DIR/"
+scp "$OUT/runtime/bun" "$OUT/runtime/VERSION" "$HOST:$DIR/runtime/"
 ssh "$HOST" bash -s -- "$REMOTE" "$DIR" "$COMMIT" "$PORT" <<'SH'
 set -euo pipefail
 umask 077
@@ -25,6 +27,11 @@ failed() {
    cp "$BACKUP/nexusflow" "$ROOT/nexusflow.rollback"
    chmod +x "$ROOT/nexusflow.rollback"
    mv "$ROOT/nexusflow.rollback" "$ROOT/nexusflow"
+   if [[ -f "$BACKUP/DEPLOYED_COMMIT" ]]; then
+    cp "$BACKUP/DEPLOYED_COMMIT" "$ROOT/DEPLOYED_COMMIT"
+   elif [[ -f "$ROOT/DEPLOYED_COMMIT" ]]; then
+    rm "$ROOT/DEPLOYED_COMMIT"
+   fi
    if sudo systemctl restart nexusflow && systemctl is-active --quiet nexusflow; then
     printf 'BINARY_RESTORED; database not rolled back\n' >> "$DIR/STATUS"
    else printf 'ROLLBACK_FAILED; manual recovery required\n' >> "$DIR/STATUS"; fi
@@ -33,6 +40,7 @@ failed() {
  fi
 }
 trap failed EXIT
+trap 'exit 130' INT TERM
 cd "$DIR"
 sha256sum --check SHA256SUMS >/dev/null
 [[ $(cat COMMIT) == "$COMMIT" && $COMMIT =~ ^[0-9a-f]{40}$ ]]

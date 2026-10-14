@@ -52,6 +52,24 @@ with tempfile.TemporaryDirectory() as directory:
     assert b'deploy only from main' in subprocess.run(guard,stderr=subprocess.PIPE,stdout=subprocess.PIPE).stderr
     git('checkout','-b','main')
     assert b'worktree is not clean' in subprocess.run(guard,stderr=subprocess.PIPE,stdout=subprocess.PIPE).stderr
+# Execute only the release failure function against disposable files and stubbed systemd.
+text=(root/'scripts/deploy.sh').read_text()
+failure=text[text.index('failed() {'):text.index('trap failed EXIT')]
+with tempfile.TemporaryDirectory() as directory:
+    target=pathlib.Path(directory)
+    for previous_marker in (True,False):
+        service=target/('with-marker' if previous_marker else 'legacy'); service.mkdir()
+        backup=service/'backup'; backup.mkdir(); evidence=service/'attachment'; evidence.mkdir()
+        (backup/'nexusflow').write_text('old binary')
+        (service/'nexusflow').write_text('new binary')
+        (service/'DEPLOYED_COMMIT').write_text('new commit')
+        if previous_marker: (backup/'DEPLOYED_COMMIT').write_text('old commit')
+        shell='ROOT="$1"; BACKUP="$ROOT/backup"; DIR="$ROOT/attachment"; COMMIT=synthetic; PHASE=verify; SWAPPED=1\nsudo(){ return 0; }; systemctl(){ return 0; }\n'+failure+'\nfalse; failed\n'
+        subprocess.run(['bash','-c',shell,'check',str(service)],check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        assert (service/'nexusflow').read_text()=='old binary'
+        marker=service/'DEPLOYED_COMMIT'
+        assert marker.read_text()=='old commit' if previous_marker else not marker.exists()
+        assert 'BINARY_RESTORED' in (evidence/'STATUS').read_text()
 for script in (root/'scripts').glob('*.sh'):
     subprocess.run(['bash','-n',str(script)],check=True)
-print('release checks: PASS (environment parsing, container backup identity, GET guard, clean-main guards, shell syntax)')
+print('release checks: PASS (environment parsing, container backup identity, GET guard, clean-main guards, binary+commit rollback, shell syntax)')

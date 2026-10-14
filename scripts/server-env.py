@@ -72,6 +72,7 @@ def main():
         print('PG dump + object metadata backup: PASS (object bytes unchanged, not backed up)')
     elif action=='verify':
         directory=pathlib.Path(sys.argv[3]); commit=(directory/'COMMIT').read_text().strip()
+        subprocess.run(['python3',str(directory/'source/scripts/check-read-safety.py'),str(directory/'source')],check=True)
         env={'PATH':'/usr/bin:/bin','HOME':str(directory/'test-home'),'NEXUSFLOW_URL':sys.argv[4], 'NEXUSFLOW_BASE_PATH':values.get('NEXUSFLOW_BASE_PATH','/nexusflow'), 'SUPER_ADMIN_USERNAME':values.get('SUPER_ADMIN_USERNAME',''), 'SUPER_ADMIN_PASSWORD':values.get('SUPER_ADMIN_PASSWORD','')}
         subprocess.run([str(directory/'nexusflow-cli'),'verify','b0','--commit',commit,'--json'],env=env,check=True)
     else: raise ValueError('unsupported server operation')
