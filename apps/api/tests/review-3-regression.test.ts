@@ -1,5 +1,8 @@
 import { expect, test, mock, beforeEach, afterAll } from "bun:test";
 import { createHash, createHmac } from "node:crypto";
+import { mkdtemp,readFile,stat,rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 // Reviewer checks only: pure memory SQL/Redis models, no sockets or listeners.
 delete process.env.DATABASE_URL; delete process.env.REDIS_URL; delete process.env.APP_ENV;
 const seedEnvironment={enabled:process.env.DEMO_SEED_ENABLED,tenant:process.env.DEMO_SEED_TENANT_ID};
@@ -396,8 +399,21 @@ async function localLogin(username:string,password:string){return app.request("/
 test("T2: demo approvers receive unique one-time credentials and complete login through CLI",async()=>{
  const seeded=await runDemoSeed(),credentials=seeded.credentials as {username:string;password:string}[];expect(credentials).toHaveLength(10);expect(new Set(credentials.map(x=>x.password)).size).toBe(10);
  for(const username of ["demo.zhangwei","demo.zhaomin","demo.wangjianguo"]){const credential=credentials.find(x=>x.username===username)!;const response=await localLogin(username,credential.password);expect(response.status).toBe(200);expect((await response.json()).user.username).toBe(username);}
- const envKeys=["NEXUSFLOW_URL","NEXUSFLOW_BASE_PATH","NEXUSFLOW_USER","NEXUSFLOW_PASSWORD"],oldEnv=envKeys.map(k=>process.env[k]),oldFetch=globalThis.fetch,oldLog=console.log,output:string[]=[];config.localTenantId="t1";process.env.NEXUSFLOW_URL="http://nexusflow.test";process.env.NEXUSFLOW_BASE_PATH="/";process.env.NEXUSFLOW_USER="demo.zhangwei";process.env.NEXUSFLOW_PASSWORD=credentials.find(x=>x.username==="demo.zhangwei")!.password;console.log=(value?:any)=>output.push(String(value));globalThis.fetch=Object.assign(async(...[input,init]:Parameters<typeof fetch>)=>app.request(new URL(String(input)).pathname,init),{preconnect:oldFetch.preconnect});
- let token="";try{await cliMain(["auth","login"]);token=output[0]!.match(/NEXUSFLOW_TOKEN='([^']+)'/)?.[1]||"";}finally{globalThis.fetch=oldFetch;console.log=oldLog;envKeys.forEach((key,i)=>oldEnv[i]===undefined?delete process.env[key]:process.env[key]=oldEnv[i]!);}
+ const envKeys=["NEXUSFLOW_URL","NEXUSFLOW_BASE_PATH","NEXUSFLOW_USER","NEXUSFLOW_PASSWORD","NEXUSFLOW_TOKEN"],oldEnv=envKeys.map(k=>process.env[k]),oldFetch=globalThis.fetch,oldLog=console.log,output:string[]=[];
+ const directory=await mkdtemp(join(tmpdir(),"nf-review-t2-")),tokenFile=join(directory,"session-token"),credential=credentials.find(x=>x.username==="demo.zhangwei")!;
+ let token="";
+ try{
+  config.localTenantId="t1";process.env.NEXUSFLOW_URL="http://nexusflow.test";process.env.NEXUSFLOW_BASE_PATH="/";process.env.NEXUSFLOW_USER=credential.username;process.env.NEXUSFLOW_PASSWORD=credential.password;delete process.env.NEXUSFLOW_TOKEN;
+  console.log=(value?:unknown)=>output.push(String(value));globalThis.fetch=Object.assign(async(...[input,init]:Parameters<typeof fetch>)=>app.request(new URL(String(input)).pathname,init),{preconnect:oldFetch.preconnect});
+  await cliMain(["auth","login","--token-file",tokenFile,"--json"]);
+  token=await readFile(tokenFile,"utf8");expect((await stat(tokenFile)).mode&0o777).toBe(0o600);
+  const stdout=output.join("\n");expect(stdout.includes(token)).toBe(false);expect(stdout.includes(credential.password)).toBe(false);
+  for(const key of ["access_token","NEXUSFLOW_TOKEN","password"])expect(stdout.includes(key)).toBe(false);
+  expect(JSON.parse(stdout)).toMatchObject({authenticated:true,token_file:tokenFile,user:{username:credential.username}});
+ }finally{
+  globalThis.fetch=oldFetch;console.log=oldLog;envKeys.forEach((key,i)=>oldEnv[i]===undefined?delete process.env[key]:process.env[key]=oldEnv[i]!);
+  await rm(directory,{recursive:true,force:true});
+ }
  expect(token).not.toBe("");const org=records.find(r=>r.kind==="orgs"&&r.data.name==="研发部")!,created=await request("/api/tasks","POST",task({org_id:org.id}),seedAdmin),parent=await created.json(),started=await request("/api/dispatch","POST",{task_id:parent.id,requester_id:seedAdmin.id,workflow:"standard"},seedAdmin),dispatch=await started.json();expect((await request(`/api/dispatch/${dispatch.id}/submit`,"POST",{},seedAdmin)).status).toBe(200);const approval=records.find(r=>r.kind==="approvals"&&r.data.dispatch_id===dispatch.id&&r.data.step==="department_director")!;
  const departmentDecision=await app.request(`/api/approvals/${approval.id}/decision`,{method:"POST",headers:{authorization:`Bearer ${token}`,"content-type":"application/json"},body:JSON.stringify({approved:true})});expect(departmentDecision.status).toBe(200);
  const centerApproval=records.find(r=>r.kind==="approvals"&&r.data.dispatch_id===dispatch.id&&r.data.step==="center_director")!,centerCredential=credentials.find(x=>x.username==="demo.wangjianguo")!,centerLogin=await localLogin(centerCredential.username,centerCredential.password),centerToken=(await centerLogin.json()).access_token;
