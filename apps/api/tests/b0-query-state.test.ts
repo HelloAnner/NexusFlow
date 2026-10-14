@@ -1,6 +1,7 @@
 import { expect,test } from "bun:test";
 import { queryState,recordQueryState,measured } from "../../web/lib/query-state.ts";
 import { projectPlanState } from "../../web/lib/plan-data.ts";
+import type { GanttGroup } from "../../web/lib/demo.ts";
 
 const pending={data:undefined,isPending:true,isError:false,error:null};
 const success=(data:unknown[])=>({data,isPending:false,isError:false,error:null});
@@ -23,7 +24,7 @@ test("project plan never finds in undefined data or selects an unrelated project
  expect(projectPlanState("live-project",projects,empty)).toEqual({kind:"empty",message:"暂无项目任务"});
  const failure=queryState({...pending,isPending:false,isError:true,error:new Error("endpoint not found")});
  expect(projectPlanState("live-project",projects,failure)).toEqual({kind:"error",message:"endpoint not found"});
- const group={type:"research",typeColor:"#878C94",owner:"real-owner",ownerColor:"#878C94",tasks:[{id:"real-task",name:"Real task",start:0,end:2,kind:"plan"}]};
+ const group:GanttGroup={type:"research",typeColor:"#878C94",owner:"real-owner",ownerColor:"#878C94",tasks:[{id:"real-task",name:"Real task",start:0,end:2,kind:"plan"}]};
  const ready=projectPlanState("live-project",projects,queryState(success([group])));
  expect(ready.kind).toBe("ready");if(ready.kind!=="ready")throw Error("expected real ready plan");
  expect(ready.project.id).toBe("live-project");expect(ready.groups).toEqual([group]);expect(ready.start).toBe("2026-06-01");expect(ready.days).toBe(2);

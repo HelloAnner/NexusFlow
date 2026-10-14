@@ -1,11 +1,12 @@
 import { expect, test, mock, beforeEach } from "bun:test";
 import { createHash, createHmac } from "node:crypto";
+import { fileURLToPath } from "node:url";
 
 // In-memory mocks only: never open a socket or start a listener.
 delete process.env.DATABASE_URL;
 delete process.env.REDIS_URL;
 process.env.JWT_SECRET = "review-only-secret-at-least-32-bytes";
-const root = "/Users/anner/cnpc/NexusFlow/apps/api/src";
+const root = fileURLToPath(new URL("../src",import.meta.url));
 type Row = { id: string; kind: string; tenant_id: string | null; created_by: string; data: Record<string, any> };
 let records: Row[] = [];
 let users: Record<string, any>[] = [];
@@ -68,7 +69,7 @@ const { createRecord, updateRecord, listRecords } = await import(`${root}/record
 const { objectRequest } = await import(`${root}/storage.ts`);
 const { default: app } = await import(`${root}/router.ts`);
 const originalFetch = globalThis.fetch;
-globalThis.fetch = (async () => { throw Error("unexpected network attempt blocked by reviewer"); }) as unknown as typeof fetch;
+globalThis.fetch = Object.assign(async () => { throw Error("unexpected network attempt blocked by reviewer"); },{preconnect:originalFetch.preconnect});
 const center: any = { id: "u1", username: "one", role: "center_director", tenant_id: "t1", org_id: "o1", portal_permissions: null };
 const member = { ...center, role: "member" };
 const department = { ...center, role: "department_director" };
@@ -102,11 +103,13 @@ test("Portal task read scope cannot publish; write scope is required", async () 
   expect(records[0]!.data.status).toBe("draft");
 });
 test("Portal request and CLI regression checks", async () => {
-  const { parseArgs } = await import("/Users/anner/cnpc/NexusFlow/cli/src/args.ts");
-  const { commandRequest } = await import("/Users/anner/cnpc/NexusFlow/cli/src/commands.ts");
-  expect(commandRequest(parseArgs(["projects", "create", "--json", '{"name":"review"}'])).body).toEqual({name:"review"});
+  const { parseArgs } = await import("../../../cli/src/args.ts");
+  const { commandRequest } = await import("../../../cli/src/commands.ts");
+  const body=commandRequest(parseArgs(["projects", "create", "--json", '{"name":"review"}'])).body;
+  if(!body||typeof body!=="object"||Array.isArray(body)||!("name" in body)||typeof body.name!=="string")throw Error("expected CLI JSON body with a string name");
+  expect(body).toEqual({name:"review"});
   expect(commandRequest(parseArgs(["config", "versions", "config-1"])).path).toContain("versions");
-  const {parseArgs:parse}=await import("/Users/anner/cnpc/NexusFlow/cli/src/args.ts");expect(parse(["x","y","--key=a=b"]).options.key).toBe("a=b");
+  const {parseArgs:parse}=await import("../../../cli/src/args.ts");expect(parse(["x","y","--key=a=b"]).options.key).toBe("a=b");
 });
 test("logout revokes token and reports Redis failure without revoking index", async () => {
   users = [{ ...center, status: "active", portal_id: null }];
@@ -170,12 +173,12 @@ test("hidden task occupancy affects overload without leaking hidden task details
 test("authorized archived files remain downloadable and downloads are audited", async () => {
   Object.assign(config,{s3Endpoint:"http://minio.invalid:9000",s3AccessKey:"review",s3SecretKey:"review-secret",s3Bucket:"nexusflow",s3Region:"us-east-1"});
   records=[row("task-1","tasks",task("task-1",{status:"archived"})),row("file-1","files",{status:"archived",name:"result.txt",object_key:"result",uploaded_by:"u1",task_id:"task-1",content_type:"text/plain",size_bytes:4})];
-  globalThis.fetch=(async()=>new Response("data",{status:200})) as unknown as typeof fetch;const response=await request("/api/files/file-1/download");expect(response.status).toBe(200);expect(await response.text()).toBe("data");expect(statements.some(x=>x.values.includes("file.download"))).toBe(true);
+  globalThis.fetch=Object.assign(async()=>new Response("data",{status:200}),{preconnect:originalFetch.preconnect});const response=await request("/api/files/file-1/download");expect(response.status).toBe(200);expect(await response.text()).toBe("data");expect(statements.some(x=>x.values.includes("file.download"))).toBe(true);
 });
 test("SigV4 canonical URI uses AWS strict encoding for punctuation and Unicode", async () => {
   Object.assign(config, { s3Endpoint: "http://minio.invalid:9000", s3AccessKey: "review", s3SecretKey: "review-secret", s3Bucket: "nexusflow", s3Region: "us-east-1" });
   let captured: { url: URL; headers: Headers } | undefined;
-  globalThis.fetch = (async (url: any, init: any) => { captured = { url: new URL(String(url)), headers: new Headers(init.headers) }; return new Response("", { status: 200 }); }) as typeof fetch;
+  globalThis.fetch = Object.assign(async (...[url,init]:Parameters<typeof fetch>) => { captured = { url: new URL(String(url)), headers: new Headers(init?.headers) }; return new Response("", { status: 200 }); },{preconnect:originalFetch.preconnect});
   try {
     await objectRequest("GET", "test/report!(draft).txt");
     const { url, headers } = captured!;

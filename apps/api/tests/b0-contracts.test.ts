@@ -37,13 +37,13 @@ test("seed defaults closed and requires explicit isolated-tenant authority",()=>
 test("web API refuses HTML, invalid JSON, and old-session in-flight results",async()=>{
  const previous=globalThis.fetch;
  try{
-  globalThis.fetch=(async()=>new Response("<html>fallback</html>",{headers:{"content-type":"text/html"}})) as typeof fetch;
+  globalThis.fetch=Object.assign(async()=>new Response("<html>fallback</html>",{headers:{"content-type":"text/html"}}),{preconnect:previous.preconnect});
   await expect(api("/tools")).rejects.toThrow("non-JSON");
-  globalThis.fetch=(async()=>new Response("broken",{headers:{"content-type":"application/json"}})) as typeof fetch;
+  globalThis.fetch=Object.assign(async()=>new Response("broken",{headers:{"content-type":"application/json"}}),{preconnect:previous.preconnect});
   await expect(api("/tools")).rejects.toThrow("invalid JSON");
-  globalThis.fetch=(async()=>Response.json({items:[]})) as typeof fetch;expect(await api("/tools")).toEqual({items:[]});
+  globalThis.fetch=Object.assign(async()=>Response.json({items:[]}),{preconnect:previous.preconnect});expect(await api<{items:{id:string}[]}>("/tools")).toEqual({items:[]});
   let release!:(response:Response)=>void;
-  globalThis.fetch=((..._args:any[])=>new Promise<Response>(resolve=>{release=resolve;})) as typeof fetch;
+  globalThis.fetch=Object.assign(()=>new Promise<Response>(resolve=>{release=resolve;}),{preconnect:previous.preconnect});
   const pending=api("/tools"),before=sessionEpoch();resetApiSession();expect(sessionEpoch()).toBeGreaterThan(before);
   release(Response.json({items:[{id:"old-user"}]}));await expect(pending).rejects.toThrow("session changed");
  }finally{globalThis.fetch=previous;}
