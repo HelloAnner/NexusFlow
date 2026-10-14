@@ -1,4 +1,4 @@
-NexusFlow 功能/控件追踪基线 B0P v1
+NexusFlow 功能/控件追踪基线 B0P v2
 =================================
 确认：用户于2026-10-14确认 docs/backend-real-function-plan.txt 的现Bun/Next栈、design.pen与业务规则，并明确开始。
 实际起始 main = origin/main = 5c46266cb6efd2f9f5fba47aacadc45a66fff2aa；origin/HEAD -> origin/main。
@@ -155,10 +155,11 @@ M06-009 | F06§4/7；PLAN M06b | 验收冻结版本/父任务项目归档所有�
 M06-010 | P11§7/9/11；T06§7 | 预览/元信息/fallback/复制链接/关联跳转 | 无preview-meta专用；download可复用 | 待:安全预览审计/签名短期链接 | 补:files preview-meta/link-resolve | 正:图片或明确下载fallback；拒:危险HTML/iframe权限；读:元信息真实 | 06a,02b | 未实现 | W/files无详情预览；ST只GET
 M06-011 | P11§3/8/10；PLAN M06 | 收藏、回收站软删恢复、保留30天/引用保护 | DELETE files禁止；无trash/restore/favorite | 待:软删/引用/个人favorite/清理任务 | 补:files favorite/trash/restore | 正:自删可恢复；拒:成果引用硬删/撤权恢复；读:版本及原字节未丢 | 06a,02b | 未实现 | R:deleteRecord；W/files sidebar
 M06-012 | PLAN M06/§6 | 上传/回滚提交后回读失败不可误删已提交对象、孤儿补偿审计 | 当前try含getRecord，catch DELETE对象 | storage_cleanup待审计/提交标记 | 补:files operation-status/cleanup preflight | 正:注入回读失败仍可恢复；拒:已提交对象被补偿删除；读:元数据及字节同时在 | 06a,B0 | 未实现 | A:67/70/queueObjectCleanup/retryObjectCleanup
+M06-013 | P11§7/7.1（docs/pages/11-files.md:61,91） | 文件详情Comments/Approval Tab：文件评论输入/提交/列表、成果审批记录；任务评论M03-018不能替代 | 无文件评论API；无文件审批记录查询专用API，成果动作缺口见M06-008 | 待:关联稳定文件ID/版本ID的评论正文、作者、服务端时间及审计；审批结果/操作人/意见消费M06-008真实记录 | 当前无；补:files comments list/create/show、files approval-history | 正:有权人提交文件评论并查看对应版本成果审批；拒:无文件权限/撤权旧会话/空正文/伪作者或错版本关联；读:刷新及CLI同一文件版本回读正文/作者/时间与审批结果，任务评论不串入 | 06a,06b,02b | 未实现 | W/files无详情Comments/Approval或评论handler；A:67-72仅上传/版本/回滚/归档/下载；C无files comments/approval-history
 UI-F01 | P11§3/4/5 | 全部/个人报告/整体报告/PPT/申报/数据/纪要、项目/收藏/回收站导航，目录含代码仓库 | sidebar与目录无handler；GET files {items}被忽略 | FILES/1284及类别数固定；代码资料仅预留非必做引擎 | 现:files list；补:files folder/owner/project/category/favorites/trash filters | 正:真实目录/计数；拒:不可见项目；读:目录集等CLI集 | 06a,06b | 假数据 | W/files:FilesSidebar/directory/normalize
 UI-F02 | P11§6/9；F06§3 | 搜索文件/上传人、上传按钮、拖拽多文件队列/同名新版本 | SearchBox/Upload无handler；队列未有 | 待:真实multipart提交/失败恢复 | 现:files upload/list --q；补:upload queue/version/meta | 正:多文件逐项结果；拒:超限保留失败项；读:成功file ID/大小/hash | 06a | 未接通 | W/files:PageHeader；U:SearchBox
 UI-F03 | P11§4/5 | 类型全部/Word/PPT/PDF/Excel/数据按钮、按上传时间排序、List/Grid/Timeline | filter state不参与files.map；sort仅span；其他无 | 待:服务端筛选/视图偏好 | 现:files list --q；补:format/category/sort/view | 正:过滤结果真实减少；拒:清空无demo补；读:count/order | 06a | 未接通 | W/files:setFilter/files.map
-UI-F04 | P11§5/7/11 | 文件名/所属任务/下载图标/大小时间上传人、详情版本链接范围成果日志 | 下载仅icon/行无click；fake字段 | FILES字段补齐；待真实详情 | 现:files show/download/versions/archive；补:detail tabs | 正:点击真实file ID；拒:下载失败不假成功；读:字节/元信息/日志 | 06a,06b | 假数据 | W/files:normalize/table
+UI-F04 | P11§5/7/11 | 文件名/所属任务/下载图标/大小时间上传人、详情版本链接范围成果日志、Comments/Approval（见M06-013） | 下载仅icon/行无click；fake字段 | FILES字段补齐；待真实详情 | 现:files show/download/versions/archive；补:detail tabs | 正:点击真实file ID；拒:下载失败不假成功；读:字节/元信息/日志 | 06a,06b | 假数据 | W/files:normalize/table
 UI-F05 | P11§2/6/9 | 新建文件夹/目录展开、多文件描述类型关联/上传进度/离页提示 | 当前无控件 | 待:目录组织/上传queue，不替代业务文件事实 | 补:files folders/queue | 正:可组织真实资料；拒:引用越权/离页丢上传；读:目录及上传状态 | 06a | 未实现 | W/files全文
 
 M07 首页及全局工作台
@@ -288,7 +289,7 @@ UI-A05 | F13§5/8；P15§5/6/7/10/12 | SA新组织人/邀请生成复制停用/�
 
 覆盖维护方法与边界
 ------------------
-稳定追踪条目221条：13领域150条、当前/设计控件族61条、公共底座10条。模块分布：01=12，02=10，03=18，04=12，05=11，06=12，07=10，08=10，09=11，10=6，11=10，12=10，13=18。控件族合并重复渲染实例，条目数不是单个DOM数量或完成率。
+稳定追踪条目222条：13领域151条、当前/设计控件族61条、公共底座10条。模块分布：01=12，02=10，03=18，04=12，05=11，06=13，07=10，08=10，09=11，10=6，11=10，12=10，13=18。控件族合并重复渲染实例，条目数不是单个DOM数量或完成率。
 1. 需求来源已完整读取：O、13份F+13份T、docs/pages全部18份（00..16为17份，另organization为1份）。按章节拆成可验收动作/规则；同事实字段或枚举合并，不把每个渲染实例重复计数。
 2. 完整读取当前10个业务视图及登录，共11个page.tsx：/、inbox、my-work、projects、projects/[id]/plan、dispatch/new、team、load、files、tools、login。plan/page为包装，交互全文在gantt-client。清单不因“10页”计数口径漏掉登录。
 3. Shell、providers、ui、data/api/auth/home/demo/utils及后端router/records/permissions/auth/db/storage/load/config/index、shared、CLI args/commands/index均读；导航/SideItem/SideSection、按钮/输入/select/textarea/form、路由Link、SVG/card/图标等看似可点元素都查实际handler和数据来源。当前可操作声明静态定位278处（rg匹配行，非需求条数）。无handler、不起作用的filter及伪可点图标也入UI清单。
@@ -296,4 +297,5 @@ UI-A05 | F13§5/8；P15§5/6/7/10/12 | SA新组织人/邀请生成复制停用/�
 5. 本清单不依赖C0未集成抽取，不修改已确认业务口径。P16轻度超载可继续的旧文案，以PLAN已确认“超载/全天不能仅警告发布”优先；SA默认不参与业务审批；CLI/API路径以当前代码为准，不把历史/resources/users/todos/notifications/dashboard路径当已实现。
 6. F12§5明确二期可做的拖拽/批量调期/PDF图片导出与P00建议库、能力画像/代码库预留，不据此新增框架或引擎；确认PLAN要求的受控调期/真实导出仍追踪，非必做增强不阻塞一期仅因未装建议库。
 7. 外部输入阻塞：可用工具URL/域白名单/授权上下文协议及外部服务可用证据；特殊节假日/工作日及出差培训兼容配置；审批兜底显式授权及缺审批人的业务口径；邮件短信渠道；Portal真实账号scope/测试票据与服务器隔离PG/Redis/S3资源；存量demo可信归属清单。未知值不得由agent编造，不阻止无这些依赖的切片实现。
+v2修订：按reviewer对54666c24的意见补M06-013文件评论及审批记录追踪，UI-F04交叉引用；不实现代码、不升级能力状态，服务器结构/业务检查仍NOT_RUN。
 8. 每切片交付逐行补候选commit、真实命令/脱敏对象ID、拒绝后回读及联动/审计证据到acceptance；release记录主协调者集成/发布身份。所有子切片PASS后仍需JOIN全域复核，禁止把本基线当全系统完成。

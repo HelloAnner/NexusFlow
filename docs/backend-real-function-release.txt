@@ -1,4 +1,4 @@
-NexusFlow 后端真实功能发布基线 B0P v1
+NexusFlow 后端真实功能发布基线 B0P v2
 ====================================
 确认：用户于2026-10-14确认 docs/backend-real-function-plan.txt，并明确开始；现Bun/Hono/Next、design.pen与业务规则不重写。
 实际起始 main / origin/main：5c46266cb6efd2f9f5fba47aacadc45a66fff2aa；origin/HEAD -> origin/main。
@@ -38,11 +38,12 @@ C0抽取仅等价移文件；集成后领域owner更新coverage证据路径，�
 发布记录模板（每次一行，配acceptance同切片同SHA）
 ----------------------------------------------
 切片 | coverage IDs | feature commit | 起始main/集成main | push结果 | make deploy命令/结果 | server运行SHA/资源身份 | 验收结果/acceptance附件 | 时间(ISO+时区) | 备份/迁移/风险/回滚状态
-B0P | 三份txt基线 | 待本地提交SHA | 起始5c46266/未集成 | NOT_RUN（worker禁止push） | NOT_RUN（协调者通道） | 未验证 | NOT_RUN（只有静态来源核对） | 未发布 | 未写生产/未删数据/未调用seed；多数业务pending
+B0P v1 | 三份txt基线 | 54666c24edaf774ae1a960715402983e916a5eda | 起始5c46266/未集成 | NOT_RUN（worker禁止push） | NOT_RUN（协调者通道） | 未验证 | NOT_RUN（只有静态来源核对） | 未发布 | 未写生产/未删数据/未调用seed；多数业务pending
+B0P v2 | M06-013/UI-F04文件评论及计数修订 | 见本文件v2提交SHA（协调者取git日志） | 起始5c46266/未集成 | NOT_RUN（worker禁止push） | NOT_RUN（协调者通道） | 未验证 | NOT_RUN；保留服务器结构检查及人工完整性复核 | 未发布 | 仅修订三份txt；文件评论未实现，外部依赖不变
 占位 | 待填写 | 待填写 | 待填写 | NOT_RUN | NOT_RUN | 待填写 | NOT_RUN | 未发布 | 待填写
 
 最后核对
 --------
 最终业务交付必须：范围内改动及修复全部commit、包含于main和origin/main且二者一致、服务器同版本通过；全功能CLI覆盖与拒绝回读证据齐全。
 已真实能力不自动成为服务器PASS；未运行填NOT_RUN，缺外部条件填BLOCKED，失败填FAIL，不以健康200/mock/导航成功替代。
-文档handoff只用IMPLEMENTATION_READY B0P v1 + commit SHA + 条目数/覆盖方法/缺口/外部阻塞；不是FINAL_PASS。
+文档handoff只用IMPLEMENTATION_READY B0P v2 + commit SHA + 条目数/覆盖方法/缺口/外部阻塞；不是FINAL_PASS。
