@@ -123,6 +123,27 @@ test("R7: final approval completes linked dispatch/task and rejects repeat decis
  expect((await request("/api/approvals/a1/decision","POST",{approved:true})).status).toBe(200);
  expect(records.find(r=>r.id==="d1")!.data.status).toBe("published");expect(records.find(r=>r.id==="task-1")!.data.status).toBe("in_progress");expect((await request("/api/approvals/a1/decision","POST",{approved:true})).status).toBe(409);
 });
+test("B0 v2: approval/rejection audit records actual locked transitions, not client snapshots or secrets",async()=>{
+ for(const approved of [true,false]){
+  const status=approved?"approved":"rejected",approvalId=`decision-${status}`,dispatchId=`dispatch-${status}`,taskId=`task-${status}`;
+  records.push(row(approvalId,"approvals",{dispatch_id:dispatchId,approver_id:"u1",step:"center_director",status:"pending"}),row(dispatchId,"dispatch",{task_id:taskId,requester_id:"u1",target_org_ids:["o1"],status:"pending_approval"}),row(taskId,"tasks",task({status:"pending_coordination"})));
+  const body={approved,reason:"same reason",password:"not-for-audit",token:"not-for-audit",invitation_token:"not-for-audit",before:{status:"forged"},after:{status:"forged"}};
+  const response=await request(`/api/approvals/${approvalId}/decision`,"POST",body);expect(response.status).toBe(200);
+  const entry=audits.find(a=>a.v[3]==="approval.decision"&&a.v[5]===approvalId)!.v[6];
+  expect(entry).toMatchObject({before:{status:"pending"},after:{status},reason:"same reason",result:"success",tenant_id:"t1",actor:"u1",object_id:approvalId});
+  expect(entry.details.approved).toBe(approved);expect(entry.request_id).toBe(response.headers.get("x-request-id"));
+  expect(JSON.stringify(entry)).not.toContain("not-for-audit");expect(JSON.stringify(entry)).not.toContain("forged");
+  expect(records.find(r=>r.id===approvalId)!.data.status).toBe(status);
+  expect(records.find(r=>r.id===dispatchId)!.data.status).toBe(approved?"published":"rejected");
+  expect(records.find(r=>r.id===taskId)!.data.status).toBe(approved?"in_progress":"draft");
+  const count=audits.length;expect((await request(`/api/approvals/${approvalId}/decision`,"POST",body)).status).toBe(409);expect(audits).toHaveLength(count);
+ }
+});
+test("B0 v2: failed approval workflow rolls back its state and leaves no success audit",async()=>{
+ records.push(row("failed-decision","approvals",{dispatch_id:"missing-dispatch",approver_id:"u1",step:"center_director",status:"pending"}));
+ const response=await request("/api/approvals/failed-decision/decision","POST",{approved:true});expect(response.status).toBe(404);
+ expect(records.find(r=>r.id==="failed-decision")!.data.status).toBe("pending");expect(audits.some(a=>a.v[3]==="approval.decision")).toBe(false);
+});
 test("R8: conflict resolve works only after actual conflict cleared",async()=>{
  records.push(row("task-1","tasks",task({status:"done"})),row("f1","conflicts",{task_id:"task-1",type:"workload_overload",person_id:"u1",status:"open"}));
  expect((await request("/api/conflicts/f1/resolve","POST",{reason:"schedule cleared"})).status).toBe(200);expect(records.find(r=>r.id==="f1")!.data.status).toBe("resolved");

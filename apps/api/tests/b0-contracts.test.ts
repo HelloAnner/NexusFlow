@@ -15,6 +15,7 @@ test("list DTO preserves items compatibility and paginates only when requested",
 test("audit whitelist removes nested secrets and trusts only the configured proxy chain",async()=>{
  const secret={password:"p",token:"t",invitation_token:"i",password_hash:"h",secret_key:"s"};
  expect(auditSummary({before:{name:"old",...secret},after:{status:"active",...secret}})).toEqual({before:{name:"old"},after:{status:"active"}});
+ for(const approved of [true,false])expect(auditSummary({approved,...secret})).toEqual({approved});
  const headers=new Headers({"x-forwarded-for":"203.0.113.7, 10.0.0.2"});
  expect(sourceIp("198.51.100.3",headers,["10.0.0.2"])).toBe("198.51.100.3");
  expect(sourceIp("10.0.0.1",headers,["10.0.0.1","10.0.0.2"])).toBe("203.0.113.7");
