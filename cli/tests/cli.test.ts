@@ -30,4 +30,10 @@ test("important workflows map to dedicated API operations",()=>{
  expect(commandRequest(parseArgs(["task-assignments","action","a-1","--action","submit","--result","done","--file-ids","f-1,f-2"])).body).toEqual({action:"submit",result:"done",reason:"",file_ids:["f-1","f-2"]});
  expect(commandRequest(parseArgs(["visibility-grants","list"])).path).toBe("/api/visibility_grants");
 });
+test("file scopes are optional and validated before network calls",()=>{
+ expect(commandRequest(parseArgs(["files","list"])).path).toBe("/api/files");
+ for(const scope of ["personal","space"])expect(commandRequest(parseArgs(["files","list","--scope",scope])).path).toBe(`/api/files?scope=${scope}`);
+ for(const value of ["invalid",""])expect(()=>commandRequest(parseArgs(["files","list",`--scope=${value}`]))).toThrow("scope must be personal or space");
+ expect(()=>commandRequest(parseArgs(["files","list","--scope"]))).toThrow("scope must be personal or space");
+});
 test("missing command arguments fail before network calls",()=>{expect(()=>commandRequest(parseArgs(["projects","create","{bad}"]))).toThrow("expected a JSON object");expect(()=>commandRequest(parseArgs(["dispatch","submit"]))).toThrow("requires dispatch ID");expect(()=>commandRequest(parseArgs(["tasks","assign","t-1","--user-id","u-2"]))).toThrow("requires ID");});

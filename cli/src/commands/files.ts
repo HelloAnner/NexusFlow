@@ -5,7 +5,7 @@ export function filesRequest(args:CliArgs):CommandRequest|undefined {
  const {command,action,positionals:p}=args;
  if(command==="files"&&action==="list"){
   const params=new URLSearchParams(),scope=option(args,"scope"),q=option(args,"q");
-  if(scope!==undefined){if(scope!=="personal"&&scope!=="space")throw Error("files list --scope must be personal or space");params.set("scope",scope);}
+  if(Object.hasOwn(args.options,"scope")){if(scope!=="personal"&&scope!=="space")throw Error("files list --scope must be personal or space");params.set("scope",scope);}
   if(q)params.set("q",q);
   const qs=params.toString();
   return {path:`/api/files${qs?`?${qs}`:""}`,method:"GET"};
