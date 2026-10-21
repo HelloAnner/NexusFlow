@@ -1,0 +1,62 @@
+统一文件管理部署与验收（2026-10-21）
+====================================
+
+已部署
+------
+Northline 6445287
+  personal/space 文件；聊天抽屉列表/网格、搜索、预览；@ 引用键盘选择。
+  Portal 读取接口使用服务令牌 + 双身份映射，不接受本地身份参数。
+  部署脚本保留 PORTAL_INTERNAL_TOKEN。
+
+Documind ac7cee4
+  personal/space 文件；聊天抽屉列表/网格、搜索、预览；@ 引用键盘选择。
+  超限引用保留输入；刷新选择器时不保留旧文件；大文本跳过预览下载。
+  Portal 读取接口使用服务令牌 + 双身份映射。
+
+NexusFlow 0c970de
+  文件列表 scope、显式 scope 上传、Portal 文件只读接口。
+  独立 nexusflow.portal_file_links，不修改用户登录/密码/角色。
+  admin portal-links / portal-link / portal-unlink 可维护映射。
+  保留项目/任务 ACL；个人文件还必须属于当前上传者。
+
+Portal 2ede924
+  文件管理入口、聊天文件抽屉与引用、MinIO、跨系统汇总接口/CLI。
+  三个来源均已启用。未映射账号显示 unlinked，不能借管理员身份越权读取。
+
+服务器真实验收
+--------------
+Northline、Documind：
+  对 Portal 已映射身份读取列表、下载、预览，实际字节与大小相符。
+  content 与 preview 字节一致；no-store 生效。
+  错误服务令牌拒绝；错误企业身份拒绝。
+  两系统同一验收文件 SHA256：
+  b030937dd4ea25368d5d81dd0b41f3d8a9ede902f62426f9529053ef2b73193f
+
+NexusFlow（服务器已部署 CLI）：
+  files list --scope personal/space、admin portal-links 通过。
+  未映射返回409；显式建立映射后列表/下载/预览通过，字节一致。
+  撤销映射后原身份立即返回409。
+  使用隔离验收双ID；映射已撤销；临时登录已注销。
+
+Portal（服务器编译CLI）：
+  管理员个人文件 sources/aggregate 成功；未映射来源明确 unlinked。
+  无企业成员资格时 space 返回403，这是预期权限行为，不自动建立成员。
+  尚未完成：同一个已登录且已映射的普通成员经 Portal 聚合下载全链路验收。
+
+尚未完成
+--------
+NexusFlow 文件页的个人/空间、网格/列表、上传与预览代码保留在：
+  /Users/anner/worktree/nexusflow-unified-files
+  分支 nf/unified-files
+未提交、未部署这些页面改动。
+原因：项目要求 docs/pages -> Pencil设计稿 -> 前端；Pencil MCP 当前报：
+  failed to connect to running Pencil app: visual_studio_code
+  transport not connected to app: visual_studio_code
+不能绕过设计稿前置要求，也不能把未部署页面声称完成。
+
+预览边界
+--------
+安全位图/PDF/纯文本内联预览；Office/未知格式下载查看。
+没有实现 Office 转 PDF 服务，不声称 Office 在线预览已完成。
+NexusFlow 没有聊天页面，不新增虚构的聊天入口。
+生产用户映射需明确建立；不按用户名自动匹配、不扩大租户成员权限。
