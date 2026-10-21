@@ -27,6 +27,21 @@ def pg_environment(values):
         elif key not in ('application_name',): raise ValueError('unsupported PG URL parameter; require explicit backup connection support')
     return result
 
+def compose_environment(values):
+    """中间件 compose 的环境文件。凭据全部从既有 .env 派生，不引入新的密钥来源。"""
+    url=urllib.parse.urlsplit(values.get('DATABASE_URL',''))
+    if url.scheme not in ('postgres','postgresql') or not url.hostname: raise ValueError('DATABASE_URL required')
+    user=urllib.parse.unquote(url.username or ''); password=urllib.parse.unquote(url.password or '')
+    database=urllib.parse.unquote(url.path.lstrip('/'))
+    if not user or not password or not database: raise ValueError('DATABASE_URL must carry user, password and database')
+    access=values.get('S3_ACCESS_KEY',''); secret=values.get('S3_SECRET_KEY','')
+    if not access or not secret: raise ValueError('S3_ACCESS_KEY and S3_SECRET_KEY required')
+    for value in (user,password,database,access,secret):
+        if any(c in value for c in ' \t\n"\''): raise ValueError('credential contains characters compose env files cannot carry')
+    return {'POSTGRES_USER':user,'POSTGRES_PASSWORD':password,'POSTGRES_DB':database,
+            'MINIO_ROOT_USER':access,'MINIO_ROOT_PASSWORD':secret,
+            'S3_BUCKET':values.get('S3_BUCKET','nexusflow')}
+
 def pg(env,args,output=None,input_file=None):
     run=subprocess.run(args,env=env,stdin=input_file,stdout=output or subprocess.PIPE,stderr=subprocess.DEVNULL)
     if run.returncode: raise RuntimeError('PostgreSQL operation failed; credentials suppressed')
@@ -41,7 +56,8 @@ def backup_tools(values):
     if not container.replace('-','').replace('_','').isalnum(): raise ValueError('invalid backup container name')
     # The deployed PG16 container supplies matched tools, not a global installation.
     container_env=dict(env,PGHOST='127.0.0.1',PGPORT='5432')
-    prefix=['podman','exec']
+    # 服务器容器运行时已从 podman 迁到 Docker CE（见 scripts/migrate-podman-to-docker.sh）
+    prefix=['docker','exec']
     for key in container_env:
         if key.startswith('PG'): prefix+=['--env',key]
     prefix+=[container]
@@ -50,7 +66,7 @@ def backup_tools(values):
     identity='SELECT system_identifier FROM pg_control_system()'
     if pg(env,['psql','-XAt','-c',identity])!=pg(container_env,prefix+['psql','-XAt','-c',identity]):
         raise RuntimeError('backup container is not production PostgreSQL cluster')
-    return container_env,prefix,['podman','exec','-i']+prefix[2:]
+    return container_env,prefix,['docker','exec','-i']+prefix[2:]
 
 def main():
     action,envfile=sys.argv[1:3]; values=environment(envfile)
@@ -70,6 +86,11 @@ def main():
         with (target/'object-metadata.tsv').open('xb') as f: pg(pg_env,prefix+['psql','-X','-q','-c',query],f)
         with (target/'database.dump').open('rb') as f: pg(pg_env,interactive+['pg_restore','--list'],input_file=f)
         print('PG dump + object metadata backup: PASS (object bytes unchanged, not backed up)')
+    elif action=='compose-env':
+        target=pathlib.Path(sys.argv[3])
+        target.write_text(''.join(f'{key}={value}\n' for key,value in compose_environment(values).items()))
+        target.chmod(0o600)
+        print('middleware compose environment derived from .env: PASS')
     elif action=='verify':
         directory=pathlib.Path(sys.argv[3]); commit=(directory/'COMMIT').read_text().strip()
         subprocess.run(['python3',str(directory/'source/scripts/check-read-safety.py'),str(directory/'source')],check=True)

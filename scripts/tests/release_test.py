@@ -48,7 +48,7 @@ def fake_pg(env,args,*a,**k):
 module.pg=fake_pg
 try:
     env,prefix,interactive=module.backup_tools(values)
-    assert prefix[0]=='podman' and 'PGPASSWORD' in prefix and '-i' in interactive
+    assert prefix[0]=='docker' and 'PGPASSWORD' in prefix and '-i' in interactive
     identity_match[0]=False
     try: module.backup_tools(values)
     except RuntimeError: pass

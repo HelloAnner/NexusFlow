@@ -1,0 +1,89 @@
+# NexusFlow 中间件统一声明。
+#
+# 应用本体仍由 scripts/deploy.sh 以「单二进制 + systemd」发布，不进容器。
+# 本文件只负责 Postgres / Redis / MinIO。
+#
+# 用法（服务器上）：
+#   docker compose --env-file /opt/nexusflow/compose.env -f compose.yaml up -d
+#   docker compose --env-file /opt/nexusflow/compose.env -f compose.yaml --profile init up minio-init
+#
+# 数据全部是宿主 bind mount（/opt/nexusflow/*-data），切换容器运行时不会丢数据。
+# 永远不要执行 down -v。
+
+name: nexusflow
+
+# 镜像走 m.daocloud.io 国内镜像，与迁移前容器使用的镜像一致。
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-docker.m.daocloud.io/library/postgres:16-alpine}
+    container_name: nexusflow-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?compose.env 缺少 POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?compose.env 缺少 POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?compose.env 缺少 POSTGRES_DB}
+      PGDATA: /var/lib/postgresql/data
+      LANG: en_US.utf8
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - /opt/nexusflow/postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  redis:
+    image: ${REDIS_IMAGE:-docker.m.daocloud.io/library/redis:7-alpine}
+    container_name: nexusflow-redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - /opt/nexusflow/redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  minio:
+    image: ${MINIO_IMAGE:-docker.m.daocloud.io/minio/minio:latest}
+    container_name: nexusflow-minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?compose.env 缺少 MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?compose.env 缺少 MINIO_ROOT_PASSWORD}
+    command: ["server", "/data", "--address", ":9000", "--console-address", ":9001"]
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - /opt/nexusflow/minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  # 一次性任务：确保 bucket 存在。用 --profile init 显式触发，不随 up -d 启动。
+  minio-init:
+    # tag 必须是本地已有的那个：MinIO 镜像已拉不到，mc 只能从 podman 存储搬过来，
+    # 而本地存的是 :latest。写成别的 tag 会导致 compose 去仓库拉并失败。
+    image: ${MINIO_MC_IMAGE:-docker.m.daocloud.io/minio/mc:latest}
+    profiles: ["init"]
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?compose.env 缺少 MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?compose.env 缺少 MINIO_ROOT_PASSWORD}
+      BUCKET: ${S3_BUCKET:-nexusflow}
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        mc ready local
+        mc mb --ignore-existing "local/$$BUCKET"

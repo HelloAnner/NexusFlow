@@ -51,6 +51,20 @@ mkdir -p source
 tar -xzf source.tar.gz -C source
 tar -xzf dependencies.tar.gz -C source
 bash source/scripts/server-checks.sh "$DIR"
+PHASE=middleware
+# 中间件统一由 deploy/compose.yaml 声明；compose.env 由 .env 派生，是凭据的唯一来源。
+COMPOSE_FILE="$ROOT/compose.yaml"; COMPOSE_ENV="$ROOT/compose.env"
+install -m 644 source/deploy/compose.yaml "$COMPOSE_FILE"
+python3 source/scripts/server-env.py compose-env "$ROOT/.env" "$COMPOSE_ENV"
+docker compose --env-file "$COMPOSE_ENV" -f "$COMPOSE_FILE" up -d
+for attempt in $(seq 1 60); do
+ if docker exec nexusflow-postgres pg_isready -q >/dev/null 2>&1 &&
+    docker exec nexusflow-redis redis-cli ping >/dev/null 2>&1 &&
+    curl -fsS http://127.0.0.1:9000/minio/health/live >/dev/null 2>&1; then break; fi
+ [[ $attempt != 60 ]] || exit 1
+ sleep 1
+done
+docker compose --env-file "$COMPOSE_ENV" -f "$COMPOSE_FILE" --profile init up minio-init
 PHASE=backup
 BACKUP="$ROOT/backups/$COMMIT-$(date -u +%Y%m%dT%H%M%SZ)"
 python3 source/scripts/server-env.py backup "$ROOT/.env" "$BACKUP"
