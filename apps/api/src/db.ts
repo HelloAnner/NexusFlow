@@ -34,6 +34,12 @@ export async function migrate() {
   await sql`UPDATE nexusflow.records SET tenant_id='local' WHERE tenant_id IS NULL`;
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS users_tenant_username_lower_idx ON nexusflow.users(tenant_id,lower(username))`;
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS users_portal_identity_idx ON nexusflow.users(portal_tenant_id,portal_id) WHERE portal_id IS NOT NULL`;
+  await sql`CREATE TABLE IF NOT EXISTS nexusflow.portal_file_links (
+    portal_tenant_id text NOT NULL, portal_user_id text NOT NULL,
+    local_user_id text NOT NULL REFERENCES nexusflow.users(id), local_tenant_id text NOT NULL,
+    status text NOT NULL DEFAULT 'active' CHECK (status IN ('active','revoked')),
+    reason text NOT NULL, updated_by text NOT NULL, updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY(portal_tenant_id,portal_user_id))`;
   await sql`CREATE TABLE IF NOT EXISTS nexusflow.audit (id text PRIMARY KEY, actor text, tenant_id text, action text NOT NULL, object_kind text, object_id text, data jsonb NOT NULL DEFAULT '{}', created_at timestamptz NOT NULL DEFAULT now())`;
   await sql`ALTER TABLE nexusflow.audit ADD COLUMN IF NOT EXISTS actor text`;
   await sql`ALTER TABLE nexusflow.audit ADD COLUMN IF NOT EXISTS tenant_id text`;

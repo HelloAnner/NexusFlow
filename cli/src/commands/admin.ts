@@ -3,6 +3,12 @@ import { option } from "../args";
 import { type CommandRequest, csvOption } from "./shared";
 export function adminRequest(args:CliArgs):CommandRequest|undefined {
  const {command,action,positionals:p}=args;
+ if(command==="admin"&&action==="portal-links")return {path:"/api/admin/portal-file-links",method:"GET"};
+ if(command==="admin"&&["portal-link","portal-unlink"].includes(action)){
+  const portal_user_id=option(args,"portal-user-id"),portal_tenant_id=option(args,"portal-tenant-id"),reason=option(args,"reason");
+  if(!portal_user_id||!portal_tenant_id||!reason||action==="portal-link"&&!p[0])throw Error("portal mapping requires --portal-user-id, --portal-tenant-id, --reason and local user ID for link");
+  return {path:"/api/admin/portal-file-links",method:"PUT",body:{portal_user_id,portal_tenant_id,reason,status:action==="portal-link"?"active":"revoked",...(action==="portal-link"?{local_user_id:p[0]}:{})}};
+ }
  if(command==="admin"&&action==="preflight")return {path:"/api/admin/preflight",method:"GET"};
  if(command==="admin"&&action==="audit")return {path:"/api/admin/audit",method:"GET"};
  if(command==="admin"&&action==="users")return {path:"/api/admin/users",method:"GET"};

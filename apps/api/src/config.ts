@@ -7,6 +7,8 @@ export const config = {
   portalEnabled: env("PORTAL_AUTH_ENABLED", "false") === "true" || env("AUTH_LOGIN_MODE")==="portal",
   portalUrl: env("PORTAL_BASE_URL", "http://123.57.255.204:6688").replace(/\/+$/, ""),
   portalEndpoint: env("PORTAL_EXCHANGE_ENDPOINT", "/api/auth/exchange-ticket"),
+  // 仅供 Portal 聚合文件接口使用的服务间静态令牌；不替代用户身份映射。
+  portalInternalToken: env("PORTAL_INTERNAL_TOKEN"),
   jwtSecret: env("JWT_SECRET"),
   databaseUrl: env("DATABASE_URL"),
   redisUrl: env("REDIS_URL"),

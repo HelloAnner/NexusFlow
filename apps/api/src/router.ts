@@ -17,6 +17,8 @@ import { registerRoutes as registerApprovals,registerRecords as registerApproval
 import { registerRoutes as registerLoad,registerRecords as registerLoadRecords } from "./domains/load/routes.ts";
 import { registerRoutes as registerConflicts,registerRecords as registerConflictsRecords } from "./domains/conflicts/routes.ts";
 import { registerRoutes as registerFiles,registerRecords as registerFilesRecords } from "./domains/files/routes.ts";
+import { registerPortalFiles,portalFilesPublicPath } from "./domains/files/portal.ts";
+import { registerPortalFileLinks } from "./domains/files/portal-links.ts";
 import { registerRoutes as registerHome,registerRecords as registerHomeRecords } from "./domains/home/routes.ts";
 import { registerRoutes as registerConfig,registerRecords as registerConfigRecords } from "./domains/config/routes.ts";
 import { registerRoutes as registerInbox,registerRecords as registerInboxRecords } from "./domains/inbox/routes.ts";
@@ -38,7 +40,7 @@ app.use("*",async(c,next)=>{
  });
 });
 const publicPaths=new Set(["/api/auth/login","/api/auth/logout","/api/auth/register"]);
-app.use("/api/*",async(c,next)=>{if(publicPaths.has(c.req.path)||c.req.path==="/api/system/version"&&c.req.method==="GET")return next();const user=await currentUser(c);if(!user)return c.json({error:"unauthorized"},401);
+app.use("/api/*",async(c,next)=>{if(publicPaths.has(c.req.path)||c.req.path==="/api/system/version"&&c.req.method==="GET"||portalFilesPublicPath.test(c.req.path))return next();const user=await currentUser(c);if(!user)return c.json({error:"unauthorized"},401);
  const registered=app.routes.some(route=>!route.path.includes("*")&&(route.method===c.req.method||route.method==="ALL")&&new RegExp("^"+route.path.replace(/:[^/]+/g,"[^/]+")+"$").test(c.req.path));
  if(!registered)return c.json({error:"not found"},404);
  if(!portalAllows(user,c.req.path,c.req.method))return c.json({error:"forbidden"},403);c.set("user",user);await next();});
@@ -58,6 +60,8 @@ registerApprovals(app);
 registerConflicts(app);
 registerLoad(app);
 registerFiles(app);
+registerPortalFiles(app);
+registerPortalFileLinks(app);
 registerHome(app);
 registerConfig(app);
 registerInbox(app);
