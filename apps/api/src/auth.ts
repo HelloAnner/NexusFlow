@@ -24,7 +24,9 @@ export async function currentUser(c:Context):Promise<User|null> {
     if(typeof payload.sid!=="string"||!payload.sub)return null;
     const session=await redis.get(sessionKey(payload.sid));
     if(!session||JSON.parse(session).user_id!==payload.sub)return null;
-    const rows=await sql`SELECT id,username,role,tenant_id,org_id,status,portal_id,portal_permissions FROM nexusflow.users WHERE id=${payload.sub}`;
+    const rows=await sql`SELECT u.id,u.username,u.role,u.tenant_id,u.org_id,u.status,u.portal_id,u.portal_permissions
+      FROM nexusflow.users u LEFT JOIN nexusflow.tenants t ON t.id=u.tenant_id
+      WHERE u.id=${payload.sub} AND (u.tenant_id IS NULL OR t.status='active')`;
     const row=rows[0];
     if(!row||row.status!=="active")return null;
     return {id:row.id,username:row.username,role:row.role,tenant_id:row.tenant_id,org_id:row.org_id,portal_permissions:row.portal_id?row.portal_permissions||[]:null};
@@ -36,7 +38,9 @@ export async function login(c:Context) {
   const body=await c.req.json().catch(()=>({}));
   const username=String(body.username||"").trim();const password=String(body.password||"");
   const tenant_id=String(body.tenant_id||config.localTenantId);
-  const rows=await sql`SELECT id,username,password_hash,display_name,role,tenant_id,org_id,status FROM nexusflow.users WHERE lower(username)=lower(${username}) AND tenant_id=${tenant_id} AND portal_id IS NULL`;
+  const rows=await sql`SELECT u.id,u.username,u.password_hash,u.display_name,u.role,u.tenant_id,u.org_id,u.status
+    FROM nexusflow.users u JOIN nexusflow.tenants t ON t.id=u.tenant_id
+    WHERE lower(u.username)=lower(${username}) AND u.tenant_id=${tenant_id} AND u.portal_id IS NULL AND t.status='active'`;
   const row=rows[0];
   if(!row||row.status!=="active"||!await bcrypt.compare(password,row.password_hash))return c.json({error:"invalid credentials"},401);
   if(row.role==="super_admin"&&row.username!==config.adminUsername)return c.json({error:"invalid credentials"},401);
@@ -67,6 +71,9 @@ export async function portalCallback(c:Context) {
     const p=await response.json() as Record<string,unknown>;
     if(p.system_code!=="nexusflow"||typeof p.user_id!=="string"||!p.user_id||typeof p.username!=="string"||!p.username||typeof p.display_name!=="string"||!p.display_name||typeof p.tenant_id!=="string"||!p.tenant_id||typeof p.expires_at!=="number"||!Number.isFinite(p.expires_at)||p.expires_at<=Date.now()/1000||!Array.isArray(p.portal_roles)||!Array.isArray(p.system_roles)||!Array.isArray(p.permissions)||![...p.portal_roles,...p.system_roles,...p.permissions].every(x=>typeof x==="string"))return c.text("Invalid Portal ticket response",401);
     const portalRoles=p.portal_roles as string[],systemRoles=p.system_roles as string[],permissions=p.permissions as string[];
+    const tenant=await sql`SELECT status FROM nexusflow.tenants WHERE id=${p.tenant_id} LIMIT 1`;
+    if(!tenant[0]) await sql`INSERT INTO nexusflow.tenants (id,code,name,status) VALUES (${p.tenant_id},${p.tenant_id},${p.tenant_id},'active') ON CONFLICT (id) DO NOTHING`;
+    else if(tenant[0].status!=="active")return c.text("Tenant disabled",403);
     const role=portalRoles.some(x=>["tenant_owner","tenant_admin"].includes(x))||systemRoles.some(x=>["tenant_owner","tenant_admin"].includes(x))?"center_director":"member";
     const linked=await sql`SELECT id,username,role,tenant_id,org_id,portal_permissions,status FROM nexusflow.users WHERE portal_id=${p.user_id} AND portal_tenant_id=${p.tenant_id}`;
     let row=linked[0];

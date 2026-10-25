@@ -41,6 +41,23 @@ export async function migrate() {
     reason text NOT NULL, updated_by text NOT NULL, updated_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY(portal_tenant_id,portal_user_id))`;
   await sql`CREATE TABLE IF NOT EXISTS nexusflow.audit (id text PRIMARY KEY, actor text, tenant_id text, action text NOT NULL, object_kind text, object_id text, data jsonb NOT NULL DEFAULT '{}', created_at timestamptz NOT NULL DEFAULT now())`;
+  // 租户注册表：NexusFlow 原来只有 tenant_id 字符串；同步需要一个可查询的租户实体。
+  await sql`CREATE TABLE IF NOT EXISTS nexusflow.tenants (
+    id text PRIMARY KEY, code text NOT NULL UNIQUE, name text NOT NULL,
+    status text NOT NULL DEFAULT 'active', portal_tenant_id text,
+    created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now())`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS tenants_portal_idx ON nexusflow.tenants(portal_tenant_id) WHERE portal_tenant_id IS NOT NULL`;
+  await sql`INSERT INTO nexusflow.tenants (id,code,name,status,portal_tenant_id)
+    SELECT DISTINCT tenant_id,tenant_id,tenant_id,'active',
+      CASE WHEN tenant_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN tenant_id ELSE NULL END
+    FROM nexusflow.users WHERE tenant_id IS NOT NULL ON CONFLICT (code) DO NOTHING`;
+  await sql`INSERT INTO nexusflow.tenants (id,code,name,status,portal_tenant_id)
+    SELECT DISTINCT tenant_id,tenant_id,tenant_id,'active',
+      CASE WHEN tenant_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN tenant_id ELSE NULL END
+    FROM nexusflow.records WHERE tenant_id IS NOT NULL ON CONFLICT (code) DO NOTHING`;
+  await sql`INSERT INTO nexusflow.tenants (id,code,name,status,portal_tenant_id)
+    VALUES (${config.localTenantId},${config.localTenantId},'默认租户','active',NULL)
+    ON CONFLICT (code) DO NOTHING`;
   await sql`ALTER TABLE nexusflow.audit ADD COLUMN IF NOT EXISTS actor text`;
   await sql`ALTER TABLE nexusflow.audit ADD COLUMN IF NOT EXISTS tenant_id text`;
   await sql`ALTER TABLE nexusflow.audit ADD COLUMN IF NOT EXISTS action text NOT NULL DEFAULT 'legacy'`;
