@@ -9,15 +9,11 @@ import { revokeUserSessions } from "../auth.ts";
 
 const PREFIX = "/api/portal/sync/v1";
 
-function enabled(): boolean {
-  return process.env.PORTAL_SYNC_ENABLED === "true";
-}
-
 function tokenOk(provided: string): boolean {
   const expected = config.portalInternalToken;
   const a = Buffer.from(expected);
   const b = Buffer.from(provided);
-  return Boolean(enabled() && expected && a.length === b.length && timingSafeEqual(a, b));
+  return Boolean(expected && a.length === b.length && timingSafeEqual(a, b));
 }
 
 function text(value: unknown, label: string, max = 128): string {
