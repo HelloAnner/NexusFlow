@@ -177,6 +177,18 @@ export function registerPortalSync(app: ApiApp): void {
           WHERE id=${localId}
         `;
       }
+      if (status !== "active") {
+        const active = await sql`
+          SELECT id FROM nexusflow.users WHERE tenant_id=${localId} AND status='active'
+        `;
+        await sql`
+          UPDATE nexusflow.users SET status='disabled', updated_at=now()
+          WHERE tenant_id=${localId} AND status='active'
+        `;
+        for (const row of active) {
+          try { await revokeUserSessions(String(row.id)); } catch { /* session store unavailable */ }
+        }
+      }
       return c.json({ local_tenant_id: localId, created, code, status });
     } catch (error) {
       return fail(c, 422, "invalid_request", error instanceof Error ? error.message : String(error));

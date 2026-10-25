@@ -24,9 +24,7 @@ export async function currentUser(c:Context):Promise<User|null> {
     if(typeof payload.sid!=="string"||!payload.sub)return null;
     const session=await redis.get(sessionKey(payload.sid));
     if(!session||JSON.parse(session).user_id!==payload.sub)return null;
-    const rows=await sql`SELECT u.id,u.username,u.role,u.tenant_id,u.org_id,u.status,u.portal_id,u.portal_permissions
-      FROM nexusflow.users u LEFT JOIN nexusflow.tenants t ON t.id=u.tenant_id
-      WHERE u.id=${payload.sub} AND (u.tenant_id IS NULL OR t.status='active')`;
+    const rows=await sql`SELECT id,username,role,tenant_id,org_id,status,portal_id,portal_permissions FROM nexusflow.users WHERE id=${payload.sub}`;
     const row=rows[0];
     if(!row||row.status!=="active")return null;
     return {id:row.id,username:row.username,role:row.role,tenant_id:row.tenant_id,org_id:row.org_id,portal_permissions:row.portal_id?row.portal_permissions||[]:null};
@@ -38,9 +36,7 @@ export async function login(c:Context) {
   const body=await c.req.json().catch(()=>({}));
   const username=String(body.username||"").trim();const password=String(body.password||"");
   const tenant_id=String(body.tenant_id||config.localTenantId);
-  const rows=await sql`SELECT u.id,u.username,u.password_hash,u.display_name,u.role,u.tenant_id,u.org_id,u.status
-    FROM nexusflow.users u JOIN nexusflow.tenants t ON t.id=u.tenant_id
-    WHERE lower(u.username)=lower(${username}) AND u.tenant_id=${tenant_id} AND u.portal_id IS NULL AND t.status='active'`;
+  const rows=await sql`SELECT id,username,password_hash,display_name,role,tenant_id,org_id,status FROM nexusflow.users WHERE lower(username)=lower(${username}) AND tenant_id=${tenant_id} AND portal_id IS NULL`;
   const row=rows[0];
   if(!row||row.status!=="active"||!await bcrypt.compare(password,row.password_hash))return c.json({error:"invalid credentials"},401);
   if(row.role==="super_admin"&&row.username!==config.adminUsername)return c.json({error:"invalid credentials"},401);
