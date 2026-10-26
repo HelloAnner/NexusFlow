@@ -6,6 +6,7 @@ const basePath = process.env.NEXUSFLOW_BASE_PATH || "";
 const nextConfig: NextConfig = {
   output: isStaticExport ? "export" : "standalone",
   basePath,
+  env: { NEXT_PUBLIC_BASE_PATH: basePath },
   images: { unoptimized: true },
 };
 

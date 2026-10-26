@@ -1,5 +1,5 @@
 {
-  "version": "2.20",
+  "version": "2.21",
   "children": [
     {
       "type": "frame",
@@ -559,7 +559,8 @@
                       "width": "fill_container",
                       "content": "智慧油田数据平台",
                       "fontFamily": "Inter",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -595,7 +596,8 @@
                       "width": "fill_container",
                       "content": "管道完整性管理",
                       "fontFamily": "Inter",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -631,7 +633,8 @@
                       "width": "fill_container",
                       "content": "北线调度优化",
                       "fontFamily": "Inter",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -713,7 +716,8 @@
                       "width": "fill_container",
                       "content": "管道完整性管理",
                       "fontFamily": "Inter",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -985,7 +989,8 @@
                       "width": "fill_container",
                       "content": "巡检机器人研发",
                       "fontFamily": "Inter",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1021,7 +1026,8 @@
                       "width": "fill_container",
                       "content": "数字化转型咨询",
                       "fontFamily": "Inter",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -1103,7 +1109,8 @@
                       "width": "fill_container",
                       "content": "LNG 接收站智能化",
                       "fontFamily": "Inter",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1139,7 +1146,8 @@
                       "width": "fill_container",
                       "content": "管网数字孪生",
                       "fontFamily": "Inter",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -1373,7 +1381,8 @@
                           "width": "fill_container",
                           "content": "智慧油田数据平台",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1409,7 +1418,8 @@
                           "width": "fill_container",
                           "content": "管道完整性管理",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1445,7 +1455,8 @@
                           "width": "fill_container",
                           "content": "北线调度优化",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -1527,7 +1538,8 @@
                           "width": "fill_container",
                           "content": "新建任务",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1563,7 +1575,8 @@
                           "width": "fill_container",
                           "content": "填报阶段成果",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1599,7 +1612,8 @@
                           "width": "fill_container",
                           "content": "发起任务派发",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1635,7 +1649,8 @@
                           "width": "fill_container",
                           "content": "上传资料",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -1717,7 +1732,8 @@
                           "width": "fill_container",
                           "content": "智慧油田数据平台",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -1776,7 +1792,8 @@
                           "width": "fill_container",
                           "content": "管道完整性管理",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -1835,7 +1852,8 @@
                           "width": "fill_container",
                           "content": "巡检机器人研发",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -1871,7 +1889,8 @@
                           "width": "fill_container",
                           "content": "数字化转型咨询",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -3700,7 +3719,8 @@
                                   "fill": "$g500",
                                   "content": "周一 22",
                                   "fontFamily": "Inter",
-                                  "fontSize": 10.5
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -3722,7 +3742,8 @@
                                   "fill": "$g500",
                                   "content": "周二 23",
                                   "fontFamily": "Inter",
-                                  "fontSize": 10.5
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -3768,7 +3789,8 @@
                                   "fill": "$g500",
                                   "content": "周四 25",
                                   "fontFamily": "Inter",
-                                  "fontSize": 10.5
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -3790,7 +3812,8 @@
                                   "fill": "$g500",
                                   "content": "周五 26",
                                   "fontFamily": "Inter",
-                                  "fontSize": 10.5
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -3812,7 +3835,8 @@
                                   "fill": "$g500",
                                   "content": "周六 27",
                                   "fontFamily": "Inter",
-                                  "fontSize": 10.5
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -3834,7 +3858,8 @@
                                   "fill": "$g500",
                                   "content": "周日 28",
                                   "fontFamily": "Inter",
-                                  "fontSize": 10.5
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -5447,7 +5472,8 @@
                               "content": "将张伟的「申报报告撰写」调整至下周，可解除 2 项冲突",
                               "lineHeight": 1.5,
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "frame",
@@ -6137,7 +6163,8 @@
                           "fill": "$g500",
                           "content": "概览",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -6208,7 +6235,8 @@
                           "fill": "$g500",
                           "content": "成员",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -6239,7 +6267,8 @@
                           "fill": "$g500",
                           "content": "问题",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -6248,7 +6277,8 @@
                           "fill": "$g400",
                           "content": "7",
                           "fontFamily": "Inter",
-                          "fontSize": 11.5
+                          "fontSize": 11.5,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -6279,7 +6309,8 @@
                           "fill": "$g500",
                           "content": "资料",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -6288,7 +6319,8 @@
                           "fill": "$g400",
                           "content": "12",
                           "fontFamily": "Inter",
-                          "fontSize": 11.5
+                          "fontSize": 11.5,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -6319,7 +6351,8 @@
                           "fill": "$g500",
                           "content": "动态",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -6387,7 +6420,8 @@
                               "fill": "$g600",
                               "content": "周",
                               "fontFamily": "Inter",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -6408,7 +6442,8 @@
                               "fill": "$g600",
                               "content": "月",
                               "fontFamily": "Inter",
-                              "fontSize": 12
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -6921,7 +6956,8 @@
                       "fill": "#3A3F45",
                       "content": "需求调研与确认",
                       "fontFamily": "Inter",
-                      "fontSize": 12.5
+                      "fontSize": 12.5,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -6955,7 +6991,8 @@
                       "fill": "#3A3F45",
                       "content": "总体设计评审",
                       "fontFamily": "Inter",
-                      "fontSize": 12.5
+                      "fontSize": 12.5,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -6989,7 +7026,8 @@
                       "fill": "#3A3F45",
                       "content": "五日迭代闭环演示",
                       "fontFamily": "Inter",
-                      "fontSize": 12.5
+                      "fontSize": 12.5,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -7069,7 +7107,8 @@
                       "fill": "#3A3F45",
                       "content": "试点单位签约",
                       "fontFamily": "Inter",
-                      "fontSize": 12.5
+                      "fontSize": 12.5,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -7159,7 +7198,8 @@
                       "fill": "#3A3F45",
                       "content": "推广方案定稿",
                       "fontFamily": "Inter",
-                      "fontSize": 12.5
+                      "fontSize": 12.5,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -7218,7 +7258,8 @@
                       "fill": "#3A3F45",
                       "content": "现场调研 · 3 站",
                       "fontFamily": "Inter",
-                      "fontSize": 12.5
+                      "fontSize": 12.5,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -7252,7 +7293,8 @@
                       "fill": "#3A3F45",
                       "content": "设备安装联调",
                       "fontFamily": "Inter",
-                      "fontSize": 12.5
+                      "fontSize": 12.5,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -7332,7 +7374,8 @@
                       "fill": "#3A3F45",
                       "content": "阶段报告撰写",
                       "fontFamily": "Inter",
-                      "fontSize": 12.5
+                      "fontSize": 12.5,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -7366,7 +7409,8 @@
                       "fill": "#3A3F45",
                       "content": "验收材料准备",
                       "fontFamily": "Inter",
-                      "fontSize": 12.5
+                      "fontSize": 12.5,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -7458,7 +7502,8 @@
                       "fill": "#3A3F45",
                       "content": "主题党日活动",
                       "fontFamily": "Inter",
-                      "fontSize": 12.5
+                      "fontSize": 12.5,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -7492,7 +7537,8 @@
                       "fill": "#3A3F45",
                       "content": "结对共建总结",
                       "fontFamily": "Inter",
-                      "fontSize": 12.5
+                      "fontSize": 12.5,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -8299,7 +8345,8 @@
                           "width": "fill_container",
                           "content": "我负责的",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -8358,7 +8405,8 @@
                           "width": "fill_container",
                           "content": "我参与的",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -8417,7 +8465,8 @@
                           "width": "fill_container",
                           "content": "我收藏的",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -8522,7 +8571,8 @@
                           "width": "fill_container",
                           "content": "进行中",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -8581,7 +8631,8 @@
                           "width": "fill_container",
                           "content": "待启动",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -8640,7 +8691,8 @@
                           "width": "fill_container",
                           "content": "已完成",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -8699,7 +8751,8 @@
                           "width": "fill_container",
                           "content": "已逾期",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -8804,7 +8857,8 @@
                           "width": "fill_container",
                           "content": "公司级",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -8863,7 +8917,8 @@
                           "width": "fill_container",
                           "content": "处级",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -8922,7 +8977,8 @@
                           "width": "fill_container",
                           "content": "中心级",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -9175,7 +9231,8 @@
                           "fill": "$g600",
                           "content": "科研",
                           "fontFamily": "Inter",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -9199,7 +9256,8 @@
                           "fill": "$g600",
                           "content": "市场",
                           "fontFamily": "Inter",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -9223,7 +9281,8 @@
                           "fill": "$g600",
                           "content": "出差",
                           "fontFamily": "Inter",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -9247,7 +9306,8 @@
                           "fill": "$g600",
                           "content": "文职",
                           "fontFamily": "Inter",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -9271,7 +9331,8 @@
                           "fill": "$g600",
                           "content": "党建",
                           "fontFamily": "Inter",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -9295,7 +9356,8 @@
                           "fill": "$g600",
                           "content": "学习",
                           "fontFamily": "Inter",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -9319,7 +9381,8 @@
                           "fill": "$g600",
                           "content": "休假",
                           "fontFamily": "Inter",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -12959,7 +13022,8 @@
                           "width": "fill_container",
                           "content": "本周",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -13018,7 +13082,8 @@
                           "width": "fill_container",
                           "content": "下周",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -13077,7 +13142,8 @@
                           "width": "fill_container",
                           "content": "已完成",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -13182,7 +13248,8 @@
                           "width": "fill_container",
                           "content": "智慧油田数据平台",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -13241,7 +13308,8 @@
                           "width": "fill_container",
                           "content": "等保测评专项",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -13300,7 +13368,8 @@
                           "width": "fill_container",
                           "content": "巡检机器人研发",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -13405,7 +13474,8 @@
                           "width": "fill_container",
                           "content": "我的休假",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -13441,7 +13511,8 @@
                           "width": "fill_container",
                           "content": "我的学习",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -13556,7 +13627,8 @@
                           "fill": "$g600",
                           "content": "日历",
                           "fontFamily": "Inter",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -13580,7 +13652,8 @@
                           "fill": "$g600",
                           "content": "统计",
                           "fontFamily": "Inter",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -13926,7 +13999,8 @@
                                           "fill": "$g500",
                                           "content": "周三",
                                           "fontFamily": "Inter",
-                                          "fontSize": 11
+                                          "fontSize": 11,
+                                          "fontWeight": "normal"
                                         },
                                         {
                                           "type": "text",
@@ -14036,7 +14110,8 @@
                                           "fill": "$g500",
                                           "content": "周五",
                                           "fontFamily": "Inter",
-                                          "fontSize": 11
+                                          "fontSize": 11,
+                                          "fontWeight": "normal"
                                         },
                                         {
                                           "type": "text",
@@ -14115,7 +14190,8 @@
                                           "width": "fill_container",
                                           "content": "周一例会待办 · 已拆解 3 条",
                                           "fontFamily": "Inter",
-                                          "fontSize": 12.5
+                                          "fontSize": 12.5,
+                                          "fontWeight": "normal"
                                         },
                                         {
                                           "type": "frame",
@@ -14157,7 +14233,8 @@
                                           "fill": "$g500",
                                           "content": "已完成",
                                           "fontFamily": "Inter",
-                                          "fontSize": 11
+                                          "fontSize": 11,
+                                          "fontWeight": "normal"
                                         },
                                         {
                                           "type": "text",
@@ -14404,7 +14481,8 @@
                                           "fill": "$g500",
                                           "content": "7/3",
                                           "fontFamily": "Inter",
-                                          "fontSize": 11
+                                          "fontSize": 11,
+                                          "fontWeight": "normal"
                                         },
                                         {
                                           "type": "text",
@@ -14519,7 +14597,8 @@
                                   "fill": "$g500",
                                   "content": "周一 22",
                                   "fontFamily": "Inter",
-                                  "fontSize": 10.5
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -14540,7 +14619,8 @@
                                   "fill": "$g500",
                                   "content": "周二 23",
                                   "fontFamily": "Inter",
-                                  "fontSize": 10.5
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -14584,7 +14664,8 @@
                                   "fill": "$g500",
                                   "content": "周四 25",
                                   "fontFamily": "Inter",
-                                  "fontSize": 10.5
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -14605,7 +14686,8 @@
                                   "fill": "$g500",
                                   "content": "周五 26",
                                   "fontFamily": "Inter",
-                                  "fontSize": 10.5
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -14626,7 +14708,8 @@
                                   "fill": "$g500",
                                   "content": "周六 27",
                                   "fontFamily": "Inter",
-                                  "fontSize": 10.5
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -14647,7 +14730,8 @@
                                   "fill": "$g500",
                                   "content": "周日 28",
                                   "fontFamily": "Inter",
-                                  "fontSize": 10.5
+                                  "fontSize": 10.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -15675,7 +15759,8 @@
                           "width": "fill_container",
                           "content": "市场",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -15711,7 +15796,8 @@
                           "width": "fill_container",
                           "content": "出差",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -15747,7 +15833,8 @@
                           "width": "fill_container",
                           "content": "文职",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -15783,7 +15870,8 @@
                           "width": "fill_container",
                           "content": "党建",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -15819,7 +15907,8 @@
                           "width": "fill_container",
                           "content": "学习",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -15855,7 +15944,8 @@
                           "width": "fill_container",
                           "content": "休假",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -15937,7 +16027,8 @@
                           "width": "fill_container",
                           "content": "标准流程",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -15996,7 +16087,8 @@
                           "width": "fill_container",
                           "content": "后补流程",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -16101,7 +16193,8 @@
                           "width": "fill_container",
                           "content": "迁移演练方案",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -16160,7 +16253,8 @@
                           "width": "fill_container",
                           "content": "部门月度例会",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -16416,7 +16510,8 @@
                                   "fill": "$g600",
                                   "content": "科研 · 处级",
                                   "fontFamily": "Inter",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -16440,7 +16535,8 @@
                                   "fill": "$g600",
                                   "content": "科研 · 中心级",
                                   "fontFamily": "Inter",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -16464,7 +16560,8 @@
                                   "fill": "$g600",
                                   "content": "市场",
                                   "fontFamily": "Inter",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -16488,7 +16585,8 @@
                                   "fill": "$g600",
                                   "content": "出差",
                                   "fontFamily": "Inter",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -16512,7 +16610,8 @@
                                   "fill": "$g600",
                                   "content": "文职",
                                   "fontFamily": "Inter",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -16536,7 +16635,8 @@
                                   "fill": "$g600",
                                   "content": "党建",
                                   "fontFamily": "Inter",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -16560,7 +16660,8 @@
                                   "fill": "$g600",
                                   "content": "学习",
                                   "fontFamily": "Inter",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -16584,7 +16685,8 @@
                                   "fill": "$g600",
                                   "content": "休假",
                                   "fontFamily": "Inter",
-                                  "fontSize": 12
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -17227,7 +17329,8 @@
                               "fill": "$g600",
                               "content": "每日 3h",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "text",
@@ -18748,7 +18851,8 @@
                           "width": "fill_container",
                           "content": "二级单位 · 勘探开发",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -18784,7 +18888,8 @@
                           "width": "fill_container",
                           "content": "公司总部",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -18866,7 +18971,8 @@
                           "width": "fill_container",
                           "content": "软件研发部",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -18925,7 +19031,8 @@
                           "width": "fill_container",
                           "content": "数据科学部",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -18984,7 +19091,8 @@
                           "width": "fill_container",
                           "content": "运维保障部",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -19043,7 +19151,8 @@
                           "width": "fill_container",
                           "content": "市场拓展部",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -19102,7 +19211,8 @@
                           "width": "fill_container",
                           "content": "综合管理部",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -19207,7 +19317,8 @@
                           "width": "fill_container",
                           "content": "AI 应用工作室",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -19266,7 +19377,8 @@
                           "width": "fill_container",
                           "content": "数字孪生工作室",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -19583,7 +19695,8 @@
                           "width": "fill_container",
                           "content": "创新中心",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -19681,7 +19794,8 @@
                           "width": "fill_container",
                           "content": "数据科学部",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -19729,7 +19843,8 @@
                           "width": "fill_container",
                           "content": "运维保障部",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -19777,7 +19892,8 @@
                           "width": "fill_container",
                           "content": "市场拓展部",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -19825,7 +19941,8 @@
                           "width": "fill_container",
                           "content": "综合管理部",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -19883,7 +20000,8 @@
                           "width": "fill_container",
                           "content": "AI 应用工作室",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -19931,7 +20049,8 @@
                           "width": "fill_container",
                           "content": "数字孪生工作室",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -20027,7 +20146,8 @@
                               "fill": "$g600",
                               "content": "前端",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -20051,7 +20171,8 @@
                               "fill": "$g600",
                               "content": "后端",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -20075,7 +20196,8 @@
                               "fill": "$g600",
                               "content": "Python",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -20099,7 +20221,8 @@
                               "fill": "$g600",
                               "content": "Go",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -20123,7 +20246,8 @@
                               "fill": "$g600",
                               "content": "报告撰写",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -20147,7 +20271,8 @@
                               "fill": "$g600",
                               "content": "PPT 制作",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -20171,7 +20296,8 @@
                               "fill": "$g600",
                               "content": "需求对接",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -20195,7 +20321,8 @@
                               "fill": "$g600",
                               "content": "运维",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -22840,7 +22967,8 @@
                           "width": "fill_container",
                           "content": "数据科学部",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -22899,7 +23027,8 @@
                           "width": "fill_container",
                           "content": "运维保障部",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -22958,7 +23087,8 @@
                           "width": "fill_container",
                           "content": "全中心",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -23063,7 +23193,8 @@
                           "width": "fill_container",
                           "content": "冲突",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -23122,7 +23253,8 @@
                           "width": "fill_container",
                           "content": "过载",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -23181,7 +23313,8 @@
                           "width": "fill_container",
                           "content": "饱和",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -23240,7 +23373,8 @@
                           "width": "fill_container",
                           "content": "空闲",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -23299,7 +23433,8 @@
                           "width": "fill_container",
                           "content": "全天锁定",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -23442,7 +23577,8 @@
                           "width": "fill_container",
                           "content": "列表",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -23924,7 +24060,8 @@
                               "fill": "$g400",
                               "content": "6/22",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -23945,7 +24082,8 @@
                               "fill": "$g400",
                               "content": "6/23",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -23989,7 +24127,8 @@
                               "fill": "$g400",
                               "content": "6/25",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -24010,7 +24149,8 @@
                               "fill": "$g400",
                               "content": "6/26",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -24031,7 +24171,8 @@
                               "fill": "$g400",
                               "content": "6/27",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -24052,7 +24193,8 @@
                               "fill": "$g400",
                               "content": "6/28",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -24073,7 +24215,8 @@
                               "fill": "$g400",
                               "content": "6/29",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -24094,7 +24237,8 @@
                               "fill": "$g400",
                               "content": "6/30",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -24115,7 +24259,8 @@
                               "fill": "$g400",
                               "content": "7/1",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -24136,7 +24281,8 @@
                               "fill": "$g400",
                               "content": "7/2",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -24157,7 +24303,8 @@
                               "fill": "$g400",
                               "content": "7/3",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -24178,7 +24325,8 @@
                               "fill": "$g400",
                               "content": "7/4",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -24199,7 +24347,8 @@
                               "fill": "$g400",
                               "content": "7/5",
                               "fontFamily": "Inter",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -27118,7 +27267,8 @@
                               "fill": "$g500",
                               "content": "影响较小 · 可顺延 · 6/25 · 超出 2h/天",
                               "fontFamily": "Inter",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "frame",
@@ -27430,7 +27580,8 @@
                           "width": "fill_container",
                           "content": "个人报告",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -27489,7 +27640,8 @@
                           "width": "fill_container",
                           "content": "整体报告",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -27548,7 +27700,8 @@
                           "width": "fill_container",
                           "content": "汇报 PPT",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -27607,7 +27760,8 @@
                           "width": "fill_container",
                           "content": "申报报告",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -27666,7 +27820,8 @@
                           "width": "fill_container",
                           "content": "数据集",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -27725,7 +27880,8 @@
                           "width": "fill_container",
                           "content": "会议纪要",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -27830,7 +27986,8 @@
                           "width": "fill_container",
                           "content": "智慧油田数据平台",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -27889,7 +28046,8 @@
                           "width": "fill_container",
                           "content": "巡检机器人研发",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -27948,7 +28106,8 @@
                           "width": "fill_container",
                           "content": "等保测评专项",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -28053,7 +28212,8 @@
                           "width": "fill_container",
                           "content": "我的收藏",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -28112,7 +28272,8 @@
                           "width": "fill_container",
                           "content": "回收站",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -28368,7 +28529,8 @@
                           "width": "fill_container",
                           "content": "全部资料",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -28414,7 +28576,8 @@
                           "width": "fill_container",
                           "content": "个人报告",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -28460,7 +28623,8 @@
                           "width": "fill_container",
                           "content": "整体报告",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -28506,7 +28670,8 @@
                           "width": "fill_container",
                           "content": "汇报 PPT",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -28552,7 +28717,8 @@
                           "width": "fill_container",
                           "content": "申报报告",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -28598,7 +28764,8 @@
                           "width": "fill_container",
                           "content": "数据集",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -28644,7 +28811,8 @@
                           "width": "fill_container",
                           "content": "会议纪要",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -28690,7 +28858,8 @@
                           "width": "fill_container",
                           "content": "代码仓库",
                           "fontFamily": "Inter",
-                          "fontSize": 12.5
+                          "fontSize": 12.5,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "text",
@@ -28766,7 +28935,8 @@
                               "fill": "$g600",
                               "content": "Word",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -28790,7 +28960,8 @@
                               "fill": "$g600",
                               "content": "PPT",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -28814,7 +28985,8 @@
                               "fill": "$g600",
                               "content": "PDF",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -28838,7 +29010,8 @@
                               "fill": "$g600",
                               "content": "Excel",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -28862,7 +29035,8 @@
                               "fill": "$g600",
                               "content": "数据",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -30465,7 +30639,8 @@
                           "width": "fill_container",
                           "content": "常用工具",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -30524,7 +30699,8 @@
                           "width": "fill_container",
                           "content": "智能体工具",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -30583,7 +30759,8 @@
                           "width": "fill_container",
                           "content": "我的收藏",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -30688,7 +30865,8 @@
                           "width": "fill_container",
                           "content": "PDF 格式转换",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -30747,7 +30925,8 @@
                           "width": "fill_container",
                           "content": "智能翻译",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -30806,7 +30985,8 @@
                           "width": "fill_container",
                           "content": "论文撰写助手",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -30842,7 +31022,8 @@
                           "width": "fill_container",
                           "content": "会议纪要生成",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -30924,7 +31105,8 @@
                           "width": "fill_container",
                           "content": "论文撰写助手",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -30960,7 +31142,8 @@
                           "width": "fill_container",
                           "content": "专利撰写助手",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -30996,7 +31179,8 @@
                           "width": "fill_container",
                           "content": "个人知识库",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -31032,7 +31216,8 @@
                           "width": "fill_container",
                           "content": "平台问答助手",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -32899,7 +33084,8 @@
                           "width": "fill_container",
                           "content": "审批",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -32958,7 +33144,8 @@
                           "width": "fill_container",
                           "content": "指派",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -33017,7 +33204,8 @@
                           "width": "fill_container",
                           "content": "@ 提及",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -33076,7 +33264,8 @@
                           "width": "fill_container",
                           "content": "冲突预警",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -33135,7 +33324,8 @@
                           "width": "fill_container",
                           "content": "系统通知",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -33240,7 +33430,8 @@
                           "width": "fill_container",
                           "content": "智慧油田数据平台",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -33299,7 +33490,8 @@
                           "width": "fill_container",
                           "content": "等保测评专项",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -33358,7 +33550,8 @@
                           "width": "fill_container",
                           "content": "北线调度优化",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -33463,7 +33656,8 @@
                           "width": "fill_container",
                           "content": "已归档",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -33499,7 +33693,8 @@
                           "width": "fill_container",
                           "content": "全部标为已读",
                           "fontFamily": "Inter",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
@@ -33677,7 +33872,8 @@
                               "fill": "$g600",
                               "content": "审批",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -33701,7 +33897,8 @@
                               "fill": "$g600",
                               "content": "指派",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -33725,7 +33922,8 @@
                               "fill": "$g600",
                               "content": "@ 提及",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -33749,7 +33947,8 @@
                               "fill": "$g600",
                               "content": "系统",
                               "fontFamily": "Inter",
-                              "fontSize": 11.5
+                              "fontSize": 11.5,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -34198,7 +34397,8 @@
                                   "width": "fill_container",
                                   "content": "在「联调用例评审」中提到你",
                                   "fontFamily": "Inter",
-                                  "fontSize": 12.5
+                                  "fontSize": 12.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -34315,7 +34515,8 @@
                                   "width": "fill_container",
                                   "content": "结对共建总结 · 成果确认申请",
                                   "fontFamily": "Inter",
-                                  "fontSize": 12.5
+                                  "fontSize": 12.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -34432,7 +34633,8 @@
                                   "width": "fill_container",
                                   "content": "你的周报已自动生成",
                                   "fontFamily": "Inter",
-                                  "fontSize": 12.5
+                                  "fontSize": 12.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -34549,7 +34751,8 @@
                                   "width": "fill_container",
                                   "content": "需求调研访谈 · 你被指定为参会人",
                                   "fontFamily": "Inter",
-                                  "fontSize": 12.5
+                                  "fontSize": 12.5,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },

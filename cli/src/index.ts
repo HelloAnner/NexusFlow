@@ -3,6 +3,7 @@ import { parseArgs,option } from "./args";
 import { build,environmentClient } from "./client";
 import { verifyB0 } from "./verify";
 import { portalSync } from "./portal-sync";
+import { checkBrand } from "./brand";
 
 export async function main(argv=process.argv.slice(2)) {
  const args=parseArgs(argv);
@@ -19,13 +20,17 @@ export async function main(argv=process.argv.slice(2)) {
   const file=option(args,"token-file");
   if(file){const {writeFile}=await import("node:fs/promises");await writeFile(file,client.token,{mode:0o600,flag:"wx"});}
   result={user,authenticated:true,...(file?{token_file:file}:{})};
+ } else if(args.command==="brand") {
+  if(args.action && args.action!=="check")throw Error("usage: nexusflow brand check");
+  result=await checkBrand(client.base,"nexusflow");
  } else if(args.command==="portal-sync") {
   result=await portalSync(client,args);
  } else result=await client.command(args);
  console.log(args.options.json===true?JSON.stringify(result):JSON.stringify(result,null,2));return 0;
 }
-function help(){console.log(`nexusflow <auth|version|verify|home|gantt|orgs|people|projects|tasks|dispatch|approvals|load|conflicts|files|inbox|reports|tools|config|admin|portal-sync> <action>
+function help(){console.log(`nexusflow <auth|version|verify|home|gantt|orgs|people|projects|tasks|dispatch|approvals|load|conflicts|files|inbox|reports|tools|config|admin|portal-sync|brand> <action>
 Actions: list/show/create/update/delete; auth login|register|logout|me; tasks assign|assignments|publish|action; task-assignments list|show|update|requirements|action; visibility_grants create|list|show, visibility-grants revoke; dispatch submit|confirm; approvals decision; conflicts resolve|force; files upload|download|rollback|archive|versions|portal-list|portal-content|portal-preview; reports export; inbox read|complete; config publish|versions; admin preflight|audit|users|delegations|user-status|user-binding; health [ready]; seed [status]
+brand check: verify SVG favicon, system identity and application base path.
 version: public service commit; version --local: compiled CLI commit.
 verify b0 --commit SHA: read regression, temporary admin session; no seed or business writes.
 Set NEXUSFLOW_URL, NEXUSFLOW_BASE_PATH, NEXUSFLOW_TOKEN. --json for compact JSON.

@@ -6,6 +6,7 @@ import { Lock, User, Eye, EyeOff, Check, AlertTriangle, ExternalLink, LogIn } fr
 import { ApiError } from "@/lib/api";
 import { absorbPortalToken, useAuth } from "@/lib/auth";
 import pkg from "../../package.json";
+import { BrandIcon } from "@/components/brand-icon";
 
 const PORTAL_URL = "http://123.57.255.204:6688";
 const VERSION = `v${pkg.version}`;
@@ -108,11 +109,7 @@ export default function LoginPage() {
       <aside className="hidden w-[420px] shrink-0 flex-col justify-between bg-[#1F2329] px-10 py-10 text-white lg:w-[480px] md:flex">
         <div>
           <div className="flex items-center gap-2.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-white/10">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M12 2.5 L20 7 v10 L12 21.5 L4 17 V7 Z" strokeLinejoin="round" />
-              </svg>
-            </span>
+            <BrandIcon size={40} />
             <div>
               <div className="text-[15px] font-semibold tracking-tight">NexusFlow</div>
               <div className="text-[11.5px] text-white/55">企业项目管理综合系统</div>
@@ -139,11 +136,7 @@ export default function LoginPage() {
       <main className="flex flex-1 flex-col items-center justify-center px-5 py-10">
         <div className="w-[360px] max-w-full rounded-xl border border-border bg-panel p-8">
           <div className="mb-6 flex flex-col items-center gap-2.5 md:hidden">
-            <span className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-ink text-panel">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M12 2.5 L20 7 v10 L12 21.5 L4 17 V7 Z" strokeLinejoin="round" />
-              </svg>
-            </span>
+            <BrandIcon size={44} />
             <h1 className="text-[17px] font-semibold text-ink">NexusFlow</h1>
             <p className="text-[12px] text-ink-3">企业项目管理综合系统</p>
           </div>

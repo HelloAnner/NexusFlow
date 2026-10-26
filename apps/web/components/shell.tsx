@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { cx } from "@/lib/utils";
 import { useAuth, absorbPortalToken } from "@/lib/auth";
+import { BrandIcon } from "@/components/brand-icon";
 
 const NAV = [
   { href: "/", icon: LayoutGrid, key: "home" },
@@ -38,10 +39,8 @@ export function IconRail() {
   const user = useAuth((s) => s.user);
   return (
     <nav className="flex w-16 shrink-0 flex-col items-center border-r border-border bg-panel py-3.5">
-      <Link href="/" className="mb-6 flex h-9 w-9 items-center justify-center rounded-[10px] bg-ink text-panel">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M12 2.5 L20 7 v10 L12 21.5 L4 17 V7 Z" strokeLinejoin="round" />
-        </svg>
+      <Link href="/" aria-label="NexusFlow 首页" className="mb-6 flex h-9 w-9 items-center justify-center rounded-[10px]">
+        <BrandIcon />
       </Link>
       <div className="flex flex-col items-center gap-1.5">
         {NAV.map((n) => {
