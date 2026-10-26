@@ -12,10 +12,10 @@ ssh "$HOST" "umask 077; mkdir -p '$DIR/runtime'"
 OUT="$ROOT/dist/linux-x86_64"
 scp -C "$OUT/"{nexusflow,nexusflow-cli,source.tar.gz,dependencies.tar.gz,COMMIT,BUILD_TIME,SHA256SUMS} "$HOST:$DIR/"
 scp -C "$OUT/runtime/bun" "$OUT/runtime/VERSION" "$HOST:$DIR/runtime/"
-ssh "$HOST" bash -s -- "$REMOTE" "$DIR" "$COMMIT" "$PORT" <<'SH'
+ssh "$HOST" bash -s -- "$REMOTE" "$DIR" "$COMMIT" "$PORT" "${DEPLOY_RECOVERY:-0}" <<'SH'
 set -euo pipefail
 umask 077
-ROOT="$1"; DIR="$2"; COMMIT="$3"; PORT="$4"; PHASE=checksum; SWAPPED=0
+ROOT="$1"; DIR="$2"; COMMIT="$3"; PORT="$4"; RECOVERY="$5"; PHASE=checksum; SWAPPED=0
 # Serial release lock is also enforced on the server.
 exec 9>"$ROOT/.release.lock"
 flock -n 9 || { echo 'BLOCKED: release channel busy'; exit 1; }
@@ -74,10 +74,16 @@ sha256sum "$BACKUP/nexusflow" > "$BACKUP/old-binary.sha256"
 if ! curl -fsS --max-time 10 "http://127.0.0.1:$PORT/nexusflow/api/system/version" | python3 -c 'import json,re,sys; v=json.load(sys.stdin); assert v.get("service")=="nexusflow" and re.fullmatch("[0-9a-f]{40}",v.get("version","")); print(json.dumps(v))' > "$BACKUP/old-version.json" 2>/dev/null; then printf '{"version":null,"legacy":true}\n' > "$BACKUP/old-version.json"; fi
 if [[ -f "$ROOT/DEPLOYED_COMMIT" ]]; then
  cp "$ROOT/DEPLOYED_COMMIT" "$BACKUP/DEPLOYED_COMMIT"
- python3 - "$BACKUP" <<'PY'
-import json,pathlib,sys
+ python3 - "$BACKUP" "$RECOVERY" "$ROOT" <<'PY'
+import hashlib,json,pathlib,re,sys
 p=pathlib.Path(sys.argv[1]); old=json.loads((p/'old-version.json').read_text()).get('version')
-assert old==(p/'DEPLOYED_COMMIT').read_text().strip(), 'old binary/commit mismatch'
+previous=(p/'DEPLOYED_COMMIT').read_text().strip()
+if old is None and sys.argv[2]=='1':
+ assert re.fullmatch('[0-9a-f]{40}',previous), 'invalid deployed commit'
+ artifact=pathlib.Path(sys.argv[3])/'validation'/previous/'nexusflow'
+ assert hashlib.sha256((p/'nexusflow').read_bytes()).digest()==hashlib.sha256(artifact.read_bytes()).digest(), 'recovery binary/attachment mismatch'
+else:
+ assert old==previous, 'old binary/commit mismatch'
 PY
 fi
 PHASE=restart

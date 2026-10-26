@@ -100,6 +100,19 @@ with tempfile.TemporaryDirectory() as directory:
         marker=service/'DEPLOYED_COMMIT'
         assert marker.read_text()=='old commit' if previous_marker else not marker.exists()
         assert 'BINARY_RESTORED' in (evidence/'STATUS').read_text()
+# Recovery may accept an offline service only when its binary matches its immutable deployed attachment.
+recovery=text.split('python3 - "$BACKUP" "$RECOVERY" "$ROOT" <<\'PY\'\n',1)[1].split('\nPY',1)[0]
+with tempfile.TemporaryDirectory() as directory:
+    target=pathlib.Path(directory); backup=target/'backup'; backup.mkdir()
+    marker='a'*40; artifact=target/'validation'/marker; artifact.mkdir(parents=True)
+    (backup/'old-version.json').write_text('{"version":null}')
+    (backup/'DEPLOYED_COMMIT').write_text(marker)
+    (backup/'nexusflow').write_bytes(b'old binary'); (artifact/'nexusflow').write_bytes(b'old binary')
+    def recovery_check(flag):
+        return subprocess.run(['python3','-',str(backup),flag,str(target)],input=recovery.encode(),stdout=subprocess.PIPE,stderr=subprocess.PIPE).returncode
+    assert recovery_check('1')==0 and recovery_check('0')!=0
+    (artifact/'nexusflow').write_bytes(b'other binary')
+    assert recovery_check('1')!=0
 # Real curl against an isolated socket that accepts connections but never responds.
 # Keep production timeout flags; shorten only the retry count and inter-attempt sleep.
 health=text[text.index('PHASE=health\n'):text.index('PHASE=b0-verifier\n')]
