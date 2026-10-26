@@ -10,3 +10,8 @@ test("upgrade migrations add legacy columns and keep schema statements rerunnabl
  expect(source).not.toMatch(/ALTER TABLE[^`]* ADD COLUMN (?!IF NOT EXISTS)/);
  expect(source).not.toMatch(/CREATE (?:UNIQUE )?INDEX (?!IF NOT EXISTS)/);
 });
+test("tenant backfills preserve synced identities when their business code changes",()=>{
+ const inserts=[...source.matchAll(/INSERT INTO nexusflow\.tenants\b[^`]+/g)];
+ expect(inserts).toHaveLength(3);
+ for(const [query] of inserts)expect(query).toContain("ON CONFLICT DO NOTHING");
+});

@@ -47,17 +47,18 @@ export async function migrate() {
     status text NOT NULL DEFAULT 'active', portal_tenant_id text,
     created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now())`;
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS tenants_portal_idx ON nexusflow.tenants(portal_tenant_id) WHERE portal_tenant_id IS NOT NULL`;
+  // Portal 同步会修改 code；回填遇到已有 id、code 或 Portal 绑定时都保留原租户。
   await sql`INSERT INTO nexusflow.tenants (id,code,name,status,portal_tenant_id)
     SELECT DISTINCT tenant_id,tenant_id,tenant_id,'active',
       CASE WHEN tenant_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN tenant_id ELSE NULL END
-    FROM nexusflow.users WHERE tenant_id IS NOT NULL ON CONFLICT (code) DO NOTHING`;
+    FROM nexusflow.users WHERE tenant_id IS NOT NULL ON CONFLICT DO NOTHING`;
   await sql`INSERT INTO nexusflow.tenants (id,code,name,status,portal_tenant_id)
     SELECT DISTINCT tenant_id,tenant_id,tenant_id,'active',
       CASE WHEN tenant_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN tenant_id ELSE NULL END
-    FROM nexusflow.records WHERE tenant_id IS NOT NULL ON CONFLICT (code) DO NOTHING`;
+    FROM nexusflow.records WHERE tenant_id IS NOT NULL ON CONFLICT DO NOTHING`;
   await sql`INSERT INTO nexusflow.tenants (id,code,name,status,portal_tenant_id)
     VALUES (${config.localTenantId},${config.localTenantId},'默认租户','active',NULL)
-    ON CONFLICT (code) DO NOTHING`;
+    ON CONFLICT DO NOTHING`;
   await sql`ALTER TABLE nexusflow.audit ADD COLUMN IF NOT EXISTS actor text`;
   await sql`ALTER TABLE nexusflow.audit ADD COLUMN IF NOT EXISTS tenant_id text`;
   await sql`ALTER TABLE nexusflow.audit ADD COLUMN IF NOT EXISTS action text NOT NULL DEFAULT 'legacy'`;
