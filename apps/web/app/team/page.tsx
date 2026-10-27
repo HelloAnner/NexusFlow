@@ -46,9 +46,9 @@ export default function TeamPage() {
         }
       />
 
-      <div className="grid grid-cols-[300px_1fr] gap-3 p-6 pt-4">
+      <div className="flex flex-col gap-3 p-6 pt-4">
         {/* 组织架构 */}
-        <Card className="self-start p-4">
+        <Card className="p-4">
           <h3 className="text-[13.5px] font-semibold">组织架构</h3>
           <p className="mt-0.5 mb-2 text-[11.5px] text-ink-3">公司 / 二级单位 / 三级单位 / 部门</p>
           <div className="flex items-center gap-2 px-1 py-1.5 text-[12.5px]">

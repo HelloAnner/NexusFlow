@@ -40,9 +40,9 @@ export default function InboxPage() {
         right={<button className="text-[12.5px] font-medium text-ink-2 hover:text-ink">全部标为已读</button>}
       />
 
-      <div className="grid grid-cols-[1.1fr_1.4fr] gap-0">
+      <div className="flex flex-col">
         {/* 列表 */}
-        <div className="border-r border-border">
+        <div className="border-b border-border">
           <div className="flex gap-2 px-5 py-3">
             {FILTERS.map((f) => (
               <button

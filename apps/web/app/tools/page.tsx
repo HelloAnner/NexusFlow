@@ -47,36 +47,42 @@ export default function ToolsPage() {
         right={<SearchBox placeholder="搜索工具" className="w-64" />}
       />
 
-      <div className="p-6 pt-4">
-        <p className="mb-2 text-[12.5px] text-ink-3">最近使用</p>
-        <div className="grid grid-cols-4 gap-3">
-          {recent.map((t) => (
-            <Card key={t.id} className="relative cursor-pointer p-4 hover:border-ink-4/40">
-              <ArrowUpRight size={14} className="absolute top-4 right-4 text-ink-3" />
-              <ToolIcon tool={t} />
-              <p className="mt-3 text-[13px] font-semibold">{t.name}</p>
-              <p className="mt-1 text-[11.5px] text-ink-3">{t.recent}</p>
-            </Card>
-          ))}
-        </div>
+      <div className="flex flex-col gap-3 p-6 pt-4">
+        {recent.length > 0 && <Card className="p-4">
+          <h3 className="text-[13.5px] font-semibold">最近使用</h3>
+          <div className="mt-1 flex flex-col">
+            {recent.map((t) => (
+              <button key={t.id} className="flex items-center gap-3 border-b border-border/60 py-2.5 text-left last:border-0 hover:bg-fill">
+                <ToolIcon tool={t} size={28} />
+                <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink">{t.name}</span>
+                <span className="text-[11.5px] text-ink-3">{t.recent}</span>
+                <ArrowUpRight size={14} className="shrink-0 text-ink-3" />
+              </button>
+            ))}
+          </div>
+        </Card>}
 
-        <p className="mt-5 mb-2 text-[12.5px] text-ink-3">全部工具</p>
-        <div className="grid grid-cols-3 gap-3">
-          {tools.map((t) => (
-            <Card key={t.id} className="relative p-4 hover:border-ink-4/40">
-              {t.ai && <span className="absolute top-4 right-4"><Badge color="#6d5bd0">AI 智能体</Badge></span>}
-              <ToolIcon tool={t} />
-              <p className="mt-3 text-[13.5px] font-semibold">{t.name}</p>
-              <p className="mt-1 text-[11.5px] text-ink-3">{t.desc}</p>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-[11.5px] text-ink-3">{t.usage}</span>
-                <button className="flex items-center gap-1 text-[12.5px] font-medium text-accent">
+        <Card className="p-4">
+          <h3 className="text-[13.5px] font-semibold">全部工具</h3>
+          <div className="mt-1 flex flex-col">
+            {tools.map((t) => (
+              <div key={t.id} className="flex items-center gap-3 border-b border-border/60 py-2.5 last:border-0 hover:bg-fill">
+                <ToolIcon tool={t} size={28} />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-2 text-[12.5px] font-medium text-ink">
+                    <span className="truncate">{t.name}</span>
+                    {t.ai && <Badge color="#6d5bd0">AI 智能体</Badge>}
+                  </p>
+                  <p className="truncate text-[11.5px] text-ink-3">{t.desc}</p>
+                </div>
+                <span className="shrink-0 text-[11.5px] text-ink-3">{t.usage}</span>
+                <button className="flex shrink-0 items-center gap-1 text-[12.5px] font-medium text-accent">
                   打开 <ArrowUpRight size={12} />
                 </button>
               </div>
-            </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Card>
       </div>
     </Shell>
   );

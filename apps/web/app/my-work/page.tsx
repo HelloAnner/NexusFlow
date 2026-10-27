@@ -83,7 +83,7 @@ export default function MyWorkPage() {
         }
       />
 
-      <div className="grid grid-cols-[1fr_1.15fr] gap-3 p-6 pt-4">
+      <div className="flex flex-col gap-3 p-6 pt-4">
         {/* 个人任务清单 */}
         <Card className="p-4">
           <div className="mb-1 flex items-center justify-between">
@@ -98,7 +98,7 @@ export default function MyWorkPage() {
 
         <div className="flex flex-col gap-3">
           <WeekSchedule />
-          <div className="grid grid-cols-[1.5fr_1fr] gap-3">
+          <div className="flex flex-col gap-3">
             {/* 阶段成果填报 */}
             <Card className="flex flex-col p-4">
               <div className="mb-2 flex items-center justify-between">

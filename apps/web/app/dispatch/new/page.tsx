@@ -76,7 +76,7 @@ export default function DispatchNewPage() {
         <span className="ml-auto text-[11.5px] text-ink-3">草稿已自动保存 12:04</span>
       </div>
 
-      <div className="grid grid-cols-[1.9fr_1fr] gap-3 p-6 pt-4">
+      <div className="flex flex-col gap-3 p-6 pt-4">
         {/* 表单 */}
         <Card className="p-5">
           <Field label="任务类型">

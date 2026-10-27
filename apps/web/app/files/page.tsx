@@ -55,30 +55,36 @@ export default function FilesPage() {
         }
       />
 
-      <div className="grid grid-cols-[240px_1fr] gap-3 p-6 pt-4">
+      <div className="flex flex-col gap-3 p-6 pt-4">
         {/* 目录 */}
-        <Card className="self-start p-4">
-          <h3 className="text-[13.5px] font-semibold">目录</h3>
-          <p className="mt-0.5 mb-2 text-[11.5px] text-ink-3">按任务归档 · 资料 + 属性</p>
-          {[
-            { icon: FolderOpen, name: "全部资料", count: 1284 },
-            { icon: FileText, name: "个人报告", count: 312 },
-            { icon: FileBarChart, name: "整体报告", count: 86 },
-            { icon: Presentation, name: "汇报 PPT", count: 154 },
-            { icon: FileBadge, name: "申报报告", count: 42 },
-            { icon: Database, name: "数据集", count: 230 },
-            { icon: NotebookPen, name: "会议纪要", count: 178 },
-          ].map((d, i) => (
-            <div key={d.name} className={cx("flex items-center gap-2 rounded-sm px-2 py-1.5 text-[12.5px]", i === 0 ? "text-ink" : "text-ink-2 hover:bg-fill")}>
-              <d.icon size={13} className="text-ink-3" />
-              <span className="flex-1">{d.name}</span>
-              <span className="text-[11.5px] text-ink-3">{d.count}</span>
-            </div>
-          ))}
-          <div className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-[12.5px] text-ink-2 hover:bg-fill">
-            <FolderOpen size={13} className="text-ink-3" />
-            <span className="flex-1">代码仓库</span>
-            <span className="text-[11.5px] text-ink-3">—</span>
+        <Card className="p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-[13.5px] font-semibold">目录</h3>
+            <span className="text-[11.5px] text-ink-3">按任务归档 · 资料 + 属性</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { icon: FolderOpen, name: "全部资料", count: 1284 },
+              { icon: FileText, name: "个人报告", count: 312 },
+              { icon: FileBarChart, name: "整体报告", count: 86 },
+              { icon: Presentation, name: "汇报 PPT", count: 154 },
+              { icon: FileBadge, name: "申报报告", count: 42 },
+              { icon: Database, name: "数据集", count: 230 },
+              { icon: NotebookPen, name: "会议纪要", count: 178 },
+              { icon: FolderOpen, name: "代码仓库", count: null },
+            ].map((d, i) => (
+              <button
+                key={d.name}
+                className={cx(
+                  "flex h-7 items-center gap-1.5 rounded-[6px] px-2.5 text-[12.5px]",
+                  i === 0 ? "bg-ink font-medium text-white" : "border border-border text-ink-2 hover:bg-fill",
+                )}
+              >
+                <d.icon size={13} />
+                <span>{d.name}</span>
+                {d.count !== null && <span className={cx("text-[11px]", i === 0 ? "text-white/70" : "text-ink-3")}>{d.count}</span>}
+              </button>
+            ))}
           </div>
         </Card>
 

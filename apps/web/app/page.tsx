@@ -237,7 +237,7 @@ export default function HomePage() {
       </div>
 
       {/* 第一行三列 */}
-      <div className="grid grid-cols-[1.05fr_1.3fr_0.85fr] gap-3 px-6 pt-3">
+      <div className="flex flex-col gap-3 px-6 pt-3 pb-6">
         <Card className="p-4">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-[13.5px] font-semibold">今日焦点</h3>
@@ -358,10 +358,7 @@ export default function HomePage() {
             </div>
           </Module>
         </Card>
-      </div>
 
-      {/* 第二行三列 */}
-      <div className="grid grid-cols-[1.05fr_1.3fr_0.85fr] gap-3 px-6 pt-3 pb-6">
         <Card className="p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[13.5px] font-semibold">项目脉搏</h3>
@@ -436,14 +433,22 @@ export default function HomePage() {
             pending={toolsQ.isPending} error={toolsQ.isError} onRetry={() => toolsQ.refetch()}
             empty={!tools.length} emptyText="暂无可用工具" skeleton={<SkRows n={4} />}
           >
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col">
               {tools.map((t) => {
                 const Icon = ICONS[TOOL_ICON[str(t.id, "")] ?? ""] || Wrench;
                 const color = TOOL_COLOR[str(t.id, "")] || "#4a4a52";
                 return (
-                  <Link key={str(t.id, str(t.name))} href="/tools" title={str(t.description)} className="flex flex-col items-start gap-1.5 rounded-md bg-fill/60 p-3 hover:bg-fill">
-                    <Icon size={16} style={{ color }} />
-                    <span className="text-[11.5px] text-ink-2">{str(t.name, "工具")}</span>
+                  <Link
+                    key={str(t.id, str(t.name))}
+                    href="/tools"
+                    title={str(t.description)}
+                    className="flex items-center gap-2.5 border-b border-border/60 py-2.5 last:border-0 hover:bg-fill"
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px]" style={{ background: `${color}14`, color }}>
+                      <Icon size={14} />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink-2">{str(t.name, "工具")}</span>
+                    <ChevronRight size={14} className="shrink-0 text-ink-3" />
                   </Link>
                 );
               })}

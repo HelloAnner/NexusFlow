@@ -39,9 +39,9 @@ export default function LoadPage() {
         }
       />
 
-      <div className="grid grid-cols-[1.7fr_1fr] gap-3 p-6 pt-4">
+      <div className="flex flex-col gap-3 p-6 pt-4">
         {/* 热力图 */}
-        <Card className="self-start p-4">
+        <Card className="p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[13.5px] font-semibold">部门负载热力图 · 软件研发部</h3>
             <div className="flex items-center gap-2.5 text-[11.5px] text-ink-3">
@@ -91,7 +91,7 @@ export default function LoadPage() {
         </Card>
 
         {/* 待协调冲突 */}
-        <Card className="self-start p-4">
+        <Card className="p-4">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-[13.5px] font-semibold">待协调冲突</h3>
             <span className="text-[11.5px] text-ink-3">按影响排序</span>
