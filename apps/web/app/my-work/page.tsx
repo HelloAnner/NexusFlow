@@ -23,8 +23,8 @@ const STATUS_TEXT: Record<string, string> = {
   pending_acceptance: "待验收", done: "已完成", archived: "已归档", cancelled: "已取消",
 };
 const STATUS_COLOR: Record<string, string> = {
-  draft: "#86868f", pending_coordination: "#b87407", in_progress: "#2563eb",
-  pending_acceptance: "#6d5bd0", done: "#12855a", archived: "#86868f", cancelled: "#86868f",
+  draft: "var(--color-ink-3)", pending_coordination: "var(--color-orange)", in_progress: "var(--color-blue)",
+  pending_acceptance: "var(--color-purple)", done: "var(--color-green)", archived: "var(--color-ink-3)", cancelled: "var(--color-ink-3)",
 };
 
 function normalize(items: Record<string, unknown>[]): Task[] {
@@ -118,12 +118,12 @@ export default function MyWorkPage() {
                         {t.progress !== undefined ? ` · 进度 ${t.progress}%` : ""}
                       </p>
                     </div>
-                    <Badge color={STATUS_COLOR[t.status] ?? "#86868f"}>{STATUS_TEXT[t.status] ?? t.status}</Badge>
+                    <Badge color={STATUS_COLOR[t.status] ?? "var(--color-ink-3)"}>{STATUS_TEXT[t.status] ?? t.status}</Badge>
                     {t.status === "pending_confirmation" && (mineOwner || t.members.includes(user?.id ?? "")) && (
                       <button
                         onClick={() => void act(() => api(`/tasks/${t.id}/action`, { method: "POST", body: JSON.stringify({ action: "confirm" }) }), "任务已确认")}
                         disabled={saving}
-                        className="h-7 rounded-sm bg-ink px-2.5 text-[11.5px] font-medium text-white disabled:opacity-60"
+                        className="h-7 rounded-sm bg-ink px-2.5 text-[11.5px] font-medium text-canvas disabled:opacity-60"
                       >
                         确认任务
                       </button>
@@ -150,7 +150,7 @@ export default function MyWorkPage() {
                         <button
                           onClick={() => void act(() => api(`/tasks/${t.id}/action`, { method: "POST", body: JSON.stringify({ action: "accept" }) }), "验收通过")}
                           disabled={saving}
-                          className="h-7 rounded-sm bg-green px-2.5 text-[11.5px] font-medium text-white disabled:opacity-60"
+                          className="h-7 rounded-sm bg-green px-2.5 text-[11.5px] font-medium text-canvas disabled:opacity-60"
                         >
                           验收通过
                         </button>
@@ -180,7 +180,7 @@ export default function MyWorkPage() {
         onClose={() => setReportFor(null)}
         footer={<>
           <button onClick={() => setReportFor(null)} className="h-8 rounded-sm border border-border px-3 text-[12.5px] text-ink-2">取消</button>
-          <button onClick={() => void report()} disabled={saving} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white disabled:opacity-60">{saving ? "提交中…" : "提交"}</button>
+          <button onClick={() => void report()} disabled={saving} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-canvas disabled:opacity-60">{saving ? "提交中…" : "提交"}</button>
         </>}
       >
         <div className="flex flex-col gap-3">

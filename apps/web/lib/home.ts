@@ -56,10 +56,10 @@ export const PROJECT_STATUS_TEXT: Record<string, string> = {
   planning: "待启动", active: "进行中", paused: "已暂停", completed: "已完成", archived: "已归档",
 };
 export const PROJECT_STATUS_COLOR: Record<string, string> = {
-  planning: "#86868f", active: "#12855a", paused: "#b87407", completed: "#86868f", archived: "#a8a8b0",
+  planning: "var(--color-ink-3)", active: "var(--color-green)", paused: "var(--color-orange)", completed: "var(--color-ink-3)", archived: "var(--color-ink-4)",
 };
 export const projectStatusText = (status?: string) => PROJECT_STATUS_TEXT[str(status, "")] || str(status, "未知");
-export const projectStatusColor = (status?: string) => PROJECT_STATUS_COLOR[str(status, "")] || "#86868f";
+export const projectStatusColor = (status?: string) => PROJECT_STATUS_COLOR[str(status, "")] || "var(--color-ink-3)";
 
 // ---------- 日期 ----------
 export const WEEK_CN = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
@@ -98,11 +98,11 @@ export function focusRows(tasks: TaskRow[], conflicts: ConflictRow[], today: str
     return "active";
   };
   const KIND: Record<string, { tag: string; color: string; route: string; rank: number }> = {
-    overdue: { tag: "逾期", color: "#d92d20", route: "/my-work", rank: 0 },
-    conflict: { tag: "冲突", color: "#b87407", route: "/load", rank: 1 },
-    due: { tag: "今日截止", color: "#16161a", route: "/my-work", rank: 2 },
-    approval: { tag: "待处理", color: "#6d5bd0", route: "/inbox", rank: 3 },
-    active: { tag: "进行中", color: "#2563eb", route: "/my-work", rank: 4 },
+    overdue: { tag: "逾期", color: "var(--color-red)", route: "/my-work", rank: 0 },
+    conflict: { tag: "冲突", color: "var(--color-orange)", route: "/load", rank: 1 },
+    due: { tag: "今日截止", color: "var(--color-ink)", route: "/my-work", rank: 2 },
+    approval: { tag: "待处理", color: "var(--color-purple)", route: "/inbox", rank: 3 },
+    active: { tag: "进行中", color: "var(--color-blue)", route: "/my-work", rank: 4 },
   };
   return tasks
     .filter((t) => !isClosed(t))
@@ -127,13 +127,13 @@ export const overdueCount = (tasks: TaskRow[], today: string) => tasks.filter((t
 
 // ---------- 风险雷达 ----------
 export const RISK_META: Record<string, { label: string; icon: string; color: string; route: string }> = {
-  workload_overload: { label: "任务负载过载", icon: "activity", color: "#b87407", route: "/load" },
-  all_day_overlap: { label: "全天任务冲突", icon: "git-branch", color: "#d92d20", route: "/load" },
-  person_unavailable: { label: "成员不可用", icon: "user-x", color: "#6d5bd0", route: "/load" },
-  cross_department_approval: { label: "跨部门审批待办", icon: "stamp", color: "#2563eb", route: "/inbox" },
-  invalid_date_range: { label: "任务日期异常", icon: "calendar-clock", color: "#86868f", route: "/my-work" },
+  workload_overload: { label: "任务负载过载", icon: "activity", color: "var(--color-orange)", route: "/load" },
+  all_day_overlap: { label: "全天任务冲突", icon: "git-branch", color: "var(--color-red)", route: "/load" },
+  person_unavailable: { label: "成员不可用", icon: "user-x", color: "var(--color-purple)", route: "/load" },
+  cross_department_approval: { label: "跨部门审批待办", icon: "stamp", color: "var(--color-blue)", route: "/inbox" },
+  invalid_date_range: { label: "任务日期异常", icon: "calendar-clock", color: "var(--color-ink-3)", route: "/my-work" },
 };
-const FALLBACK_RISK = { label: "其他风险", icon: "alert-triangle", color: "#86868f", route: "/load" };
+const FALLBACK_RISK = { label: "其他风险", icon: "alert-triangle", color: "var(--color-ink-3)", route: "/load" };
 
 export type RiskGroup = { type: string; label: string; icon: string; color: string; route: string; count: number; blocking: number; people: number; days: number };
 
@@ -161,7 +161,7 @@ export function riskGroups(rows: ConflictRow[]): RiskGroup[] {
 // ---------- 团队负载 ----------
 export type HeatLevel = "idle" | "free" | "full" | "over";
 export const HEAT_COLOR: Record<HeatLevel, string> = {
-  idle: "#f5f4f2", free: "#dcefe6", full: "#f6e8d2", over: "#fadfd9",
+  idle: "var(--color-fill)", free: "var(--color-green-soft)", full: "var(--color-orange-soft)", over: "var(--color-red-soft)",
 };
 export function heatLevel(ratio: number): HeatLevel {
   if (!Number.isFinite(ratio)) return "idle";
@@ -204,7 +204,7 @@ export function timelineBars(tasks: TaskRow[], dates: string[], today: string, c
       if (end <= offset) return null;
       const conflict = conflictTaskIds.has(str(t.id, ""));
       const overdue = isOverdue(t, today);
-      const color = conflict || overdue ? "#d92d20" : isClosed(t) ? "#12855a" : "#2563eb";
+      const color = conflict || overdue ? "var(--color-red)" : isClosed(t) ? "var(--color-green)" : "var(--color-blue)";
       const state = conflict ? "冲突待协调" : overdue ? `逾期 · ${taskStatusText(t.status)}` : taskStatusText(t.status);
       return {
         id: str(t.id, taskTitle(t)), name: taskTitle(t), offset, width: Math.max(end - offset, 0.4),
@@ -222,9 +222,9 @@ export const TOOL_ICON: Record<string, string> = {
   "meeting-minutes": "notebook-pen", "weekly-report": "calendar-check", "data-visualization": "bar-chart-3",
 };
 export const TOOL_COLOR: Record<string, string> = {
-  "pdf-convert": "#d92d20", translate: "#2563eb", "paper-writing": "#6d5bd0",
-  "patent-writing": "#b87407", "knowledge-base": "#12855a", "platform-assistant": "#2563eb",
-  "meeting-minutes": "#4a4a52", "weekly-report": "#b04a7c", "data-visualization": "#12855a",
+  "pdf-convert": "var(--color-red)", translate: "var(--color-blue)", "paper-writing": "var(--color-purple)",
+  "patent-writing": "var(--color-orange)", "knowledge-base": "var(--color-green)", "platform-assistant": "var(--color-blue)",
+  "meeting-minutes": "var(--color-ink-2)", "weekly-report": "var(--color-pink)", "data-visualization": "var(--color-green)",
 };
 
 export const arrOf = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);

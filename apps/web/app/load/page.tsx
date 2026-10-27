@@ -30,12 +30,12 @@ const CONFLICT_LABEL: Record<string, string> = {
 };
 
 const heat = (d?: Daily) => {
-  if (!d) return "#f5f4f2";
-  if (d.capacity === 0) return "#ececea";
-  if (d.ratio >= 100) return "#fadfd9";
-  if (d.ratio >= 80) return "#f6e8d2";
-  if (d.ratio >= 50) return "#dcefe6";
-  return "#f5f4f2";
+  if (!d) return "var(--color-fill)";
+  if (d.capacity === 0) return "var(--color-fill-2)";
+  if (d.ratio >= 100) return "var(--color-red-soft)";
+  if (d.ratio >= 80) return "var(--color-orange-soft)";
+  if (d.ratio >= 50) return "var(--color-green-soft)";
+  return "var(--color-fill)";
 };
 
 export default function LoadPage() {
@@ -82,7 +82,7 @@ export default function LoadPage() {
       <PageHeader
         title="负载与冲突"
         sub={`${people.length} 人 · 未来 7 天 · 冲突 ${conflicts.length} 项`}
-        right={<Badge color={conflicts.length ? "#d92d20" : "#12855a"}>{conflicts.length ? `${conflicts.length} 项待协调` : "无冲突"}</Badge>}
+        right={<Badge color={conflicts.length ? "var(--color-red)" : "var(--color-green)"}>{conflicts.length ? `${conflicts.length} 项待协调` : "无冲突"}</Badge>}
       />
 
       <div className="flex flex-col gap-3 p-6 pt-4">
@@ -90,11 +90,11 @@ export default function LoadPage() {
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-[13.5px] font-semibold">部门负载热力图</h3>
             <div className="flex items-center gap-2.5 text-[11.5px] text-ink-3">
-              <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px]" style={{ background: "#f5f4f2" }} />空闲</span>
-              <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px]" style={{ background: "#dcefe6" }} />正常</span>
-              <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px]" style={{ background: "#f6e8d2" }} />饱和</span>
-              <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px]" style={{ background: "#fadfd9" }} />过载</span>
-              <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px]" style={{ background: "#ececea" }} />不可用</span>
+              <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px]" style={{ background: "var(--color-fill)" }} />空闲</span>
+              <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px]" style={{ background: "var(--color-green-soft)" }} />正常</span>
+              <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px]" style={{ background: "var(--color-orange-soft)" }} />饱和</span>
+              <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px]" style={{ background: "var(--color-red-soft)" }} />过载</span>
+              <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px]" style={{ background: "var(--color-fill-2)" }} />不可用</span>
             </div>
           </div>
           {pending ? <p className="py-6 text-center text-[12.5px] text-ink-3">加载中…</p>
@@ -153,8 +153,8 @@ export default function LoadPage() {
                   <div className="flex items-center gap-2">
                     <Avatar name={personName(c.person_id)} color={avatarColor(personName(c.person_id))} size={24} />
                     <span className="text-[13px] font-semibold">{personName(c.person_id)}</span>
-                    {c.severity === "blocking" && <Badge color="#d92d20">阻塞</Badge>}
-                    {c.status === "forced" && <Badge color="#b87407">已限期强制</Badge>}
+                    {c.severity === "blocking" && <Badge color="var(--color-red)">阻塞</Badge>}
+                    {c.status === "forced" && <Badge color="var(--color-orange)">已限期强制</Badge>}
                     <span className="ml-auto text-[11.5px] text-ink-3">{CONFLICT_LABEL[c.type] ?? c.type}</span>
                   </div>
                   <p className="mt-2 flex items-center gap-1.5 text-[12.5px] text-ink-2">
@@ -167,7 +167,7 @@ export default function LoadPage() {
                   )}
                   {canForce && c.id && c.status !== "forced" && (
                     <div className="mt-2.5 flex gap-2">
-                      <button onClick={() => setTarget(c)} className="h-7 rounded-sm bg-ink px-2.5 text-[11.5px] font-medium text-white">限期强制协调</button>
+                      <button onClick={() => setTarget(c)} className="h-7 rounded-sm bg-ink px-2.5 text-[11.5px] font-medium text-canvas">限期强制协调</button>
                     </div>
                   )}
                 </div>
@@ -184,7 +184,7 @@ export default function LoadPage() {
         onClose={() => setTarget(null)}
         footer={<>
           <button onClick={() => setTarget(null)} className="h-8 rounded-sm border border-border px-3 text-[12.5px] text-ink-2">取消</button>
-          <button onClick={() => void force()} disabled={saving} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white disabled:opacity-60">{saving ? "提交中…" : "确认"}</button>
+          <button onClick={() => void force()} disabled={saving} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-canvas disabled:opacity-60">{saving ? "提交中…" : "确认"}</button>
         </>}
       >
         <div className="flex flex-col gap-3">

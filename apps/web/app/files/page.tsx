@@ -11,7 +11,7 @@ import { recordQueryState } from "@/lib/query-state";
 import { useData } from "@/lib/data";
 import { api, apiBase, token } from "@/lib/api";
 import { Modal, Field, inputCls, toast, errorText } from "@/components/feedback";
-import { cx, str } from "@/lib/utils";
+import { cx, soft, str } from "@/lib/utils";
 
 const CATEGORY_LABEL: Record<string, string> = {
   "personal-report": "个人报告",
@@ -24,12 +24,12 @@ const CATEGORY_LABEL: Record<string, string> = {
 
 type Ft = "pdf" | "word" | "ppt" | "excel" | "image" | "other";
 const FTYPE: Record<Ft, { icon: React.ComponentType<{ size?: number | string }>; color: string; label: string }> = {
-  pdf: { icon: FileText, color: "#d92d20", label: "PDF" },
-  word: { icon: FileText, color: "#2563eb", label: "Word" },
-  ppt: { icon: Presentation, color: "#b87407", label: "PPT" },
-  excel: { icon: FileSpreadsheet, color: "#12855a", label: "Excel" },
-  image: { icon: File, color: "#b04a7c", label: "图片" },
-  other: { icon: File, color: "#86868f", label: "其他" },
+  pdf: { icon: FileText, color: "var(--color-red)", label: "PDF" },
+  word: { icon: FileText, color: "var(--color-blue)", label: "Word" },
+  ppt: { icon: Presentation, color: "var(--color-orange)", label: "PPT" },
+  excel: { icon: FileSpreadsheet, color: "var(--color-green)", label: "Excel" },
+  image: { icon: File, color: "var(--color-pink)", label: "图片" },
+  other: { icon: File, color: "var(--color-ink-3)", label: "其他" },
 };
 
 const FILTERS = ["全部类型", "Word", "PPT", "PDF", "Excel", "图片"];
@@ -124,7 +124,7 @@ export default function FilesPage() {
         right={
           <>
             <SearchBox placeholder="搜索文件名 / 上传人" className="w-56" value={q} onChange={setQ} />
-            <button onClick={() => setUploading(true)} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white">
+            <button onClick={() => setUploading(true)} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-canvas">
               <Upload size={14} /> 上传资料
             </button>
           </>
@@ -142,21 +142,21 @@ export default function FilesPage() {
             <button
               onClick={() => setCategory("")}
               className={cx("flex h-7 items-center gap-1.5 rounded-[6px] px-2.5 text-[12.5px]",
-                category === "" ? "bg-ink font-medium text-white" : "border border-border text-ink-2 hover:bg-fill")}
+                category === "" ? "bg-ink font-medium text-canvas" : "border border-border text-ink-2 hover:bg-fill")}
             >
               <FolderOpen size={13} />
               <span>全部资料</span>
-              <span className={cx("text-[11px]", category === "" ? "text-white/70" : "text-ink-3")}>{files.length}</span>
+              <span className={cx("text-[11px]", category === "" ? "text-canvas/70" : "text-ink-3")}>{files.length}</span>
             </button>
             {Object.entries(CATEGORY_LABEL).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setCategory(category === key ? "" : key)}
                 className={cx("flex h-7 items-center gap-1.5 rounded-[6px] px-2.5 text-[12.5px]",
-                  category === key ? "bg-ink font-medium text-white" : "border border-border text-ink-2 hover:bg-fill")}
+                  category === key ? "bg-ink font-medium text-canvas" : "border border-border text-ink-2 hover:bg-fill")}
               >
                 <span>{label}</span>
-                <span className={cx("text-[11px]", category === key ? "text-white/70" : "text-ink-3")}>{counts[key] ?? 0}</span>
+                <span className={cx("text-[11px]", category === key ? "text-canvas/70" : "text-ink-3")}>{counts[key] ?? 0}</span>
               </button>
             ))}
           </div>
@@ -171,7 +171,7 @@ export default function FilesPage() {
                 onClick={() => setFilter(f)}
                 className={cx(
                   "h-7 rounded-full px-3 text-[12.5px]",
-                  filter === f ? "bg-ink font-medium text-white" : "border border-border bg-panel text-ink-2 hover:bg-fill",
+                  filter === f ? "bg-ink font-medium text-canvas" : "border border-border bg-panel text-ink-2 hover:bg-fill",
                 )}
               >
                 {f}
@@ -198,13 +198,13 @@ export default function FilesPage() {
                     <tr key={f.id} className="border-b border-border/60 last:border-0 hover:bg-canvas">
                       <td className="px-5 py-3">
                         <span className="flex items-center gap-2.5">
-                          <span className="flex h-7 w-7 items-center justify-center rounded-[7px]" style={{ background: `${fi.color}14`, color: fi.color }}>
+                          <span className="flex h-7 w-7 items-center justify-center rounded-[7px]" style={{ background: soft(fi.color, 8), color: fi.color }}>
                             <fi.icon size={14} />
                           </span>
                           <span className="font-medium text-ink">{f.name}</span>
                         </span>
                       </td>
-                      <td className="px-3 py-3"><Badge color="#4a4a52">{f.categoryLabel}</Badge></td>
+                      <td className="px-3 py-3"><Badge color="var(--color-ink-2)">{f.categoryLabel}</Badge></td>
                       <td className="px-3 py-3 text-ink-2">{f.uploader}</td>
                       <td className="px-3 py-3 text-[11.5px] text-ink-3">{f.time}</td>
                       <td className="px-3 py-3 text-right text-[11.5px] text-ink-3 tabular-nums">{f.size}</td>
@@ -229,7 +229,7 @@ export default function FilesPage() {
         onClose={() => { setUploading(false); setFile(null); }}
         footer={<>
           <button onClick={() => { setUploading(false); setFile(null); }} className="h-8 rounded-sm border border-border px-3 text-[12.5px] text-ink-2">取消</button>
-          <button onClick={() => void upload()} disabled={saving || !file} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white disabled:opacity-60">{saving ? "上传中…" : "上传"}</button>
+          <button onClick={() => void upload()} disabled={saving || !file} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-canvas disabled:opacity-60">{saving ? "上传中…" : "上传"}</button>
         </>}
       >
         <div className="flex flex-col gap-3">

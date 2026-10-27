@@ -11,6 +11,7 @@ import { useAuth, absorbPortalToken } from "@/lib/auth";
 import { BrandIcon } from "@/components/brand-icon";
 import { roleLabel } from "@/lib/home";
 import { Toaster } from "@/components/feedback";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /** 一级导航：侧栏只放全局入口，页面内的筛选/目录留在页面里。 */
 const NAV = [
@@ -131,10 +132,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-fill text-[12px] font-semibold text-ink-2">
             {initial(user.name || "?")}
           </span>
-          <div className="flex min-w-0 flex-col">
+          <div className="flex min-w-0 flex-1 flex-col">
             <span className="truncate text-[12.5px] font-semibold text-ink">{user.name || "—"}</span>
             <span className="truncate text-[11px] text-ink-3">{roleLabel(user.role)}</span>
           </div>
+          <ThemeToggle />
         </div>
       </aside>
 

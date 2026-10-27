@@ -24,8 +24,8 @@ const TYPE_LABEL: Record<string,string> = {
  market:"市场","business-trip":"出差",clerical:"文职",party:"党建",learning:"学习",leave:"休假",
 };
 const TYPE_COLOR: Record<string,string> = {
- "research-company":"#12855a","research-department":"#12855a","research-center":"#12855a",
- market:"#6d5bd0","business-trip":"#b87407",clerical:"#2563eb",party:"#b04a7c",learning:"#12855a",leave:"#86868f",
+ "research-company":"var(--color-green)","research-department":"var(--color-green)","research-center":"var(--color-green)",
+ market:"var(--color-purple)","business-trip":"var(--color-orange)",clerical:"var(--color-blue)",party:"var(--color-pink)",learning:"var(--color-green)",leave:"var(--color-ink-3)",
 };
 const STATUS_TEXT: Record<string,string> = {
  draft:"草稿",pending_coordination:"待协调",in_progress:"进行中",pending_acceptance:"待验收",done:"已完成",archived:"已归档",cancelled:"已取消",
@@ -66,7 +66,7 @@ function groupsFromTasks(project: Record<string, unknown>, items: unknown[], nam
     code: taskId.slice(0, 8),
    },
   };
-  const group = map.get(key) ?? { type: typeLabel, typeColor: TYPE_COLOR[typeCode] ?? "#86868f", owner, ownerColor: avatarColor(owner), tasks: [] };
+  const group = map.get(key) ?? { type: typeLabel, typeColor: TYPE_COLOR[typeCode] ?? "var(--color-ink-3)", owner, ownerColor: avatarColor(owner), tasks: [] };
   group.tasks.push(item);
   map.set(key, group);
  }
@@ -122,9 +122,9 @@ function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,
       <div className="flex items-start justify-between px-6 pt-5">
         <div>
           <div className="flex items-center gap-2.5">
-            <Marker color="#b87407" size={18} />
+            <Marker color="var(--color-orange)" size={18} />
             <h1 className="text-[18px] font-semibold">{str(project.name)}</h1>
-            <Badge color="#86868f">{str(project.status,"—")}</Badge>
+            <Badge color="var(--color-ink-3)">{str(project.status,"—")}</Badge>
           </div>
           <p className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-ink-3">
             <CornerUpLeft size={12} />
@@ -191,7 +191,7 @@ function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,
               {rows.map((r, i) =>
                 r.kind === "group" ? (
                   <div key={i} className="flex items-center gap-2 px-4" style={{ height: GROUP_H }}>
-                    <span className="shrink-0 rounded-[6px] px-1.5 py-0.5 text-[11.5px] font-medium whitespace-nowrap text-white" style={{ background: r.group.typeColor }}>
+                    <span className="shrink-0 rounded-[6px] px-1.5 py-0.5 text-[11.5px] font-medium whitespace-nowrap text-canvas" style={{ background: r.group.typeColor }}>
                       {r.group.type.split("·")[0]}
                     </span>
                     <Avatar name={r.group.owner} color={r.group.ownerColor} size={20} />
@@ -230,11 +230,11 @@ function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,
               >
                 {/* 竖向网格线 */}
                 {ticks.map((d) => (
-                  <line key={d} x1={d * DAY_W} y1={0} x2={d * DAY_W} y2={totalH} stroke={d === GANTT_TODAY_DAY ? "#C7DBFB" : "#F1F1EF"} strokeWidth={d === GANTT_TODAY_DAY ? 1.2 : 1} vectorEffect="non-scaling-stroke" />
+                  <line key={d} x1={d * DAY_W} y1={0} x2={d * DAY_W} y2={totalH} stroke={d === GANTT_TODAY_DAY ? "var(--color-blue-soft)" : "var(--color-fill)"} strokeWidth={d === GANTT_TODAY_DAY ? 1.2 : 1} vectorEffect="non-scaling-stroke" />
                 ))}
                 {/* 行分隔线 */}
                 {rows.map((r, i) => (
-                  <line key={i} x1={0} y1={rowY(i, r.kind)} x2={CHART_W} y2={rowY(i, r.kind)} stroke="#f5f4f2" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+                  <line key={i} x1={0} y1={rowY(i, r.kind)} x2={CHART_W} y2={rowY(i, r.kind)} stroke="var(--color-fill)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
                 ))}
                 {/* 任务条 */}
                 {rows.map((r, i) => {
@@ -258,19 +258,19 @@ function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,
                   // 逾期延伸（红色描边段）
                   if (t.overdueTo && t.overdueTo > t.end) {
                     parts.push(
-                      <rect key="ov" x={t.end * DAY_W} y={y} width={(t.overdueTo - t.end) * DAY_W} height={10} rx={5} fill="#d92d20" fillOpacity={0.08} stroke="#d92d20" strokeWidth={1.5} />,
+                      <rect key="ov" x={t.end * DAY_W} y={y} width={(t.overdueTo - t.end) * DAY_W} height={10} rx={5} fill="var(--color-red)" fillOpacity={0.08} stroke="var(--color-red)" strokeWidth={1.5} />,
                     );
                   }
                   // 行尾说明文字
                   if (t.note) {
                     parts.push(
-                      <text key="n" x={Math.min((t.overdueTo || t.end) * DAY_W + 8, CHART_W - 8)} y={y + 9} fontSize={11} fill="#86868f">{t.note}</text>,
+                      <text key="n" x={Math.min((t.overdueTo || t.end) * DAY_W + 8, CHART_W - 8)} y={y + 9} fontSize={11} fill="var(--color-ink-3)">{t.note}</text>,
                     );
                   }
                   if (t.overdueLabel) {
                     // 红字标签画在逾期延伸条内部右端，避免超出 viewBox 被裁剪
                     parts.push(
-                      <text key="o" x={(t.overdueTo || t.end) * DAY_W - 8} y={y + 9} fontSize={11} fill="#d92d20" textAnchor="end">{t.overdueLabel}</text>,
+                      <text key="o" x={(t.overdueTo || t.end) * DAY_W - 8} y={y + 9} fontSize={11} fill="var(--color-red)" textAnchor="end">{t.overdueLabel}</text>,
                     );
                   }
                   return (
@@ -280,7 +280,7 @@ function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,
                   );
                 })}
                 {/* 今天蓝线 */}
-                <line x1={GANTT_TODAY_DAY * DAY_W} y1={0} x2={GANTT_TODAY_DAY * DAY_W} y2={totalH} stroke="#2563eb" strokeWidth={1.6} vectorEffect="non-scaling-stroke" />
+                <line x1={GANTT_TODAY_DAY * DAY_W} y1={0} x2={GANTT_TODAY_DAY * DAY_W} y2={totalH} stroke="var(--color-blue)" strokeWidth={1.6} vectorEffect="non-scaling-stroke" />
               </svg>
 
               {/* 任务弹层 */}
@@ -323,7 +323,7 @@ function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,
                         end: addDays(GANTT_START, selectedTask.task.overdueTo ?? selectedTask.task.end),
                         hours: "4",
                       })}
-                      className="h-7 flex-1 rounded-sm bg-ink text-[11.5px] font-medium text-white"
+                      className="h-7 flex-1 rounded-sm bg-ink text-[11.5px] font-medium text-canvas"
                     >
                       调整计划
                     </button>
@@ -355,7 +355,7 @@ function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,
               } catch (e) { toast(errorText(e), "err"); } finally { setSaving(false); }
             }}
             disabled={saving}
-            className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white disabled:opacity-60"
+            className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-canvas disabled:opacity-60"
           >
             {saving ? "保存中…" : "保存"}
           </button>

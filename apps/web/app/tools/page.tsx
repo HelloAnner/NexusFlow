@@ -10,7 +10,7 @@ import { Card, Badge, PageHeader, SearchBox, Empty } from "@/components/ui";
 import type { Tool } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState } from "@/lib/query-state";
-import { str } from "@/lib/utils";
+import { soft, str } from "@/lib/utils";
 import { useData } from "@/lib/data";
 
 const ICONS: Record<string, React.ComponentType<{ size?: number | string; style?: React.CSSProperties }>> = {
@@ -24,7 +24,7 @@ function ToolIcon({ tool, size = 34 }: { tool: Tool; size?: number }) {
   return (
     <span
       className="flex items-center justify-center rounded-[9px]"
-      style={{ width: size, height: size, background: `${tool.color}14`, color: tool.color }}
+      style={{ width: size, height: size, background: soft(tool.color, 8), color: tool.color }}
     >
       <Icon size={size * 0.47} />
     </span>
@@ -35,7 +35,7 @@ export default function ToolsPage() {
   const query=useData<unknown[]>("tools", "/tools"),state=recordQueryState(query);
   const [q, setQ] = useState("");
   if(state.kind!=="ready")return <Shell><PageHeader title="智能工具台" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无工具" /></Shell>;
-  const tools=state.items.map((x):Tool=>({id:str(x.id),name:str(x.name),desc:str(x.description,str(x.desc,"—")),usage:str(x.usage,"—"),ai:x.category==="agent"||x.ai===true,icon:str(x.icon,"wrench"),color:"#86868f",recent:str(x.recent)}));
+  const tools=state.items.map((x):Tool=>({id:str(x.id),name:str(x.name),desc:str(x.description,str(x.desc,"—")),usage:str(x.usage,"—"),ai:x.category==="agent"||x.ai===true,icon:str(x.icon,"wrench"),color:"var(--color-ink-3)",recent:str(x.recent)}));
   const kw = q.trim().toLowerCase();
   const shown = kw ? tools.filter((t) => `${t.name}${t.desc}${t.usage}`.toLowerCase().includes(kw)) : tools;
 
@@ -57,7 +57,7 @@ export default function ToolsPage() {
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 text-[12.5px] font-medium text-ink">
                     <span className="truncate">{t.name}</span>
-                    {t.ai && <Badge color="#6d5bd0">AI 智能体</Badge>}
+                    {t.ai && <Badge color="var(--color-purple)">AI 智能体</Badge>}
                   </p>
                   <p className="truncate text-[11.5px] text-ink-3">{t.desc}</p>
                 </div>

@@ -1,0 +1,58 @@
+NexusFlow 亮/暗主题（theme）
+================================
+
+一、原则
+--------
+1. 只管 token，不管页面。页面组件一律用语义工具类（bg-canvas / bg-panel /
+   bg-fill / text-ink / border-border / bg-ink text-canvas …），暗色 = 换一套
+   token 值，组件代码不改。
+2. 亮色是默认（与 Portal 门户一致的单一平铺页面风格），暗色是覆盖层。
+3. 用户选择存 localStorage["nexusflow-theme"]，没选过时跟随系统
+   prefers-color-scheme。
+4. 首屏不闪：layout 的 <head> 里注入内联脚本，渲染前就把 data-theme 写到 <html>。
+
+二、结构
+--------
+        <html data-theme="light|dark">
+                 │
+                 ├── <head> 内联脚本（THEME_INIT_SCRIPT，读 localStorage / 系统偏好）
+                 │
+                 └── ThemeProvider (lib/theme.tsx)
+                       │  state: light | dark，toggle/set 写 localStorage + <html data-theme>
+                       └── 页面组件（只认 token 工具类）
+
+  app/globals.css
+     @theme { … }                ← 亮色 token（默认值）
+     [data-theme="dark"] { … }   ← 只覆盖同名 token（canvas/panel/fill/ink/border/accent/语义色/soft 填充）
+     [data-theme="dark"] .rbac   ← 共享 RBAC 面板的宿主侧覆盖（共享源在 Portal，不能改）
+
+  components/theme-toggle.tsx   ← 侧栏底部 + 登录页右上角，单图标按钮
+  lib/theme.tsx                 ← ThemeProvider / useTheme / THEME_INIT_SCRIPT
+
+三、token 一览
+--------------
+  画布/面     --color-canvas  --color-panel  --color-fill  --color-fill-2
+  线          --color-border  --color-border-strong
+  字          --color-ink  --color-ink-2  --color-ink-3  --color-ink-4
+  强调        --color-accent  --color-accent-soft
+  语义        --color-green/purple/orange/blue/pink/red
+  低饱和填充  --color-green-soft/orange-soft/red-soft/blue-soft
+
+  暗色下 accent = 近白，"反相主操作"因此写作 `bg-ink text-canvas`：
+  亮色=深底白字，暗色=浅底深字，同一份 class 两种主题都成立。
+
+四、新增颜色时的写法
+--------------------
+  · Tailwind 类：直接用 token（bg-xxx / text-xxx / border-xxx）。
+  · TS/图表/SVG 里需要颜色字符串（Badge、Avatar、甘特、热力图）：
+      写 "var(--color-xxx)"，不要写 #hex —— 写了 hex 就只在亮色下正确。
+  · 需要半透明底时用 lib/utils.ts 的 soft(color, pct)（内部 color-mix），
+      不要拼 `${color}1A`（var() 拼不出来）。
+  · 亮色专用写法一律补一条 [data-theme="dark"] 覆盖，或新增语义 token。
+
+五、自检
+--------
+  本地：cd apps/web && npm run typecheck && npm run build
+  线上：nexusflow theme check          # 断言产物含 data-theme、无闪脚本、暗色 token、color-scheme:dark
+        nexusflow brand check          # 品牌/基路径回归
+  视觉：亮暗两套各过一遍 首页 / 项目甘特 / 负载热力图 / 收件箱 / 权限管理。

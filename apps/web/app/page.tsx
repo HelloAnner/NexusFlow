@@ -12,7 +12,7 @@ import { Shell } from "@/components/shell";
 import { Card, Badge, Avatar, Bar, Empty } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { cx, md, num, str } from "@/lib/utils";
+import { cx, md, num, soft, str } from "@/lib/utils";
 import {
   HEAT_COLOR, avgTeamRatio, dateLabel, dayLabel, focusRows, greetingAt,
   heatLevel, overloadedPeople, projectStatusColor, projectStatusText, riskGroups, roleLabel,
@@ -126,11 +126,11 @@ export default function HomePage() {
 
   const statCards = homeReady
     ? [
-      { icon: "zap", href: "/my-work", label: "今日待办", value: String(num(stats?.today_due)), sub: `${focus.length} 项在办`, subColor: "#86868f" },
-      { icon: "alarm-clock", href: "/my-work", label: "今日截止", value: String(todayDueCount(focus, today)), sub: `${overdueCount(focus, today)} 项已逾期`, subColor: "#d92d20" },
-      { icon: "git-branch", href: "/load", label: "本周冲突", value: String(num(stats?.open_conflicts)), sub: risks.length ? "需协调" : "无冲突", subColor: "#b87407" },
-      { icon: "stamp", href: "/inbox", label: "待我审批", value: String(num(stats?.pending_approvals)), sub: num(stats?.pending_approvals) ? "项待处理" : "已清空", subColor: "#86868f" },
-      { icon: "activity", href: "/load", label: "团队负载", value: avgRatio == null ? "—" : `${avgRatio}%`, sub: `${overPeople} 人过载`, subColor: overPeople ? "#d92d20" : "#86868f" },
+      { icon: "zap", href: "/my-work", label: "今日待办", value: String(num(stats?.today_due)), sub: `${focus.length} 项在办`, subColor: "var(--color-ink-3)" },
+      { icon: "alarm-clock", href: "/my-work", label: "今日截止", value: String(todayDueCount(focus, today)), sub: `${overdueCount(focus, today)} 项已逾期`, subColor: "var(--color-red)" },
+      { icon: "git-branch", href: "/load", label: "本周冲突", value: String(num(stats?.open_conflicts)), sub: risks.length ? "需协调" : "无冲突", subColor: "var(--color-orange)" },
+      { icon: "stamp", href: "/inbox", label: "待我审批", value: String(num(stats?.pending_approvals)), sub: num(stats?.pending_approvals) ? "项待处理" : "已清空", subColor: "var(--color-ink-3)" },
+      { icon: "activity", href: "/load", label: "团队负载", value: avgRatio == null ? "—" : `${avgRatio}%`, sub: `${overPeople} 人过载`, subColor: overPeople ? "var(--color-red)" : "var(--color-ink-3)" },
     ]
     : [
       { icon: "zap", href: "/my-work", label: "今日待办", value: "—", sub: "", subColor: "" },
@@ -165,7 +165,7 @@ export default function HomePage() {
             <h1 className="text-[18px] font-semibold tracking-[-0.01em]">
               {now ? `${greetingAt(now)}，${str(user?.name, "")}` : "你好"}
             </h1>
-            <Badge color="#4a4a52">{roleLabel(user?.role)}</Badge>
+            <Badge color="var(--color-ink-2)">{roleLabel(user?.role)}</Badge>
           </div>
           <p className="mt-0.5 flex items-center gap-2 text-[12.5px] text-ink-3">
             <span>{now ? dateLabel(now) : "—"}</span>
@@ -182,13 +182,13 @@ export default function HomePage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/dispatch/new" prefetch={false} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white">
+          <Link href="/dispatch/new" prefetch={false} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-canvas">
             <Plus size={14} /> 新建任务
           </Link>
           <Link href="/inbox" className="relative flex h-8 w-8 items-center justify-center rounded-full border border-border bg-panel text-ink-2">
             <Bell size={15} />
             {homeReady && num(stats?.pending_approvals) > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red px-1 text-[9.5px] font-semibold text-white">
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red px-1 text-[9.5px] font-semibold text-canvas">
                 {num(stats?.pending_approvals)}
               </span>
             )}
@@ -196,7 +196,7 @@ export default function HomePage() {
           <div className="relative">
             {menu && <button aria-label="关闭菜单" className="fixed inset-0 z-10 cursor-default" onClick={() => setMenu(false)} />}
             <button onClick={() => setMenu((m) => !m)} className="relative z-20 block rounded-full">
-              <Avatar name={str(user?.name, "?")} color="#4a4a52" size={32} />
+              <Avatar name={str(user?.name, "?")} color="var(--color-ink-2)" size={32} />
             </button>
             {menu && (
               <div className="absolute top-10 right-0 z-20 w-[176px] rounded-lg border border-border bg-panel py-1 shadow-sm">
@@ -269,7 +269,7 @@ export default function HomePage() {
         <Card className="flex flex-col p-4">
           <div className="mb-1 flex items-center gap-2">
             <h3 className="text-[13.5px] font-semibold">本周任务时间线</h3>
-            {dates.length > 0 && <Badge color="#4a4a52">{md(dates[0])} - {md(dates[dates.length - 1])}</Badge>}
+            {dates.length > 0 && <Badge color="var(--color-ink-2)">{md(dates[0])} - {md(dates[dates.length - 1])}</Badge>}
             <div className="ml-auto flex items-center gap-3 text-[11.5px] text-ink-3">
               <span className="flex items-center gap-1"><i className="h-1.5 w-1.5 rounded-full bg-green" />已完成</span>
               <span className="flex items-center gap-1"><i className="h-1.5 w-1.5 rounded-full bg-blue" />进行中</span>
@@ -322,7 +322,7 @@ export default function HomePage() {
         <Card className="p-4">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-[13.5px] font-semibold">风险雷达</h3>
-            {homeReady && (blocking > 0 ? <Badge color="#d92d20">{blocking} 高</Badge> : <Badge color="#12855a">正常</Badge>)}
+            {homeReady && (blocking > 0 ? <Badge color="var(--color-red)">{blocking} 高</Badge> : <Badge color="var(--color-green)">正常</Badge>)}
           </div>
           <Module
             pending={homeQ.isPending || !now} error={homeQ.isError} onRetry={retryAll}
@@ -337,7 +337,7 @@ export default function HomePage() {
                 if (g.blocking) parts.push(`${g.blocking} 项阻塞`);
                 return (
                   <Link key={g.type} href={g.route} className="flex items-center gap-2.5 rounded-sm py-2 hover:bg-canvas">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm" style={{ background: `${g.color}1A`, color: g.color }}>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm" style={{ background: soft(g.color), color: g.color }}>
                       <Icon size={15} />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -352,7 +352,7 @@ export default function HomePage() {
             <div className="mt-2 rounded-md bg-accent-soft p-3">
               <p className="text-[11.5px] font-medium text-accent">推荐动作</p>
               <p className="mt-1 text-[11.5px] leading-5 text-ink-2">{advice}</p>
-              <Link href="/load" className="mt-2 inline-flex h-7 items-center rounded-sm bg-accent px-2.5 text-[11.5px] font-medium text-white">
+              <Link href="/load" className="mt-2 inline-flex h-7 items-center rounded-sm bg-accent px-2.5 text-[11.5px] font-medium text-canvas">
                 去负载与冲突
               </Link>
             </div>
@@ -374,7 +374,7 @@ export default function HomePage() {
                   <div className="mb-1 flex items-center justify-between gap-2 text-[12.5px]">
                     <span className="truncate text-ink-2">{str(p.name, "未命名项目")}</span>
                     <span className="flex shrink-0 items-center gap-2">
-                      {p.level ? <Badge color="#86868f">{p.level}</Badge> : null}
+                      {p.level ? <Badge color="var(--color-ink-3)">{p.level}</Badge> : null}
                       <Badge color={projectStatusColor(p.status)}>{projectStatusText(p.status)}</Badge>
                       <span className="w-8 text-right text-ink-3 tabular-nums">{num(p.progress)}%</span>
                     </span>
@@ -436,7 +436,7 @@ export default function HomePage() {
             <div className="flex flex-col">
               {tools.map((t) => {
                 const Icon = ICONS[TOOL_ICON[str(t.id, "")] ?? ""] || Wrench;
-                const color = TOOL_COLOR[str(t.id, "")] || "#4a4a52";
+                const color = TOOL_COLOR[str(t.id, "")] || "var(--color-ink-2)";
                 return (
                   <Link
                     key={str(t.id, str(t.name))}
@@ -444,7 +444,7 @@ export default function HomePage() {
                     title={str(t.description)}
                     className="flex items-center gap-2.5 border-b border-border/60 py-2.5 last:border-0 hover:bg-fill"
                   >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px]" style={{ background: `${color}14`, color }}>
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px]" style={{ background: soft(color, 8), color }}>
                       <Icon size={14} />
                     </span>
                     <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink-2">{str(t.name, "工具")}</span>

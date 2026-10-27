@@ -94,7 +94,7 @@ export default function DispatchNewPage() {
           <ArrowLeft size={16} className="text-ink-2" />
         </button>
         <h1 className="text-[16px] font-semibold">派发任务</h1>
-        <Badge color="#16161a">{workflow === "standard" ? "标准流程" : "后补流程"}</Badge>
+        <Badge color="var(--color-ink)">{workflow === "standard" ? "标准流程" : "后补流程"}</Badge>
         <span className="text-[12.5px] text-ink-3">发起人 {user?.name ?? "—"}</span>
       </div>
 
@@ -108,7 +108,7 @@ export default function DispatchNewPage() {
                   onClick={() => setForm({ ...form, type: code })}
                   className={cx(
                     "h-7 rounded-full px-3 text-[12.5px]",
-                    form.type === code ? "bg-ink font-medium text-white" : "border border-border text-ink-2 hover:bg-fill",
+                    form.type === code ? "bg-ink font-medium text-canvas" : "border border-border text-ink-2 hover:bg-fill",
                   )}
                 >
                   {label}
@@ -172,7 +172,7 @@ export default function DispatchNewPage() {
                 const load = loadOf(m);
                 const until = (load?.ratio ?? 0) >= 100;
                 return (
-                  <div key={str(m.user_id || m.id)} className={cx("flex items-center gap-3 rounded-md border px-3 py-2.5", until ? "border-orange/50 bg-[#FFFBF4]" : "border-border")}>
+                  <div key={str(m.user_id || m.id)} className={cx("flex items-center gap-3 rounded-md border px-3 py-2.5", until ? "border-orange/50 bg-orange-soft" : "border-border")}>
                     <Avatar name={str(m.name, "?")} color={avatarColor(str(m.name))} size={26} />
                     <span className="text-[12.5px] font-medium">{str(m.name)}</span>
                     <span className="text-[11.5px] text-ink-3">{str(m.title, "")} {str(m.department, "")}</span>
@@ -231,7 +231,7 @@ export default function DispatchNewPage() {
           <div className="mb-2 flex items-center gap-2">
             <AlertTriangle size={14} className="text-orange" />
             <h3 className="text-[13.5px] font-semibold">今日负载检查</h3>
-            <Badge color={over.length ? "#d92d20" : "#12855a"}>{over.length ? `${over.length} 人已满负荷` : "正常"}</Badge>
+            <Badge color={over.length ? "var(--color-red)" : "var(--color-green)"}>{over.length ? `${over.length} 人已满负荷` : "正常"}</Badge>
           </div>
           {over.length === 0 ? (
             <p className="text-[11.5px] text-ink-3">所选成员今日负载未超 100%。</p>
@@ -260,7 +260,7 @@ export default function DispatchNewPage() {
           <button onClick={() => void create(false)} disabled={!!submitting} className="h-8 rounded-sm border border-border px-3.5 text-[12.5px] text-ink-2 disabled:opacity-60">
             {submitting === "draft" ? "保存中…" : "存草稿"}
           </button>
-          <button onClick={() => void create(true)} disabled={!!submitting} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3.5 text-[12.5px] font-medium text-white disabled:opacity-60">
+          <button onClick={() => void create(true)} disabled={!!submitting} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3.5 text-[12.5px] font-medium text-canvas disabled:opacity-60">
             <Send size={13} /> {submitting === "submit" ? "派发中…" : "确认派发"}
           </button>
         </div>

@@ -31,7 +31,7 @@ export function Toaster() {
         <div
           key={t.id}
           role="status"
-          className={cx("rounded-[6px] px-3 py-2 text-[12.5px] shadow-lg", t.kind === "err" ? "bg-red text-white" : "bg-ink text-white")}
+          className={cx("rounded-[6px] px-3 py-2 text-[12.5px] shadow-lg", t.kind === "err" ? "bg-red text-canvas" : "bg-ink text-canvas")}
         >
           {t.text}
         </div>

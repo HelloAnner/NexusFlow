@@ -4,6 +4,7 @@ import { build,environmentClient } from "./client";
 import { verifyB0 } from "./verify";
 import { portalSync } from "./portal-sync";
 import { checkBrand } from "./brand";
+import { checkTheme } from "./theme";
 import { permCommand, permText } from "./perm";
 
 export async function main(argv=process.argv.slice(2)) {
@@ -24,6 +25,9 @@ export async function main(argv=process.argv.slice(2)) {
  } else if(args.command==="brand") {
   if(args.action && args.action!=="check")throw Error("usage: nexusflow brand check");
   result=await checkBrand(client.base,"nexusflow");
+ } else if(args.command==="theme") {
+  if(args.action && args.action!=="check")throw Error("usage: nexusflow theme check");
+  result=await checkTheme(client.base);
  } else if(args.command==="portal-sync") {
   result=await portalSync(client,args);
  } else if(args.command==="perm") {
@@ -34,9 +38,10 @@ export async function main(argv=process.argv.slice(2)) {
  } else result=await client.command(args);
  console.log(args.options.json===true?JSON.stringify(result):JSON.stringify(result,null,2));return 0;
 }
-function help(){console.log(`nexusflow <auth|version|verify|home|gantt|orgs|people|projects|tasks|dispatch|approvals|load|conflicts|files|inbox|reports|tools|config|admin|perm|portal-sync|brand> <action>
+function help(){console.log(`nexusflow <auth|version|verify|home|gantt|orgs|people|projects|tasks|dispatch|approvals|load|conflicts|files|inbox|reports|tools|config|admin|perm|portal-sync|brand|theme> <action>
 Actions: list/show/create/update/delete; auth login|register|logout|me; tasks assign|assignments|publish|action; task-assignments list|show|update|requirements|action; visibility_grants create|list|show, visibility-grants revoke; dispatch submit|confirm; approvals decision; conflicts resolve|force; files upload|download|rollback|archive|versions|portal-list|portal-content|portal-preview; reports export; inbox read|complete; config publish|versions; admin preflight|audit|users|delegations|user-status|user-binding; perm catalog|subjects|matrix|set|reset|check|prune; health [ready]; seed [status]
 brand check: verify SVG favicon, system identity and application base path.
+theme check: verify the served build ships light/dark tokens and the no-flash theme script.
 version: public service commit; version --local: compiled CLI commit.
 verify b0 --commit SHA: read regression, temporary admin session; no seed or business writes.
 Set NEXUSFLOW_URL, NEXUSFLOW_BASE_PATH, NEXUSFLOW_TOKEN. --json for compact JSON.

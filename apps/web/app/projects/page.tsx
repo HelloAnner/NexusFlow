@@ -12,7 +12,7 @@ import type { Project } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState,measured } from "@/lib/query-state";
 import { useData } from "@/lib/data";
-import { cx, str, md, avatarColor } from "@/lib/utils";
+import { avatarColor, cx, md, soft, str } from "@/lib/utils";
 import { projectStatusColor, projectStatusText } from "@/lib/home";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -23,15 +23,15 @@ const LEVELS = ["公司级", "处级", "中心级"];
 
 type ProjectRow = Omit<Project,"progress"> & {progress?:number;members?:string[]};
 function normalize(items: Record<string,unknown>[]): ProjectRow[] {
- return items.map((x):ProjectRow=>({id:str(x.id),name:str(x.name),type:str(x.type,"—"),level:str(x.level),owner:str(x.owner,str(x.owner_id,"—")),ownerColor:avatarColor(str(x.owner_id)),start:str(x.start_date),end:str(x.end_date),progress:measured(x.progress),status:str(x.status,"—"),updated:str(x.updated_at,"—"),marker:"circle",color:"#86868f",members:Array.isArray(x.member_ids)?x.member_ids.filter((id):id is string=>typeof id==="string"):undefined}));
+ return items.map((x):ProjectRow=>({id:str(x.id),name:str(x.name),type:str(x.type,"—"),level:str(x.level),owner:str(x.owner,str(x.owner_id,"—")),ownerColor:avatarColor(str(x.owner_id)),start:str(x.start_date),end:str(x.end_date),progress:measured(x.progress),status:str(x.status,"—"),updated:str(x.updated_at,"—"),marker:"circle",color:"var(--color-ink-3)",members:Array.isArray(x.member_ids)?x.member_ids.filter((id):id is string=>typeof id==="string"):undefined}));
 }
 
 function progressColor(p: ProjectRow): string {
-  if (p.status === "完成" || (p.progress !== undefined && p.progress >= 100)) return "#a8a8b0";
-  if (p.status === "逾期") return "#12855a";
-  if (p.type === "市场") return "#6d5bd0";
-  if (p.type === "文职") return "#2563eb";
-  return "#12855a";
+  if (p.status === "完成" || (p.progress !== undefined && p.progress >= 100)) return "var(--color-ink-4)";
+  if (p.status === "逾期") return "var(--color-green)";
+  if (p.type === "市场") return "var(--color-purple)";
+  if (p.type === "文职") return "var(--color-blue)";
+  return "var(--color-green)";
 }
 
 export default function ProjectsPage() {
@@ -74,7 +74,7 @@ export default function ProjectsPage() {
         right={
           <>
             <SearchBox placeholder="搜索项目名称 / 负责人" className="w-64" value={q} onChange={setQ} />
-            <button onClick={() => setCreating(true)} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white">
+            <button onClick={() => setCreating(true)} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-canvas">
               <Plus size={14} /> 新建项目
             </button>
           </>
@@ -88,7 +88,7 @@ export default function ProjectsPage() {
             onClick={() => setType(t)}
             className={cx(
               "h-7 rounded-full px-3 text-[12.5px]",
-              type === t ? "bg-ink font-medium text-white" : "border border-border bg-panel text-ink-2 hover:bg-fill",
+              type === t ? "bg-ink font-medium text-canvas" : "border border-border bg-panel text-ink-2 hover:bg-fill",
             )}
           >
             {t}
@@ -101,7 +101,7 @@ export default function ProjectsPage() {
             onClick={() => setLevel(level === l ? "" : l)}
             className={cx(
               "h-7 rounded-full px-3 text-[12.5px]",
-              level === l ? "bg-ink font-medium text-white" : "border border-border bg-panel text-ink-2 hover:bg-fill",
+              level === l ? "bg-ink font-medium text-canvas" : "border border-border bg-panel text-ink-2 hover:bg-fill",
             )}
           >
             {l}
@@ -137,7 +137,7 @@ export default function ProjectsPage() {
                       {p.name}
                     </span>
                   </td>
-                  <td className="px-3 py-3"><Badge color={TYPE_COLOR[p.type] || "#86868f"}>{p.type}</Badge></td>
+                  <td className="px-3 py-3"><Badge color={TYPE_COLOR[p.type] || "var(--color-ink-3)"}>{p.type}</Badge></td>
                   <td className="px-3 py-3">
                     <span className="flex items-center gap-2">
                       <Avatar name={p.owner} color={p.ownerColor} size={22} />
@@ -156,7 +156,7 @@ export default function ProjectsPage() {
                         <span
                           key={i}
                           className="flex h-5 w-5 items-center justify-center rounded-[5px] border border-panel text-[9px] font-semibold"
-                          style={{ background: `${avatarColor(c)}1A`, color: avatarColor(c) }}
+                          style={{ background: soft(avatarColor(c)), color: avatarColor(c) }}
                         >
                           {c.slice(0,1)}
                         </span>
@@ -179,7 +179,7 @@ export default function ProjectsPage() {
         onClose={() => setCreating(false)}
         footer={<>
           <button onClick={() => setCreating(false)} className="h-8 rounded-sm border border-border px-3 text-[12.5px] text-ink-2">取消</button>
-          <button onClick={() => void create()} disabled={saving} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white disabled:opacity-60">{saving ? "创建中…" : "创建"}</button>
+          <button onClick={() => void create()} disabled={saving} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-canvas disabled:opacity-60">{saving ? "创建中…" : "创建"}</button>
         </>}
       >
         <div className="flex flex-col gap-3">

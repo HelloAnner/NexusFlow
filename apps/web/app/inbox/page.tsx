@@ -25,8 +25,8 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  审批: "#d92d20", 指派: "#2563eb", 提及: "#6d5bd0", 冲突: "#b87407",
-  验收: "#12855a", 退回: "#d92d20", 派发: "#2563eb", 待确认: "#b87407", 系统: "#86868f",
+  审批: "var(--color-red)", 指派: "var(--color-blue)", 提及: "var(--color-purple)", 冲突: "var(--color-orange)",
+  验收: "var(--color-green)", 退回: "var(--color-red)", 派发: "var(--color-blue)", 待确认: "var(--color-orange)", 系统: "var(--color-ink-3)",
 };
 
 type Row = {
@@ -134,7 +134,7 @@ export default function InboxPage() {
                 onClick={() => setFilter(f)}
                 className={cx(
                   "h-7 rounded-full px-3 text-[12.5px]",
-                  filter === f ? "bg-ink font-medium text-white" : "border border-border bg-panel text-ink-2 hover:bg-fill",
+                  filter === f ? "bg-ink font-medium text-canvas" : "border border-border bg-panel text-ink-2 hover:bg-fill",
                 )}
               >
                 {f}
@@ -154,7 +154,7 @@ export default function InboxPage() {
                 <Avatar name={m.actor} color={m.actorColor} size={34} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <Badge color={TYPE_COLOR[m.kind] ?? "#86868f"}>{m.kind}</Badge>
+                    <Badge color={TYPE_COLOR[m.kind] ?? "var(--color-ink-3)"}>{m.kind}</Badge>
                     <span className={cx("truncate text-[12.5px] text-ink", m.unread && "font-semibold")}>{m.title}</span>
                     {m.unread && <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-red" />}
                   </div>
@@ -171,7 +171,7 @@ export default function InboxPage() {
           {!selected ? <Empty text="选择一条消息查看" /> : (
             <Card className="p-5">
               <div className="flex items-center gap-2">
-                <Badge color={TYPE_COLOR[selected.kind] ?? "#86868f"}>{selected.kind}</Badge>
+                <Badge color={TYPE_COLOR[selected.kind] ?? "var(--color-ink-3)"}>{selected.kind}</Badge>
                 <h2 className="text-[15px] font-semibold">{selected.title}</h2>
                 <span className="ml-auto text-[11.5px] text-ink-3">{selected.actor} · {selected.time}</span>
               </div>
@@ -182,7 +182,7 @@ export default function InboxPage() {
                     该审批已处理（{approvalStatus(selected.sourceId) === "approved" ? "通过" : approvalStatus(selected.sourceId) === "rejected" ? "驳回" : approvalStatus(selected.sourceId)}）。
                   </p>
                   <button onClick={() => void complete()} disabled={busy}
-                    className="flex h-8 w-fit items-center gap-1.5 rounded-sm bg-ink px-3.5 text-[12.5px] font-medium text-white disabled:opacity-60">
+                    className="flex h-8 w-fit items-center gap-1.5 rounded-sm bg-ink px-3.5 text-[12.5px] font-medium text-canvas disabled:opacity-60">
                     标记完成
                   </button>
                 </div>
@@ -199,7 +199,7 @@ export default function InboxPage() {
                   />
                   <div className="mt-3 flex gap-2">
                     <button onClick={() => void decide(true)} disabled={busy}
-                      className="flex h-8 items-center gap-1.5 rounded-sm bg-green px-3.5 text-[12.5px] font-medium text-white disabled:opacity-60">
+                      className="flex h-8 items-center gap-1.5 rounded-sm bg-green px-3.5 text-[12.5px] font-medium text-canvas disabled:opacity-60">
                       <Check size={14} /> 通过
                     </button>
                     <button onClick={() => void decide(false)} disabled={busy}
@@ -212,7 +212,7 @@ export default function InboxPage() {
                 <>
                   <p className="mt-3 text-[12.5px] leading-6 text-ink-2">后补流程派发需要发起人确认后才进入审批。</p>
                   <button onClick={() => void confirmDispatch()} disabled={busy}
-                    className="mt-3 flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3.5 text-[12.5px] font-medium text-white disabled:opacity-60">
+                    className="mt-3 flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3.5 text-[12.5px] font-medium text-canvas disabled:opacity-60">
                     <Check size={14} /> 确认后补内容
                   </button>
                 </>
@@ -229,7 +229,7 @@ export default function InboxPage() {
                       placeholder="处理说明（可选）"
                     />
                     <button onClick={() => void complete()} disabled={busy}
-                      className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3.5 text-[12.5px] font-medium text-white disabled:opacity-60">
+                      className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3.5 text-[12.5px] font-medium text-canvas disabled:opacity-60">
                       标记完成
                     </button>
                   </div>

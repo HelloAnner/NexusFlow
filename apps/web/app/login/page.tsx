@@ -7,6 +7,7 @@ import { ApiError } from "@/lib/api";
 import { absorbPortalToken, useAuth } from "@/lib/auth";
 import pkg from "../../package.json";
 import { BrandIcon } from "@/components/brand-icon";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const PORTAL_URL = "http://123.57.255.204:6688";
 const VERSION = `v${pkg.version}`;
@@ -98,6 +99,9 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-canvas px-5 py-10">
+      <div className="absolute top-4 right-5">
+        <ThemeToggle />
+      </div>
       <div className="flex w-[400px] max-w-full flex-col gap-3.5 rounded-lg border border-border bg-panel p-6 pb-5">
         <div className="flex items-center justify-center gap-2">
           <BrandIcon size={30} />
@@ -159,7 +163,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center justify-center gap-1.5 rounded-[6px] bg-ink py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-55"
+            className="flex items-center justify-center gap-1.5 rounded-[6px] bg-ink py-2 text-[13px] font-medium text-canvas transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-55"
           >
             {loading ? "登录中…" : <><LogIn size={14} /> 登录</>}
           </button>

@@ -42,7 +42,7 @@ function OrgNodes({ items, depth, counts }: { items: OrgNode[]; depth: number; c
   );
 }
 
-const loadColor = (v: number) => (v >= 90 ? "#d92d20" : v >= 75 ? "#b87407" : v >= 40 ? "#12855a" : "#12855a");
+const loadColor = (v: number) => (v >= 90 ? "var(--color-red)" : v >= 75 ? "var(--color-orange)" : v >= 40 ? "var(--color-green)" : "var(--color-green)");
 
 export default function TeamPage() {
   const query=useData<unknown[]>("people", "/people"),state=recordQueryState(query);
@@ -79,7 +79,7 @@ export default function TeamPage() {
         right={
           <>
             <SearchBox placeholder="搜索姓名 / 技能" className="w-56" value={q} onChange={setQ} />
-            <button onClick={() => setInviting(true)} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white">
+            <button onClick={() => setInviting(true)} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-canvas">
               <UserPlus size={14} /> 邀请成员
             </button>
           </>
@@ -106,7 +106,7 @@ export default function TeamPage() {
                 onClick={() => setSkill(s)}
                 className={cx(
                   "h-7 rounded-full px-3 text-[12.5px]",
-                  skill === s ? "bg-ink font-medium text-white" : "border border-border bg-panel text-ink-2 hover:bg-fill",
+                  skill === s ? "bg-ink font-medium text-canvas" : "border border-border bg-panel text-ink-2 hover:bg-fill",
                 )}
               >
                 {s}
@@ -145,7 +145,7 @@ export default function TeamPage() {
                     </td>
                     <td className="px-3 py-3">
                       <span className="flex flex-wrap gap-1">
-                        {p.skills ? p.skills.map((s) => <Badge key={s} color="#16161a">{s}</Badge>) : "—"}
+                        {p.skills ? p.skills.map((s) => <Badge key={s} color="var(--color-ink)">{s}</Badge>) : "—"}
                       </span>
                     </td>
                     <td className="px-3 py-3">
@@ -153,7 +153,7 @@ export default function TeamPage() {
                         {p.load!==undefined ? <><Bar value={p.load} color={loadColor(p.load)} height={5} /><span className="w-9 shrink-0 text-right text-[11.5px] text-ink-3 tabular-nums">{p.load}%</span></> : <span className="text-ink-3">暂不可用</span>}
                       </span>
                     </td>
-                    <td className="px-5 py-3"><Badge color={STATUS_COLOR[p.status] || "#86868f"}>{p.status}</Badge></td>
+                    <td className="px-5 py-3"><Badge color={STATUS_COLOR[p.status] || "var(--color-ink-3)"}>{p.status}</Badge></td>
                   </tr>
                 ))}
               </tbody>
@@ -169,7 +169,7 @@ export default function TeamPage() {
         onClose={() => { setInviting(false); setInvite(null); }}
         footer={<>
           <button onClick={() => { setInviting(false); setInvite(null); }} className="h-8 rounded-sm border border-border px-3 text-[12.5px] text-ink-2">关闭</button>
-          <button onClick={() => void inviteMember()} disabled={saving || !!invite} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white disabled:opacity-60">{saving ? "生成中…" : "生成邀请码"}</button>
+          <button onClick={() => void inviteMember()} disabled={saving || !!invite} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-canvas disabled:opacity-60">{saving ? "生成中…" : "生成邀请码"}</button>
         </>}
       >
         <div className="flex flex-col gap-3">

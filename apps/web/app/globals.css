@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-/* 设计 token 与 Portal 门户一致：单一白底页面，发丝线分隔，单色强调（主操作反相为近黑）。 */
+/* 设计 token 与 Portal 门户一致：单一平铺页面，发丝线分隔，单色强调（主操作反相）。
+   暗色只覆盖 token（见文件末尾 [data-theme="dark"]），页面组件不需要感知主题。 */
 @theme {
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
@@ -26,6 +27,13 @@
   --color-pink: #b04a7c;
   --color-red: #d92d20;
 
+  /* 低饱和填充：热力图 / 告警行 / 甘特网格 */
+  --color-fill-2: #ececea;
+  --color-green-soft: #dcefe6;
+  --color-orange-soft: #f6e8d2;
+  --color-red-soft: #fadfd9;
+  --color-blue-soft: #c7dbfb;
+
   --radius-xs: 6px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -49,3 +57,75 @@ html, body {
   scrollbar-width: thin;
   scrollbar-color: rgba(17, 17, 17, 0.16) transparent;
 }
+
+/* ===== Dark Theme =====
+   只覆盖 token：Tailwind 工具类（bg-canvas / text-ink / border-border …）与
+   TS 里以 var(--color-*) 引用的图表、彩色徽标自动跟随。
+   「反相主操作」用 text-canvas 做前景，所以暗色下按钮是浅底深字。 */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-canvas: #0f0f12;
+  --color-panel: #16161a;
+  --color-fill: #1e1e23;
+  --color-fill-2: #28282e;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-strong: rgba(255, 255, 255, 0.24);
+
+  --color-ink: #f2f2f5;
+  --color-ink-2: #c4c4cc;
+  --color-ink-3: #8d8d97;
+  --color-ink-4: #6b6b75;
+
+  --color-accent: #f2f2f5;
+  --color-accent-soft: rgba(255, 255, 255, 0.08);
+
+  --color-green: #34c48a;
+  --color-purple: #a78bfa;
+  --color-orange: #e0a53c;
+  --color-blue: #6d9df5;
+  --color-pink: #e08ab4;
+  --color-red: #f4776b;
+
+  --color-green-soft: rgba(52, 196, 138, 0.16);
+  --color-orange-soft: rgba(224, 165, 60, 0.18);
+  --color-red-soft: rgba(244, 119, 107, 0.18);
+  --color-blue-soft: rgba(109, 157, 245, 0.24);
+}
+
+[data-theme="dark"] ::selection { background: rgba(255, 255, 255, 0.16); }
+[data-theme="dark"] * { scrollbar-color: rgba(255, 255, 255, 0.18) transparent; }
+
+/* 共享 RBAC 面板（与 Portal 同步，样式硬编码浅色）：宿主侧按主题覆盖，不去改共享源。 */
+[data-theme="dark"] .rbac {
+  --rbac-ink: var(--color-ink);
+  --rbac-ink2: var(--color-ink-2);
+  --rbac-muted: var(--color-ink-3);
+  --rbac-fill: var(--color-fill);
+  --rbac-line: var(--color-border);
+  --rbac-line2: var(--color-border-strong);
+  --rbac-red: var(--color-red);
+  --rbac-green: var(--color-green);
+  background: var(--color-canvas);
+}
+[data-theme="dark"] .rbac-search input,
+[data-theme="dark"] .rbac-reset-all,
+[data-theme="dark"] .rbac-group,
+[data-theme="dark"] .rbac-cell-reset,
+[data-theme="dark"] .rbac-mobile-select,
+[data-theme="dark"] .rbac-error button { background: var(--color-panel); }
+[data-theme="dark"] .rbac-legend,
+[data-theme="dark"] .rbac-group-head,
+[data-theme="dark"] .rbac-row:hover { background: var(--color-fill); }
+[data-theme="dark"] .rbac-person[aria-current="true"] { background: var(--color-accent-soft); }
+[data-theme="dark"] .rbac-row { border-top-color: rgba(255, 255, 255, 0.05); }
+[data-theme="dark"] .rbac-tab[aria-selected="true"],
+[data-theme="dark"] .rbac-lock.is-on,
+[data-theme="dark"] .rbac-legend .rbac-mini-lock.on,
+[data-theme="dark"] .rbac-person[aria-current="true"] .rbac-avatar { color: var(--color-canvas); }
+[data-theme="dark"] .rbac-lock.is-on:hover:not(:disabled) { background: var(--color-ink-2); }
+[data-theme="dark"] .rbac-error { background: var(--color-red-soft); color: #ffb4ab; border-color: rgba(244, 119, 107, 0.3); }
+[data-theme="dark"] .rbac-error button { color: #ffb4ab; }
+[data-theme="dark"] .rbac-skel { background: linear-gradient(90deg, var(--color-fill) 25%, var(--color-fill-2) 37%, var(--color-fill) 63%); background-size: 400% 100%; }
+[data-theme="dark"] .rbac-toast { background: var(--color-ink); color: var(--color-canvas); }
+[data-theme="dark"] .rbac-toast.is-error { background: #8f2318; color: #fff; }

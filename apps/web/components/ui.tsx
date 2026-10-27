@@ -2,13 +2,13 @@
 
 import React from "react";
 import { Search } from "lucide-react";
-import { cx, initial } from "@/lib/utils";
+import { cx, initial, soft } from "@/lib/utils";
 
 export function Avatar({ name, color, size = 24, className }: { name: string; color: string; size?: number; className?: string }) {
   return (
     <span
       className={cx("inline-flex shrink-0 items-center justify-center rounded-[7px] font-semibold", className)}
-      style={{ width: size, height: size, background: `${color}1A`, color, fontSize: size * 0.42 }}
+      style={{ width: size, height: size, background: soft(color), color, fontSize: size * 0.42 }}
     >
       {initial(name)}
     </span>
@@ -19,7 +19,7 @@ export function Badge({ color, children, className }: { color: string; children:
   return (
     <span
       className={cx("inline-flex items-center gap-1 rounded-[4px] px-[7px] py-px text-[11.5px] font-medium whitespace-nowrap", className)}
-      style={{ color, background: `${color}1A` }}
+      style={{ color, background: soft(color) }}
     >
       {children}
     </span>
@@ -96,12 +96,12 @@ export function Empty({ text = "暂无数据" }: { text?: string }) {
 }
 
 export const STATUS_COLOR: Record<string, string> = {
-  正常: "#12855a", 风险: "#b87407", 逾期: "#d92d20", 完成: "#86868f", 已完成: "#12855a",
-  未启动: "#86868f", 过载: "#d92d20", 饱和: "#b87407", 空闲: "#12855a", 全天锁定: "#4a4a52",
-  进行中: "#2563eb",
+  正常: "var(--color-green)", 风险: "var(--color-orange)", 逾期: "var(--color-red)", 完成: "var(--color-ink-3)", 已完成: "var(--color-green)",
+  未启动: "var(--color-ink-3)", 过载: "var(--color-red)", 饱和: "var(--color-orange)", 空闲: "var(--color-green)", 全天锁定: "var(--color-ink-2)",
+  进行中: "var(--color-blue)",
 };
 
 export const TYPE_COLOR: Record<string, string> = {
-  科研: "#12855a", 市场: "#6d5bd0", 出差: "#b87407", 文职: "#2563eb",
-  党建: "#b04a7c", 学习: "#12855a", 休假: "#86868f",
+  科研: "var(--color-green)", 市场: "var(--color-purple)", 出差: "var(--color-orange)", 文职: "var(--color-blue)",
+  党建: "var(--color-pink)", 学习: "var(--color-green)", 休假: "var(--color-ink-3)",
 };

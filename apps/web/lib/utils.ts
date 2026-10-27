@@ -2,7 +2,7 @@ export const cx = (...xs: (string | false | null | undefined)[]) => xs.filter(Bo
 
 export const DEMO_TODAY = "2025-06-24"; // 与设计稿一致的演示「今天」（周三）
 
-export const AVATAR_COLORS = ["#12855a", "#2563eb", "#6d5bd0", "#b04a7c", "#b87407", "#4a4a52"];
+export const AVATAR_COLORS = ["var(--color-green)", "var(--color-blue)", "var(--color-purple)", "var(--color-pink)", "var(--color-orange)", "var(--color-ink-2)"];
 
 export function avatarColor(name: string): string {
   let h = 0;
@@ -50,3 +50,9 @@ export const num = (v: unknown, fb = 0) => {
   return Number.isFinite(n) ? n : fb;
 };
 export const arr = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
+
+/**
+ * 彩色徽标 / 图标的半透明底：颜色可能是 hex，也可能是 var(--color-*)（会随主题变），
+ * 所以用 color-mix 而不是拼 `#rrggbb1A`。
+ */
+export const soft = (color: string, pct = 10) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
