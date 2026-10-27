@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { useParams } from "next/navigation";
-import { CornerUpLeft, Share2, MoreHorizontal, SlidersHorizontal } from "lucide-react";
+import React, { useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { CornerUpLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { Badge, Avatar, Marker, Empty, PageHeader } from "@/components/ui";
 import type { GanttGroup,GanttTask } from "@/lib/demo";
@@ -11,6 +11,8 @@ import { recordQueryState,queryState } from "@/lib/query-state";
 import { projectPlanState } from "@/lib/plan-data";
 import { useData } from "@/lib/data";
 import { cx, addDays, mdCn, str,dayDiff } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { Modal, Field, inputCls, toast, errorText } from "@/components/feedback";
 
 const CHART_W = 1500;
 const ROW_H = 40;
@@ -19,7 +21,7 @@ const LABEL_W = 210;
 type Row = { kind: "group"; group: GanttGroup } | { kind: "task"; group: GanttGroup; task: GanttTask };
 
 export default function GanttClient() {
- const params=useParams<{id:string}>(),id=params?.id;
+ const id=useSearchParams().get("id");
  if(!id)return <Shell><Empty text="未指定项目" /></Shell>;
  return <PlanQueries id={id} />;
 }
@@ -28,12 +30,15 @@ function PlanQueries({id}:{id:string}){
  const groups=useData<unknown[]>(`plan-${id}`,`/projects/${encodeURIComponent(id)}/tasks`);
  const state=projectPlanState(id,recordQueryState(projects),queryState(groups));
  if(state.kind!=="ready")return <Shell><PageHeader title="项目计划" /><QueryNotice state={state} retry={()=>Promise.all([projects.refetch(),groups.refetch()])} emptyText={state.kind==="empty"?state.message:"暂无项目任务"} /></Shell>;
- return <PlanChart project={state.project} groups={state.groups} start={state.start} days={state.days} />;
+ return <PlanChart project={state.project} groups={state.groups} start={state.start} days={state.days} onChanged={()=>groups.refetch()} />;
 }
-function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;groups:GanttGroup[];start:string;days:number}){
+function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,unknown>;groups:GanttGroup[];start:string;days:number;onChanged:()=>unknown}){
   const GANTT_START=start,GANTT_TOTAL_DAYS=days,GANTT_TODAY_DAY=dayDiff(start,new Date().toISOString().slice(0,10)),DAY_W=CHART_W/days;
   const [selected, setSelected] = useState<string | null>(null);
   const [scale, setScale] = useState<"周" | "月" | "阶段">("阶段");
+  const [editing, setEditing] = useState<{ id: string; name: string; start: string; end: string; hours: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const scroller = useRef<HTMLDivElement>(null);
 
   const rows = useMemo<Row[]>(() => {
     const out: Row[] = [];
@@ -65,32 +70,6 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
             <span className="font-medium text-ink">{str(project.name)}</span>
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <button className="flex h-8 items-center gap-1.5 rounded-sm border border-border bg-panel px-3 text-[12.5px] text-ink-2">
-            <Share2 size={13} /> 分享
-          </button>
-          <button className="flex h-8 w-8 items-center justify-center rounded-sm border border-border bg-panel text-ink-2">
-            <MoreHorizontal size={15} />
-          </button>
-        </div>
-      </div>
-
-      {/* 页签 */}
-      <div className="flex items-center gap-5 border-b border-border px-6 text-[12.5px]">
-        {[
-          ["概览", ""], ["计划", ""], ["成员", ""], ["问题", ""], ["资料", ""], ["动态", ""],
-        ].map(([t, c]) => (
-          <button
-            key={t}
-            className={cx(
-              "flex items-center gap-1 border-b-2 py-2.5",
-              t === "计划" ? "border-accent font-medium text-ink" : "border-transparent text-ink-3 hover:text-ink-2",
-            )}
-          >
-            {t}
-            {c && <span className={cx("text-[11.5px]", t === "动态" ? "text-red" : "text-ink-3")}>{c}</span>}
-          </button>
-        ))}
       </div>
 
       {/* 工具栏 */}
@@ -107,9 +86,16 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
               </button>
             ))}
           </div>
-          <button className="h-7 rounded-sm border border-border bg-panel px-2.5 text-[11.5px] text-ink-2">回到今天</button>
-          <button className="flex h-7 items-center gap-1 rounded-sm border border-border bg-panel px-2.5 text-[11.5px] text-ink-2">
-            <SlidersHorizontal size={12} /> 筛选
+          <button
+            onClick={() => {
+              const box = scroller.current;
+              if (!box) return;
+              const ratio = Math.max(0, Math.min(1, GANTT_TODAY_DAY / GANTT_TOTAL_DAYS));
+              box.scrollTo({ left: Math.max(0, ratio * box.scrollWidth - box.clientWidth / 2), behavior: "smooth" });
+            }}
+            className="h-7 rounded-sm border border-border bg-panel px-2.5 text-[11.5px] text-ink-2"
+          >
+            回到今天
           </button>
         </div>
         <div className="flex items-center gap-3 text-[11.5px] text-ink-3">
@@ -122,7 +108,7 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
 
       {/* 甘特主体 */}
       <div className="px-6 pb-6">
-        <div className="overflow-hidden rounded-lg border border-border bg-panel">
+        <div ref={scroller} className="overflow-x-auto rounded-lg border border-border bg-panel">
           {/* 刻度头 */}
           <div className="flex border-b border-border">
             <div className="shrink-0 px-4 py-2 text-[11.5px] text-ink-3" style={{ width: LABEL_W }}>任务 / 工作流</div>
@@ -268,10 +254,18 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
                     </div>
                   </div>
                   <div className="mt-3 flex gap-2">
-                    <button className="h-7 flex-1 rounded-sm bg-accent text-[11.5px] font-medium text-white">
-                      打开 {selectedTask.task.popover.code}
+                    <button
+                      onClick={() => setEditing({
+                        id: selectedTask.task.id,
+                        name: selectedTask.task.name,
+                        start: addDays(GANTT_START, selectedTask.task.start),
+                        end: addDays(GANTT_START, selectedTask.task.overdueTo ?? selectedTask.task.end),
+                        hours: "4",
+                      })}
+                      className="h-7 flex-1 rounded-sm bg-ink text-[11.5px] font-medium text-white"
+                    >
+                      调整计划
                     </button>
-                    <button className="h-7 flex-1 rounded-sm border border-border text-[11.5px] text-ink-2">调整计划</button>
                   </div>
                 </div>
               )}
@@ -279,6 +273,48 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
           </div>
         </div>
       </div>
+      <Modal
+        open={!!editing}
+        title={`调整计划 · ${editing?.name ?? ""}`}
+        onClose={() => setEditing(null)}
+        footer={<>
+          <button onClick={() => setEditing(null)} className="h-8 rounded-sm border border-border px-3 text-[12.5px] text-ink-2">取消</button>
+          <button
+            onClick={async () => {
+              if (!editing) return;
+              setSaving(true);
+              try {
+                await api(`/tasks/${editing.id}/action`, { method: "POST", body: JSON.stringify({
+                  action: "reschedule", start_date: editing.start, end_date: editing.end, daily_hours: Number(editing.hours),
+                }) });
+                toast("计划已调整");
+                setEditing(null);
+                setSelected(null);
+                await onChanged();
+              } catch (e) { toast(errorText(e), "err"); } finally { setSaving(false); }
+            }}
+            disabled={saving}
+            className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white disabled:opacity-60"
+          >
+            {saving ? "保存中…" : "保存"}
+          </button>
+        </>}
+      >
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="开始时间">
+              <input type="date" className={inputCls} value={editing?.start ?? ""} onChange={(e) => setEditing((v) => v && { ...v, start: e.target.value })} />
+            </Field>
+            <Field label="截止时间">
+              <input type="date" className={inputCls} value={editing?.end ?? ""} onChange={(e) => setEditing((v) => v && { ...v, end: e.target.value })} />
+            </Field>
+          </div>
+          <Field label="每日投入（小时）">
+            <input type="number" min={0} max={24} step="0.5" className={inputCls} value={editing?.hours ?? "4"} onChange={(e) => setEditing((v) => v && { ...v, hours: e.target.value })} />
+          </Field>
+          <p className="text-[11.5px] leading-5 text-ink-3">存在阻塞冲突时接口会拒绝保存，需要先在负载与冲突页处理。</p>
+        </div>
+      </Modal>
     </Shell>
   );
 }

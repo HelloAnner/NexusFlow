@@ -14,6 +14,9 @@ import { recordQueryState,measured } from "@/lib/query-state";
 import { useData } from "@/lib/data";
 import { cx, str, md, avatarColor } from "@/lib/utils";
 import { projectStatusColor, projectStatusText } from "@/lib/home";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { Modal, Field, inputCls, toast, errorText } from "@/components/feedback";
 
 const TYPES = ["科研", "市场", "出差", "文职", "党建", "学习", "休假"];
 const LEVELS = ["公司级", "处级", "中心级"];
@@ -34,11 +37,34 @@ function progressColor(p: ProjectRow): string {
 export default function ProjectsPage() {
   const router = useRouter();
   const query = useData<unknown[]>("projects", "/projects"),state=recordQueryState(query);
+  const user = useAuth((s) => s.user);
   const [type, setType] = useState("全部");
   const [level, setLevel] = useState("");
+  const [q, setQ] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: "", type: "科研", level: "中心级", start_date: "", end_date: "" });
   if(state.kind!=="ready")return <Shell><PageHeader title="项目" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无项目" /></Shell>;
   const projects=normalize(state.items);
-  const shown = projects.filter((p) => (type === "全部" || p.type === type) && (!level || p.level === level));
+  const kw = q.trim().toLowerCase();
+  const shown = projects.filter((p) =>
+    (type === "全部" || p.type === type) && (!level || p.level === level) &&
+    (!kw || `${p.name}${p.owner}`.toLowerCase().includes(kw)));
+
+  const create = async () => {
+    if (!form.name.trim()) return toast("请填写项目名称", "err");
+    setSaving(true);
+    try {
+      await api("/projects", { method: "POST", body: JSON.stringify({
+        name: form.name.trim(), type: form.type, level: form.level, status: "planning",
+        owner: user?.name || "", owner_id: user?.id, start_date: form.start_date, end_date: form.end_date, progress: 0,
+      }) });
+      toast("项目已创建");
+      setCreating(false);
+      setForm({ name: "", type: "科研", level: "中心级", start_date: "", end_date: "" });
+      await query.refetch();
+    } catch (e) { toast(errorText(e), "err"); } finally { setSaving(false); }
+  };
 
   return (
     <Shell>
@@ -47,8 +73,8 @@ export default function ProjectsPage() {
         sub={`共 ${shown.length} 个项目`}
         right={
           <>
-            <SearchBox placeholder="搜索项目名称 / 负责人" className="w-64" />
-            <button className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white">
+            <SearchBox placeholder="搜索项目名称 / 负责人" className="w-64" value={q} onChange={setQ} />
+            <button onClick={() => setCreating(true)} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white">
               <Plus size={14} /> 新建项目
             </button>
           </>
@@ -102,7 +128,7 @@ export default function ProjectsPage() {
               {shown.map((p) => (
                 <tr
                   key={p.id}
-                  onClick={() => router.push(`/projects/${p.id}/plan`)}
+                  onClick={() => router.push(`/projects/plan?id=${p.id}`)}
                   className="cursor-pointer border-b border-border/60 last:border-0 hover:bg-canvas"
                 >
                   <td className="px-5 py-3">
@@ -146,6 +172,42 @@ export default function ProjectsPage() {
           {shown.length === 0 && <Empty text="没有符合条件的项目" />}
         </Card>
       </div>
+
+      <Modal
+        open={creating}
+        title="新建项目"
+        onClose={() => setCreating(false)}
+        footer={<>
+          <button onClick={() => setCreating(false)} className="h-8 rounded-sm border border-border px-3 text-[12.5px] text-ink-2">取消</button>
+          <button onClick={() => void create()} disabled={saving} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white disabled:opacity-60">{saving ? "创建中…" : "创建"}</button>
+        </>}
+      >
+        <div className="flex flex-col gap-3">
+          <Field label="项目名称">
+            <input className={inputCls} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="如：智慧油田数据平台" />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="类型">
+              <select className={inputCls} value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </Field>
+            <Field label="级别">
+              <select className={inputCls} value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })}>
+                {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
+              </select>
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="开始时间">
+              <input type="date" className={inputCls} value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
+            </Field>
+            <Field label="截止时间">
+              <input type="date" className={inputCls} value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
+            </Field>
+          </div>
+        </div>
+      </Modal>
     </Shell>
   );
 }

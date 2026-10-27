@@ -9,27 +9,67 @@ import {
   Card, Badge, Avatar, Bar, PageHeader, SearchBox,
   Empty, STATUS_COLOR,
 } from "@/components/ui";
-import { ORG_TREE,type Person } from "@/lib/demo";
+import type { Person } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState,measured } from "@/lib/query-state";
 import { useData } from "@/lib/data";
 import { cx, str, avatarColor } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { Modal, Field, inputCls, toast, errorText } from "@/components/feedback";
 
 const SKILLS = ["全部", "前端", "后端", "Python", "Go", "报告撰写", "PPT 制作", "需求对接", "运维"];
 
-type PersonRow=Omit<Person,"load"|"skills"|"projects"> & {load?:number;skills?:string[];projects?:string[]};
+type PersonRow=Omit<Person,"load"|"skills"|"projects"> & {load?:number;skills?:string[];projects?:string[];orgId:string};
+type OrgNode = { id: string; name: string; type: string; children: OrgNode[] };
 function normalize(items: Record<string,unknown>[]): PersonRow[] {
- return items.map((x):PersonRow=>({id:str(x.id),name:str(x.name),title:str(x.title,"—"),department:str(x.department,str(x.org_id,"—")),skills:Array.isArray(x.skills)?x.skills.filter((s):s is string=>typeof s==="string"):undefined,projects:Array.isArray(x.projects)?x.projects.filter((s):s is string=>typeof s==="string"):undefined,load:measured(x.load),status:str(x.status,"—"),color:avatarColor(str(x.name))}));
+ return items.map((x):PersonRow=>({id:str(x.id),name:str(x.name),title:str(x.title,"—"),department:str(x.department,str(x.org_id,"—")),skills:Array.isArray(x.skills)?x.skills.filter((s):s is string=>typeof s==="string"):undefined,projects:Array.isArray(x.projects)?x.projects.filter((s):s is string=>typeof s==="string"):undefined,load:measured(x.load),status:str(x.status,"—"),color:avatarColor(str(x.name)),orgId:str(x.org_id)}));
+}
+
+function OrgNodes({ items, depth, counts }: { items: OrgNode[]; depth: number; counts: Record<string, number> }) {
+  return (
+    <>
+      {items.map((o) => (
+        <div key={o.id}>
+          <div className="flex items-center gap-2 py-1.5 text-[12.5px]" style={{ paddingLeft: depth * 16 }}>
+            <Building2 size={13} className="shrink-0 text-ink-3" />
+            <span className="flex-1 truncate text-ink-2">{o.name}</span>
+            <span className="text-[11.5px] text-ink-3">{counts[o.id] ?? 0}</span>
+          </div>
+          {o.children?.length ? <OrgNodes items={o.children} depth={depth + 1} counts={counts} /> : null}
+        </div>
+      ))}
+    </>
+  );
 }
 
 const loadColor = (v: number) => (v >= 90 ? "#d92d20" : v >= 75 ? "#b87407" : v >= 40 ? "#12855a" : "#12855a");
 
 export default function TeamPage() {
   const query=useData<unknown[]>("people", "/people"),state=recordQueryState(query);
+  const orgQuery=useData<unknown[]>("org-tree", "/orgs/tree");
   const [skill, setSkill] = useState("全部");
+  const [q, setQ] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [role, setRole] = useState("member");
+  const [invite, setInvite] = useState<{ token: string } | null>(null);
   if(state.kind!=="ready")return <Shell><PageHeader title="团队" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无人员" /></Shell>;
   const people=normalize(state.items);
-  const shown = people.filter((p) => skill === "全部" || p.skills?.some((s) => s.includes(skill)));
+  const orgs=(orgQuery.data ?? []) as unknown as OrgNode[];
+  const counts=people.reduce<Record<string, number>>((acc, p) => { if (p.orgId) acc[p.orgId] = (acc[p.orgId] ?? 0) + 1; return acc; }, {});
+  const kw = q.trim().toLowerCase();
+  const shown = people.filter((p) =>
+    (skill === "全部" || p.skills?.some((s) => s.includes(skill))) &&
+    (!kw || `${p.name}${p.title}${p.department}`.toLowerCase().includes(kw)));
+
+  const inviteMember = async () => {
+    setSaving(true);
+    try {
+      const res = await api<{ token: string }>("/invitations", { method: "POST", body: JSON.stringify({ role }) });
+      setInvite({ token: res.token });
+      toast("邀请已生成，把邀请码发给对方");
+    } catch (e) { toast(errorText(e), "err"); } finally { setSaving(false); }
+  };
 
   return (
     <Shell>
@@ -38,8 +78,8 @@ export default function TeamPage() {
         sub={`已加载 ${people.length} 人`}
         right={
           <>
-            <SearchBox placeholder="搜索姓名 / 技能" className="w-56" />
-            <button className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white">
+            <SearchBox placeholder="搜索姓名 / 技能" className="w-56" value={q} onChange={setQ} />
+            <button onClick={() => setInviting(true)} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white">
               <UserPlus size={14} /> 邀请成员
             </button>
           </>
@@ -49,39 +89,11 @@ export default function TeamPage() {
       <div className="flex flex-col gap-3 p-6 pt-4">
         {/* 组织架构 */}
         <Card className="p-4">
-          <h3 className="text-[13.5px] font-semibold">组织架构</h3>
-          <p className="mt-0.5 mb-2 text-[11.5px] text-ink-3">公司 / 二级单位 / 三级单位 / 部门</p>
-          <div className="flex items-center gap-2 px-1 py-1.5 text-[12.5px]">
-            <Building2 size={14} className="text-ink-3" />
-            <span className="flex-1">{ORG_TREE.name}</span>
-            <span className="text-[11.5px] text-ink-3">{ORG_TREE.count}</span>
+          <div className="mb-1 flex items-center justify-between">
+            <h3 className="text-[13.5px] font-semibold">组织架构</h3>
+            <span className="text-[11.5px] text-ink-3">按组织统计成员数</span>
           </div>
-          <div className="ml-4 flex flex-col">
-            {ORG_TREE.departments.map((d, i) => (
-              <div
-                key={d.name}
-                className={cx(
-                  "flex items-center gap-2 rounded-sm px-2 py-1.5 text-[12.5px]",
-                  i === 0 ? "bg-accent-soft font-medium" : "text-ink-2 hover:bg-fill",
-                )}
-              >
-                <ChevronRight size={12} className="text-ink-3" />
-                <span className="flex-1">{d.name}</span>
-                <span className="text-[11.5px] text-ink-3">{d.count}</span>
-              </div>
-            ))}
-          </div>
-          <p className="mt-3 mb-1 px-1 text-[11.5px] text-ink-3">创新工作室</p>
-          <div className="ml-4 flex flex-col">
-            {ORG_TREE.studios.map((s) => (
-              <div key={s.name} className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-[12.5px] text-ink-2 hover:bg-fill">
-                <Users2 size={12} className="text-ink-3" />
-                <span className="flex-1">{s.name}</span>
-                <span className="text-[11.5px] text-ink-3">{s.count}</span>
-              </div>
-            ))}
-          </div>
-          <p className="mt-2 px-1 text-[11.5px] text-ink-3">1 人可属于多个工作室</p>
+          {orgs.length ? <OrgNodes items={orgs} depth={0} counts={counts} /> : <p className="py-3 text-[12px] text-ink-3">{orgQuery.isPending ? "加载中…" : "暂无可查看的组织"}</p>}
         </Card>
 
         {/* 成员表 */}
@@ -150,6 +162,31 @@ export default function TeamPage() {
           </Card>
         </div>
       </div>
+
+      <Modal
+        open={inviting}
+        title="邀请成员"
+        onClose={() => { setInviting(false); setInvite(null); }}
+        footer={<>
+          <button onClick={() => { setInviting(false); setInvite(null); }} className="h-8 rounded-sm border border-border px-3 text-[12.5px] text-ink-2">关闭</button>
+          <button onClick={() => void inviteMember()} disabled={saving || !!invite} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white disabled:opacity-60">{saving ? "生成中…" : "生成邀请码"}</button>
+        </>}
+      >
+        <div className="flex flex-col gap-3">
+          <Field label="成员角色">
+            <select className={inputCls} value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="member">成员</option>
+              <option value="project_lead">项目负责人</option>
+            </select>
+          </Field>
+          {invite && (
+            <div className="rounded-[6px] bg-fill px-3 py-2.5">
+              <p className="text-[11.5px] text-ink-3">邀请码（7 天内有效，交给对方注册使用）</p>
+              <p className="mt-1 break-all font-mono text-[12px] text-ink">{invite.token}</p>
+            </div>
+          )}
+        </div>
+      </Modal>
     </Shell>
   );
 }

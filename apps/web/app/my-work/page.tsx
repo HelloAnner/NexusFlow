@@ -1,149 +1,207 @@
 "use client";
 
-import React from "react";
-import { CheckCircle2, Paperclip, SquarePen } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { CheckCircle2, Circle, RefreshCw } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { Card, Badge, PageHeader } from "@/components/ui";
-import { MY_TASKS, MY_SCHEDULE, MY_DISTRIBUTION, WEEK_DAYS } from "@/lib/demo";
+import { Card, Badge, PageHeader, Empty } from "@/components/ui";
+import { QueryNotice } from "@/components/query-notice";
+import { recordQueryState, measured } from "@/lib/query-state";
 import { useData } from "@/lib/data";
-import { cx } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { Modal, Field, inputCls, toast, errorText } from "@/components/feedback";
+import { todayISO } from "@/lib/home";
+import { cx, str } from "@/lib/utils";
 
-function TaskRow({ t }: { t: (typeof MY_TASKS.thisWeek)[number] }) {
-  return (
-    <div className="flex items-center gap-3 border-b border-border/60 py-2.5 last:border-0">
-      <span
-        className={cx(
-          "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border",
-          t.done ? "border-green bg-green text-white" : "border-ink-4/60 bg-panel",
-        )}
-      >
-        {t.done && <CheckCircle2 size={12} />}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className={cx("text-[12.5px] font-medium", t.done ? "text-ink-3 line-through" : "text-ink")}>{t.title}</p>
-        <p className="mt-0.5 text-[11.5px]">
-          <span className={t.dueRed ? "text-red" : "text-ink-3"}>{t.due}</span>
-          <span className="ml-2 text-ink-3">{t.daily}</span>
-        </p>
-      </div>
-      <Badge color={t.tagColor}>{t.tag}</Badge>
-    </div>
-  );
-}
+type Task = {
+  id: string; name: string; status: string; start: string; end: string;
+  hours?: number; progress?: number; ownerId: string; members: string[]; projectId: string;
+};
 
-function WeekSchedule() {
-  return (
-    <Card className="p-4">
-      <div className="mb-1 flex items-center justify-between">
-        <h3 className="text-[13.5px] font-semibold">我的排程 · 本周</h3>
-        <span className="text-[11.5px] text-ink-3">已排 32h / 40h</span>
-      </div>
-      <div className="ml-[88px] grid grid-cols-7">
-        {WEEK_DAYS.map((d, i) => (
-          <div key={d} className={cx("py-1 text-center text-[11.5px]", i === 2 ? "rounded-[6px] bg-accent-soft font-medium text-accent" : "text-ink-3")}>{d}</div>
-        ))}
-      </div>
-      <div className="relative">
-        <div className="absolute top-0 bottom-0 w-px bg-blue" style={{ left: `calc(88px + (100% - 88px) * ${2.5 / 7})` }} />
-        {MY_SCHEDULE.map((t) => (
-          <div key={t.name} className="flex items-center py-[8px]">
-            <span className="w-[88px] shrink-0 truncate pr-3 text-[12.5px] text-ink-2">{t.name}</span>
-            <div className="relative flex-1">
-              <div
-                className="flex h-[10px] overflow-hidden rounded-full"
-                style={{ marginLeft: `${(t.start / 7) * 100}%`, width: `${((t.end - t.start) / 7) * 100}%`, background: `${t.color}33` }}
-              >
-                <div className="h-full rounded-full" style={{ width: `${t.progress}%`, background: t.color }} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
+const STATUS_TEXT: Record<string, string> = {
+  draft: "草稿", pending_coordination: "待协调", in_progress: "进行中",
+  pending_acceptance: "待验收", done: "已完成", archived: "已归档", cancelled: "已取消",
+};
+const STATUS_COLOR: Record<string, string> = {
+  draft: "#86868f", pending_coordination: "#b87407", in_progress: "#2563eb",
+  pending_acceptance: "#6d5bd0", done: "#12855a", archived: "#86868f", cancelled: "#86868f",
+};
+
+function normalize(items: Record<string, unknown>[]): Task[] {
+  return items.map((x) => ({
+    id: str(x.id),
+    name: str(x.name, "未命名任务"),
+    status: str(x.status, "draft"),
+    start: str(x.start_date, ""),
+    end: str(x.end_date, ""),
+    hours: measured(x.daily_hours),
+    progress: measured(x.progress),
+    ownerId: str(x.owner_id),
+    members: Array.isArray(x.member_ids) ? x.member_ids.map(String) : [],
+    projectId: str(x.project_id),
+  }));
 }
 
 export default function MyWorkPage() {
-  // 真实任务数据（demo 兜底）
-  useData("my-tasks", "/tasks", MY_TASKS);
+  const user = useAuth((s) => s.user);
+  const query = useData<unknown[]>("tasks", "/tasks");
+  const state = recordQueryState(query, "name");
+  const [reportFor, setReportFor] = useState<Task | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ progress: "50", hours: "4", note: "" });
+
+  const today = todayISO(new Date());
+  const tasks = useMemo(() => (state.kind === "ready" ? normalize(state.items) : []), [state]);
+
+  const mine = tasks.filter((t) => t.ownerId === user?.id || t.members.includes(user?.id ?? ""));
+  const open = mine.filter((t) => !["done", "archived", "cancelled"].includes(t.status));
+  const groups = [
+    { key: "today", label: "今天截止", rows: open.filter((t) => t.end === today) },
+    { key: "overdue", label: "已逾期", rows: open.filter((t) => t.end && t.end < today) },
+    { key: "week", label: "接下来", rows: open.filter((t) => t.end > today || !t.end) },
+    { key: "closed", label: "已完成", rows: mine.filter((t) => t.status === "done") },
+  ].filter((g) => g.rows.length > 0);
+
+  if (state.kind !== "ready") {
+    return <Shell><PageHeader title="我的工作" /><QueryNotice state={state} retry={() => query.refetch()} emptyText="暂无任务" /></Shell>;
+  }
+
+  const act = async (fn: () => Promise<unknown>, message: string) => {
+    setSaving(true);
+    try {
+      await fn();
+      toast(message);
+      setReportFor(null);
+      await query.refetch();
+    } catch (e) { toast(errorText(e), "err"); } finally { setSaving(false); }
+  };
+
+  const report = () => {
+    if (!reportFor) return;
+    const progress = Number(form.progress), hours = Number(form.hours);
+    if (!Number.isFinite(progress) || progress < 0 || progress > 100) return toast("进度需在 0-100 之间", "err");
+    void act(
+      () => api(`/tasks/${reportFor.id}/action`, { method: "POST", body: JSON.stringify({ action: "report", progress, hours, note: form.note }) }),
+      "进度已上报",
+    );
+  };
+
   return (
     <Shell>
       <PageHeader
         title="我的工作"
-        sub="陈思远 · 软件研发部 · 一级工程师 · 参与 3 个项目"
-        right={
-          <>
-            <button className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white">清单</button>
-            <button className="h-8 rounded-sm border border-border bg-panel px-3 text-[12.5px] text-ink-2">日历</button>
-            <button className="h-8 rounded-sm border border-border bg-panel px-3 text-[12.5px] text-ink-2">统计</button>
-            <button className="flex h-8 items-center gap-1.5 rounded-sm bg-accent px-3 text-[12.5px] font-medium text-white">
-              <SquarePen size={13} /> 填报阶段成果
-            </button>
-          </>
-        }
+        sub={`${user?.name ?? ""} · 进行中 ${open.length} 项`}
+        right={<button onClick={() => void query.refetch()} className="flex h-8 items-center gap-1.5 rounded-sm border border-border px-3 text-[12.5px] text-ink-2 hover:bg-fill"><RefreshCw size={13} /> 刷新</button>}
       />
 
       <div className="flex flex-col gap-3 p-6 pt-4">
-        {/* 个人任务清单 */}
         <Card className="p-4">
           <div className="mb-1 flex items-center justify-between">
-            <h3 className="text-[13.5px] font-semibold">个人任务清单</h3>
-            <span className="text-[11.5px] text-ink-3">8 项进行中</span>
+            <h3 className="text-[13.5px] font-semibold">我的任务</h3>
+            <span className="text-[11.5px] text-ink-3">按截止时间排列</span>
           </div>
-          <p className="py-1 text-[11.5px] text-ink-3">本周 · 6/22 - 6/28</p>
-          {MY_TASKS.thisWeek.map((t) => <TaskRow key={t.id} t={t} />)}
-          <p className="py-1 pt-3 text-[11.5px] text-ink-3">下周 · 6/29 - 7/5</p>
-          {MY_TASKS.nextWeek.map((t) => <TaskRow key={t.id} t={t} />)}
-        </Card>
-
-        <div className="flex flex-col gap-3">
-          <WeekSchedule />
-          <div className="flex flex-col gap-3">
-            {/* 阶段成果填报 */}
-            <Card className="flex flex-col p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-[13.5px] font-semibold">阶段成果填报</h3>
-                <Badge color="#12855a">数据中台联调</Badge>
-              </div>
-              <textarea
-                className="min-h-28 w-full flex-1 resize-none rounded-sm border border-border bg-canvas p-3 text-[12.5px] outline-none placeholder:text-ink-3 focus:border-accent"
-                defaultValue="本周完成了接口对齐与 3 个核心模块联调，联调用例通过率 86%…"
-              />
-              <div className="mt-2 flex items-center gap-2">
-                <span className="flex h-7 items-center gap-1.5 rounded-sm border border-border px-2 text-[11.5px] text-ink-2">
-                  <Paperclip size={12} /> 联调报告.pdf
-                </span>
-                <span className="flex h-7 items-center gap-1.5 rounded-sm border border-border px-2 text-[11.5px] text-ink-2">
-                  <Paperclip size={12} /> 测试数据.xlsx
-                </span>
-              </div>
-              <div className="mt-3 flex justify-end gap-2">
-                <button className="h-8 rounded-sm border border-border px-3 text-[12.5px] text-ink-2">存草稿</button>
-                <button className="h-8 rounded-sm bg-accent px-3 text-[12.5px] font-medium text-white">提交负责人确认</button>
-              </div>
-            </Card>
-
-            {/* 本周投入分布 */}
-            <Card className="p-4">
-              <h3 className="text-[13.5px] font-semibold">本周投入分布</h3>
-              <p className="mt-2 text-[18px] font-semibold">32h <span className="text-[13px] font-normal text-ink-3">/ 40h</span></p>
-              <div className="mt-3 flex flex-col gap-3">
-                {MY_DISTRIBUTION.map((d) => (
-                  <div key={d.label}>
-                    <div className="mb-1 flex items-center justify-between text-[11.5px]">
-                      <span className="text-ink-2">{d.label}</span>
-                      <span className="text-ink-3">{d.pct}%</span>
+          {groups.length === 0 ? <Empty text="暂无分配给你的任务" /> : groups.map((g) => (
+            <div key={g.key}>
+              <p className="pt-3 pb-1 text-[11.5px] text-ink-3">{g.label} · {g.rows.length}</p>
+              {g.rows.map((t) => {
+                const mineOwner = t.ownerId === user?.id;
+                return (
+                  <div key={t.id} className="flex items-center gap-3 border-b border-border/60 py-2.5 last:border-0">
+                    <span className="shrink-0 text-ink-3">
+                      {t.status === "done" ? <CheckCircle2 size={16} className="text-green" /> : <Circle size={16} />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className={cx("truncate text-[12.5px] font-medium", t.status === "done" ? "text-ink-3 line-through" : "text-ink")}>{t.name}</p>
+                      <p className="mt-0.5 text-[11.5px] text-ink-3">
+                        {t.start && t.end ? `${t.start} → ${t.end}` : "未排期"}
+                        {t.hours ? ` · 每日 ${t.hours}h` : ""}
+                        {t.progress !== undefined ? ` · 进度 ${t.progress}%` : ""}
+                      </p>
                     </div>
-                    <div className="h-[5px] overflow-hidden rounded-full bg-fill">
-                      <div className="h-full rounded-full" style={{ width: `${d.pct}%`, background: d.color }} />
-                    </div>
+                    <Badge color={STATUS_COLOR[t.status] ?? "#86868f"}>{STATUS_TEXT[t.status] ?? t.status}</Badge>
+                    {t.status === "pending_confirmation" && (mineOwner || t.members.includes(user?.id ?? "")) && (
+                      <button
+                        onClick={() => void act(() => api(`/tasks/${t.id}/action`, { method: "POST", body: JSON.stringify({ action: "confirm" }) }), "任务已确认")}
+                        disabled={saving}
+                        className="h-7 rounded-sm bg-ink px-2.5 text-[11.5px] font-medium text-white disabled:opacity-60"
+                      >
+                        确认任务
+                      </button>
+                    )}
+                    {t.status === "in_progress" && (
+                      <button
+                        onClick={() => { setReportFor(t); setForm({ progress: String(t.progress ?? 50), hours: "4", note: "" }); }}
+                        className="h-7 rounded-sm border border-border px-2.5 text-[11.5px] text-ink-2 hover:bg-fill"
+                      >
+                        上报进度
+                      </button>
+                    )}
+                    {t.status === "in_progress" && mineOwner && (
+                      <button
+                        onClick={() => void act(() => api(`/tasks/${t.id}/action`, { method: "POST", body: JSON.stringify({ action: "submit_acceptance" }) }), "已提交验收")}
+                        disabled={saving}
+                        className="h-7 rounded-sm border border-border px-2.5 text-[11.5px] text-ink-2 hover:bg-fill disabled:opacity-60"
+                      >
+                        提交验收
+                      </button>
+                    )}
+                    {t.status === "pending_acceptance" && (
+                      <>
+                        <button
+                          onClick={() => void act(() => api(`/tasks/${t.id}/action`, { method: "POST", body: JSON.stringify({ action: "accept" }) }), "验收通过")}
+                          disabled={saving}
+                          className="h-7 rounded-sm bg-green px-2.5 text-[11.5px] font-medium text-white disabled:opacity-60"
+                        >
+                          验收通过
+                        </button>
+                        <button
+                          onClick={() => {
+                            const reason = window.prompt("退回原因")?.trim();
+                            if (reason) void act(() => api(`/tasks/${t.id}/action`, { method: "POST", body: JSON.stringify({ action: "return", reason }) }), "已退回");
+                          }}
+                          disabled={saving}
+                          className="h-7 rounded-sm border border-border px-2.5 text-[11.5px] text-red disabled:opacity-60"
+                        >
+                          退回
+                        </button>
+                      </>
+                    )}
                   </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-        </div>
+                );
+              })}
+            </div>
+          ))}
+        </Card>
       </div>
+
+      <Modal
+        open={!!reportFor}
+        title={`上报进度 · ${reportFor?.name ?? ""}`}
+        onClose={() => setReportFor(null)}
+        footer={<>
+          <button onClick={() => setReportFor(null)} className="h-8 rounded-sm border border-border px-3 text-[12.5px] text-ink-2">取消</button>
+          <button onClick={() => void report()} disabled={saving} className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white disabled:opacity-60">{saving ? "提交中…" : "提交"}</button>
+        </>}
+      >
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="完成进度（%）">
+              <input type="number" min={0} max={100} className={inputCls} value={form.progress} onChange={(e) => setForm({ ...form, progress: e.target.value })} />
+            </Field>
+            <Field label="本次工时（小时）">
+              <input type="number" min={0} max={24} step="0.5" className={inputCls} value={form.hours} onChange={(e) => setForm({ ...form, hours: e.target.value })} />
+            </Field>
+          </div>
+          <Field label="进展说明">
+            <textarea
+              className="min-h-20 w-full resize-none rounded-[6px] border border-border px-2.5 py-2 text-[12.5px] outline-none focus:border-ink-4"
+              value={form.note}
+              onChange={(e) => setForm({ ...form, note: e.target.value })}
+              placeholder="例如：完成接口联调，剩余用例待补"
+            />
+          </Field>
+        </div>
+      </Modal>
     </Shell>
   );
 }

@@ -74,10 +74,10 @@ function Module({
   return <>{children}</>;
 }
 
-function StatCell({ icon, label, value, sub, subColor, last }: { icon: string; label: string; value: string; sub: string; subColor: string; last?: boolean }) {
+function StatCell({ icon, label, value, sub, subColor, href, last }: { icon: string; label: string; value: string; sub: string; subColor: string; href: string; last?: boolean }) {
   const Icon = ICONS[icon] || Zap;
   return (
-    <div className={cx("flex min-w-0 flex-1 flex-col gap-2 px-4 py-3.5", !last && "border-r border-border")}>
+    <Link href={href} className={cx("flex min-w-0 flex-1 flex-col gap-2 px-4 py-3.5 hover:bg-fill", !last && "border-r border-border")}>
       <div className="flex items-center gap-1.5">
         <Icon size={13} className="shrink-0 text-ink-3" />
         <span className="truncate text-[12.5px] font-medium text-ink-2">{label}</span>
@@ -86,7 +86,7 @@ function StatCell({ icon, label, value, sub, subColor, last }: { icon: string; l
         <span className="text-[22px] leading-none font-semibold tracking-[-0.01em] text-ink tabular-nums">{value}</span>
         {sub && <span className="truncate text-[11.5px]" style={{ color: subColor }}>{sub}</span>}
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -126,18 +126,18 @@ export default function HomePage() {
 
   const statCards = homeReady
     ? [
-      { icon: "zap", label: "今日待办", value: String(num(stats?.today_due)), sub: `${focus.length} 项在办`, subColor: "#86868f" },
-      { icon: "alarm-clock", label: "今日截止", value: String(todayDueCount(focus, today)), sub: `${overdueCount(focus, today)} 项已逾期`, subColor: "#d92d20" },
-      { icon: "git-branch", label: "本周冲突", value: String(num(stats?.open_conflicts)), sub: risks.length ? "需协调" : "无冲突", subColor: "#b87407" },
-      { icon: "stamp", label: "待我审批", value: String(num(stats?.pending_approvals)), sub: num(stats?.pending_approvals) ? "项待处理" : "已清空", subColor: "#86868f" },
-      { icon: "activity", label: "团队负载", value: avgRatio == null ? "—" : `${avgRatio}%`, sub: `${overPeople} 人过载`, subColor: overPeople ? "#d92d20" : "#86868f" },
+      { icon: "zap", href: "/my-work", label: "今日待办", value: String(num(stats?.today_due)), sub: `${focus.length} 项在办`, subColor: "#86868f" },
+      { icon: "alarm-clock", href: "/my-work", label: "今日截止", value: String(todayDueCount(focus, today)), sub: `${overdueCount(focus, today)} 项已逾期`, subColor: "#d92d20" },
+      { icon: "git-branch", href: "/load", label: "本周冲突", value: String(num(stats?.open_conflicts)), sub: risks.length ? "需协调" : "无冲突", subColor: "#b87407" },
+      { icon: "stamp", href: "/inbox", label: "待我审批", value: String(num(stats?.pending_approvals)), sub: num(stats?.pending_approvals) ? "项待处理" : "已清空", subColor: "#86868f" },
+      { icon: "activity", href: "/load", label: "团队负载", value: avgRatio == null ? "—" : `${avgRatio}%`, sub: `${overPeople} 人过载`, subColor: overPeople ? "#d92d20" : "#86868f" },
     ]
     : [
-      { icon: "zap", label: "今日待办", value: "—", sub: "", subColor: "" },
-      { icon: "alarm-clock", label: "今日截止", value: "—", sub: "", subColor: "" },
-      { icon: "git-branch", label: "本周冲突", value: "—", sub: "", subColor: "" },
-      { icon: "stamp", label: "待我审批", value: "—", sub: "", subColor: "" },
-      { icon: "activity", label: "团队负载", value: "—", sub: "", subColor: "" },
+      { icon: "zap", href: "/my-work", label: "今日待办", value: "—", sub: "", subColor: "" },
+      { icon: "alarm-clock", href: "/my-work", label: "今日截止", value: "—", sub: "", subColor: "" },
+      { icon: "git-branch", href: "/load", label: "本周冲突", value: "—", sub: "", subColor: "" },
+      { icon: "stamp", href: "/inbox", label: "待我审批", value: "—", sub: "", subColor: "" },
+      { icon: "activity", href: "/load", label: "团队负载", value: "—", sub: "", subColor: "" },
     ];
 
   const hints = [
@@ -370,7 +370,7 @@ export default function HomePage() {
           >
             <div className="flex flex-col gap-3.5">
               {projects.map((p) => (
-                <Link key={str(p.id, str(p.name))} href={`/projects/${p.id}/plan`} className="block hover:opacity-90">
+                <Link key={str(p.id, str(p.name))} href={`/projects/plan?id=${p.id}`} className="block hover:opacity-90">
                   <div className="mb-1 flex items-center justify-between gap-2 text-[12.5px]">
                     <span className="truncate text-ink-2">{str(p.name, "未命名项目")}</span>
                     <span className="flex shrink-0 items-center gap-2">

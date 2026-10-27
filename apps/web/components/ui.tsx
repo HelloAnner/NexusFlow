@@ -51,11 +51,16 @@ export function PageHeader({ title, sub, extra, right, className }: { title: Rea
   );
 }
 
-export function SearchBox({ placeholder, className }: { placeholder: string; className?: string }) {
+export function SearchBox({ placeholder, className, value, onChange }: { placeholder: string; className?: string; value?: string; onChange?: (v: string) => void }) {
   return (
     <div className={cx("flex h-8 items-center gap-2 rounded-sm border border-border bg-panel px-2.5 text-ink-3", className)}>
       <Search size={14} />
-      <input className="w-full bg-transparent text-[12.5px] text-ink outline-none placeholder:text-ink-3" placeholder={placeholder} />
+      <input
+        className="w-full bg-transparent text-[12.5px] text-ink outline-none placeholder:text-ink-3"
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+      />
     </div>
   );
 }

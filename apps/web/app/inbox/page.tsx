@@ -1,43 +1,122 @@
 "use client";
 
-import React, { useState } from "react";
-import { Paperclip, Check, X } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Check, X, CheckCheck } from "lucide-react";
 import { Shell } from "@/components/shell";
-import {
-  Card, Badge, Avatar, PageHeader, Empty,
-} from "@/components/ui";
-import type { InboxItem } from "@/lib/demo";
+import { Card, Badge, Avatar, PageHeader, Empty } from "@/components/ui";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState } from "@/lib/query-state";
 import { useData } from "@/lib/data";
-import { cx, str,avatarColor } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { toast, errorText } from "@/components/feedback";
+import { cx, str, avatarColor } from "@/lib/utils";
 
-const KIND_COLOR: Record<string, string> = {
-  审批: "#d92d20", 指派: "#2563eb", 提及: "#6d5bd0", 冲突: "#b87407", 系统: "#86868f",
+const TYPE_LABEL: Record<string, string> = {
+  approval: "审批",
+  task_assigned: "指派",
+  task_accept: "验收",
+  task_return: "退回",
+  mention: "提及",
+  conflict_forced: "冲突",
+  dispatch_approved: "派发",
+  dispatch_rejected: "派发",
+  founder_confirmation: "待确认",
 };
 
-const FILTERS = ["全部", "审批", "指派", "@ 提及", "系统"];
+const TYPE_COLOR: Record<string, string> = {
+  审批: "#d92d20", 指派: "#2563eb", 提及: "#6d5bd0", 冲突: "#b87407",
+  验收: "#12855a", 退回: "#d92d20", 派发: "#2563eb", 待确认: "#b87407", 系统: "#86868f",
+};
 
-type InboxRow=Omit<InboxItem,"kind"> & {kind:string};
-function normalize(items: Record<string,unknown>[]): InboxRow[] {
- return items.map((x):InboxRow=>({id:str(x.id),title:str(x.title),desc:str(x.desc,str(x.message,"—")),kind:str(x.kind,str(x.type,"—")),actor:str(x.actor,str(x.created_by,"—")),actorColor:avatarColor(str(x.created_by)),time:str(x.created_at,"—")}));
+type Row = {
+  id: string; type: string; kind: string; title: string; desc: string;
+  actor: string; actorColor: string; time: string; unread: boolean; sourceId: string;
+};
+
+function normalize(items: Record<string, unknown>[]): Row[] {
+  return items.map((x) => {
+    const type = str(x.type, "system");
+    return {
+      id: str(x.id),
+      type,
+      kind: TYPE_LABEL[type] ?? "系统",
+      title: str(x.title, "未命名消息"),
+      desc: str(x.message, str(x.desc, "")),
+      actor: str(x.created_by_name, str(x.created_by, "系统")),
+      actorColor: avatarColor(str(x.created_by, type)),
+      time: str(x.created_at, "—").replace("T", " ").slice(0, 16),
+      unread: !x.read_at,
+      sourceId: str(x.source_id, ""),
+    };
+  }).sort((a, b) => (a.unread === b.unread ? 0 : a.unread ? -1 : 1));
 }
+
+const FILTERS = ["全部", "审批", "指派", "提及", "系统"] as const;
 
 export default function InboxPage() {
   const query=useData<unknown[]>("inbox", "/inbox"),state=recordQueryState(query,"title");
-  const [filter, setFilter] = useState("全部");
+  const [filter, setFilter] = useState<string>("全部");
   const [selectedId, setSelectedId] = useState<string|null>(null);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const items = useMemo(() => (state.kind === "ready" ? normalize(state.items) : []), [state]);
   if(state.kind!=="ready")return <Shell><PageHeader title="收件箱" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无消息" /></Shell>;
-  const items=normalize(state.items);
-  const shown = items.filter((m) => filter === "全部" || m.kind === filter.replace("@ ", ""));
+
+  const shown = items.filter((m) => {
+    if (filter === "全部") return true;
+    if (filter === "系统") return ["系统", "派发", "待确认", "冲突"].includes(m.kind);
+    return m.kind === filter;
+  });
   const selected = shown.find((m) => m.id === selectedId) || shown[0];
+  const unread = items.filter((m) => m.unread).length;
+
+  const act = async (fn: () => Promise<unknown>, message: string) => {
+    setBusy(true);
+    try {
+      await fn();
+      toast(message);
+      setReason("");
+      await query.refetch();
+    } catch (e) { toast(errorText(e), "err"); } finally { setBusy(false); }
+  };
+
+  const select = (m: Row) => {
+    setSelectedId(m.id);
+    if (m.unread) void api(`/inbox/${m.id}/read`, { method: "POST", body: JSON.stringify({}) }).then(() => query.refetch()).catch(() => {});
+  };
+
+  const markAll = () => act(async () => {
+    await Promise.all(items.filter((m) => m.unread).map((m) =>
+      api(`/inbox/${m.id}/read`, { method: "POST", body: JSON.stringify({}) })));
+  }, "已全部标为已读");
+
+  const decide = (approved: boolean) => act(
+    () => api(`/approvals/${selected.sourceId}/decision`, { method: "POST", body: JSON.stringify({ approved, reason }) }),
+    approved ? "已通过" : "已驳回",
+  );
+
+  const complete = () => act(
+    () => api(`/inbox/${selected.id}/complete`, { method: "POST", body: JSON.stringify({ reason: reason.trim() || "已处理" }) }),
+    "已标记完成",
+  );
+
+  const confirmDispatch = () => act(
+    () => api(`/dispatch/${selected.sourceId}/confirm`, { method: "POST", body: JSON.stringify({}) }),
+    "已确认派发",
+  );
 
   return (
     <Shell>
       <PageHeader
         title="收件箱"
-        sub={`已加载 ${items.length} 条消息`}
-        right={<button className="text-[12.5px] font-medium text-ink-2 hover:text-ink">全部标为已读</button>}
+        sub={unread ? `${unread} 条未读 · 共 ${items.length} 条` : `共 ${items.length} 条，已全部读过`}
+        right={
+          <button onClick={() => void markAll()} disabled={busy || unread === 0}
+            className="flex items-center gap-1.5 text-[12.5px] font-medium text-ink-2 hover:text-ink disabled:opacity-40">
+            <CheckCheck size={14} /> 全部标为已读
+          </button>
+        }
       />
 
       <div className="flex flex-col">
@@ -61,7 +140,7 @@ export default function InboxPage() {
             {shown.map((m) => (
               <button
                 key={m.id}
-                onClick={() => setSelectedId(m.id)}
+                onClick={() => select(m)}
                 className={cx(
                   "flex items-start gap-3 border-b border-border/60 px-5 py-3.5 text-left",
                   selected?.id === m.id ? "bg-accent-soft/50" : "hover:bg-canvas",
@@ -70,11 +149,11 @@ export default function InboxPage() {
                 <Avatar name={m.actor} color={m.actorColor} size={34} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <Badge color={KIND_COLOR[m.kind]}>{m.kind === "提及" ? "@ 提及" : m.kind}</Badge>
-                    <span className="truncate text-[12.5px] font-medium text-ink">{m.title}</span>
+                    <Badge color={TYPE_COLOR[m.kind] ?? "#86868f"}>{m.kind}</Badge>
+                    <span className={cx("truncate text-[12.5px] text-ink", m.unread && "font-semibold")}>{m.title}</span>
+                    {m.unread && <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-red" />}
                   </div>
-                  <p className="mt-0.5 truncate text-[11.5px] text-ink-2">{m.desc}</p>
-                  <p className="mt-0.5 text-[11.5px] text-ink-3">{m.actor} · {m.time}</p>
+                  <p className="mt-0.5 truncate text-[11.5px] text-ink-3">{m.actor} · {m.time}</p>
                 </div>
               </button>
             ))}
@@ -84,70 +163,63 @@ export default function InboxPage() {
 
         {/* 详情 */}
         <div className="p-5">
-          {!selected ? <Empty text="选择一条消息查看" /> : selected.detail ? (
-            <>
-              <Card className="p-5">
-                <div className="flex items-center gap-2">
-                  <Badge color={KIND_COLOR[selected.kind]}>{selected.kind}</Badge>
-                  <h2 className="text-[15px] font-semibold">{selected.title}</h2>
-                  {selected.overdue && <Badge color="#b87407">{selected.overdue}</Badge>}
-                  <span className="ml-auto text-[11.5px] text-ink-3">发起人 {selected.actor} · 提交于 6/18 16:20</span>
-                </div>
-                <p className="mt-3 text-[12.5px] leading-6 text-ink-2">
-                  项目概述：面向北线 3 个站场的调度优化，覆盖排产算法、车辆路径与人员排班。计划周期 6/01 - 8/15，涉及市场与研发两个部门协同。立项书包含预算、人员计划与风险评估，详细内容见附件…
-                </p>
-                <div className="mt-4 grid grid-cols-4 gap-3 rounded-md bg-fill/60 p-3.5">
-                  {selected.detail.meta.map(([k, v]) => (
-                    <div key={k}>
-                      <p className="text-[11.5px] text-ink-3">{k}</p>
-                      <p className="mt-0.5 text-[13px] font-semibold">{v}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="text-[11.5px] text-ink-3">附件</span>
-                  {selected.detail.attachments.map((a) => (
-                    <span key={a} className="flex h-7 items-center gap-1.5 rounded-sm border border-border px-2 text-[11.5px] text-ink-2">
-                      <Paperclip size={12} /> {a}
-                    </span>
-                  ))}
-                </div>
-                <p className="mt-4 mb-1.5 text-[11.5px] text-ink-3">审批意见</p>
-                <input
-                  className="h-9 w-full rounded-sm border border-border px-3 text-[12.5px] outline-none placeholder:text-ink-3 focus:border-accent"
-                  placeholder="填写审批意见（可选）…"
-                />
-                <div className="mt-3 flex gap-2">
-                  <button className="flex h-8 items-center gap-1.5 rounded-sm bg-green px-3.5 text-[12.5px] font-medium text-white">
-                    <Check size={14} /> 通过
-                  </button>
-                  <button className="flex h-8 items-center gap-1.5 rounded-sm border border-red/50 px-3.5 text-[12.5px] font-medium text-red">
-                    <X size={14} /> 驳回
-                  </button>
-                  <button className="h-8 rounded-sm border border-border px-3.5 text-[12.5px] text-ink-2">转交他人</button>
-                </div>
-              </Card>
-
-              <Card className="mt-3 p-5">
-                <h3 className="mb-2 text-[13.5px] font-semibold">流转记录</h3>
-                {selected.detail.flow.map((f) => (
-                  <div key={f.name} className="flex items-center gap-2.5 border-b border-border/60 py-2.5 last:border-0">
-                    <Avatar name={f.name} color={f.color} size={26} />
-                    <span className="text-[12.5px] font-medium">{f.name}</span>
-                    <span className="text-[12.5px] text-ink-3">{f.action}</span>
-                    <span className="ml-auto text-[11.5px] text-ink-3 tabular-nums">{f.time}</span>
-                  </div>
-                ))}
-              </Card>
-            </>
-          ) : (
+          {!selected ? <Empty text="选择一条消息查看" /> : (
             <Card className="p-5">
               <div className="flex items-center gap-2">
-                <Badge color={KIND_COLOR[selected?.kind || "系统"]}>{selected?.kind}</Badge>
-                <h2 className="text-[15px] font-semibold">{selected?.title}</h2>
+                <Badge color={TYPE_COLOR[selected.kind] ?? "#86868f"}>{selected.kind}</Badge>
+                <h2 className="text-[15px] font-semibold">{selected.title}</h2>
+                <span className="ml-auto text-[11.5px] text-ink-3">{selected.actor} · {selected.time}</span>
               </div>
-              <p className="mt-3 text-[12.5px] text-ink-2">{selected?.desc}</p>
-              <p className="mt-2 text-[11.5px] text-ink-3">{selected?.actor} · {selected?.time}</p>
+
+              {selected.type === "approval" ? (
+                <>
+                  <p className="mt-3 text-[12.5px] leading-6 text-ink-2">
+                    这是派发审批消息：通过后任务进入执行状态；驳回需要填写原因，任务会退回发起人修改。
+                  </p>
+                  <input
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    className="mt-3 h-9 w-full rounded-sm border border-border px-3 text-[12.5px] outline-none placeholder:text-ink-3 focus:border-ink-4"
+                    placeholder="审批意见（驳回时必填）"
+                  />
+                  <div className="mt-3 flex gap-2">
+                    <button onClick={() => void decide(true)} disabled={busy}
+                      className="flex h-8 items-center gap-1.5 rounded-sm bg-green px-3.5 text-[12.5px] font-medium text-white disabled:opacity-60">
+                      <Check size={14} /> 通过
+                    </button>
+                    <button onClick={() => void decide(false)} disabled={busy}
+                      className="flex h-8 items-center gap-1.5 rounded-sm border border-red/50 px-3.5 text-[12.5px] font-medium text-red disabled:opacity-60">
+                      <X size={14} /> 驳回
+                    </button>
+                  </div>
+                </>
+              ) : selected.type === "founder_confirmation" ? (
+                <>
+                  <p className="mt-3 text-[12.5px] leading-6 text-ink-2">后补流程派发需要发起人确认后才进入审批。</p>
+                  <button onClick={() => void confirmDispatch()} disabled={busy}
+                    className="mt-3 flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3.5 text-[12.5px] font-medium text-white disabled:opacity-60">
+                    <Check size={14} /> 确认后补内容
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="mt-3 text-[12.5px] leading-6 text-ink-2">
+                    {selected.desc || "该消息没有附加说明。"}
+                  </p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <input
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      className="h-9 flex-1 rounded-sm border border-border px-3 text-[12.5px] outline-none placeholder:text-ink-3 focus:border-ink-4"
+                      placeholder="处理说明（可选）"
+                    />
+                    <button onClick={() => void complete()} disabled={busy}
+                      className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3.5 text-[12.5px] font-medium text-white disabled:opacity-60">
+                      标记完成
+                    </button>
+                  </div>
+                </>
+              )}
             </Card>
           )}
         </div>

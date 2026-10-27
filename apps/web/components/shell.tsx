@@ -10,6 +10,7 @@ import { cx, initial } from "@/lib/utils";
 import { useAuth, absorbPortalToken } from "@/lib/auth";
 import { BrandIcon } from "@/components/brand-icon";
 import { roleLabel } from "@/lib/home";
+import { Toaster } from "@/components/feedback";
 
 /** 一级导航：侧栏只放全局入口，页面内的筛选/目录留在页面里。 */
 const NAV = [
@@ -117,6 +118,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
+      <Toaster />
     </div>
   );
 }
