@@ -30,6 +30,10 @@ export async function permCommand(client: Client, args: CliArgs): Promise<unknow
   const action = args.action || "catalog";
   if (action === "catalog") return client.json("/api/v1/rbac/catalog");
   if (action === "subjects") return client.json("/api/v1/rbac/subjects");
+  if (action === "prune") {
+    const dry = option(args, "dry-run") || args.options["dry-run"] === true;
+    return client.json(`/api/v1/rbac/prune?dry_run=${dry ? "true" : "false"}`, "POST", {});
+  }
   const target = await subject(client, required(args, "user"));
   if (action === "matrix") {
     return client.json(`/api/v1/rbac/matrix?subject_id=${encodeURIComponent(target.id)}`);
@@ -62,10 +66,6 @@ export async function permCommand(client: Client, args: CliArgs): Promise<unknow
     };
     if (!result.allow) process.exitCode = 1;
     return result;
-  }
-  if (action === "prune") {
-    const dry = option(args, "dry-run") || args.options["dry-run"] === true;
-    return client.json(`/api/v1/rbac/prune?dry_run=${dry ? "true" : "false"}`, "POST", {});
   }
   throw Error(`unknown perm command: ${action}`);
 }
