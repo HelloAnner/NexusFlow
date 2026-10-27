@@ -182,7 +182,7 @@ export default function HomePage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/dispatch/new" className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white">
+          <Link href="/dispatch/new" prefetch={false} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white">
             <Plus size={14} /> 新建任务
           </Link>
           <Link href="/inbox" className="relative flex h-8 w-8 items-center justify-center rounded-full border border-border bg-panel text-ink-2">
@@ -370,7 +370,7 @@ export default function HomePage() {
           >
             <div className="flex flex-col gap-3.5">
               {projects.map((p) => (
-                <Link key={str(p.id, str(p.name))} href={`/projects/plan?id=${p.id}`} className="block hover:opacity-90">
+                <Link key={str(p.id, str(p.name))} href={`/projects/plan?id=${p.id}`} prefetch={false} className="block hover:opacity-90">
                   <div className="mb-1 flex items-center justify-between gap-2 text-[12.5px]">
                     <span className="truncate text-ink-2">{str(p.name, "未命名项目")}</span>
                     <span className="flex shrink-0 items-center gap-2">
