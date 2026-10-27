@@ -11,6 +11,7 @@
 | [00-overview/README.md](00-overview/README.md) | 领域文档阅读入口 |
 | [00-overview/architecture.md](00-overview/architecture.md) | 全 TS 栈（Bun+Hono API / Next 静态前端 / Bun CLI）、单二进制部署架构 |
 | [00-overview/submodel-implementation.md](00-overview/submodel-implementation.md) | 各子模型的数据、服务、状态和实现边界 |
+| [theme-light-dark.txt](theme-light-dark.txt) | 亮/暗主题：token 分层、切换与自检 |
 
 ## 前端页面设计（重构后）
 
