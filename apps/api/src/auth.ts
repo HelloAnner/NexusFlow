@@ -36,7 +36,7 @@ export async function login(c:Context) {
   const body=await c.req.json().catch(()=>({}));
   const username=String(body.username||"").trim();const password=String(body.password||"");
   const tenant_id=String(body.tenant_id||config.localTenantId);
-  const rows=await sql`SELECT id,username,password_hash,display_name,role,tenant_id,org_id,status FROM nexusflow.users WHERE lower(username)=lower(${username}) AND tenant_id=${tenant_id} AND portal_id IS NULL`;
+  const rows=await sql`SELECT id,username,password_hash,display_name,role,tenant_id,org_id,status FROM nexusflow.users WHERE lower(username)=lower(${username}) AND tenant_id=${tenant_id}`;
   const row=rows[0];
   if(!row||row.status!=="active"||!await bcrypt.compare(password,row.password_hash))return c.json({error:"invalid credentials"},401);
   if(row.role==="super_admin"&&row.username!==config.adminUsername)return c.json({error:"invalid credentials"},401);
