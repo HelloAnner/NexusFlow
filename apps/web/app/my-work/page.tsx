@@ -12,15 +12,15 @@ function MyWorkSidebar() {
   return (
     <>
       <SideSection title="任务分组">
-        <SideItem icon={<Zap size={14} className="text-accent" />} label="今天" count={4} active />
+        <SideItem icon={<Zap size={14} />} label="今天" count={4} active />
         <SideItem icon={<CalendarDays size={14} />} label="本周" count={8} />
         <SideItem icon={<CalendarRange size={14} />} label="下周" count={3} />
-        <SideItem icon={<CheckCircle2 size={14} className="text-green" />} label="已完成" count={21} />
+        <SideItem icon={<CheckCircle2 size={14} />} label="已完成" count={21} />
       </SideSection>
       <SideSection title="我的项目">
-        <SideItem icon={<Marker color="#F2970A" />} label="智慧油田数据平台" count={<span className="rounded bg-fill px-1 text-[10px] text-ink-3">后端</span>} />
-        <SideItem icon={<Marker color="#9B59F5" shape="square" />} label="等保测评专项" count={<span className="rounded bg-fill px-1 text-[10px] text-ink-3">材料</span>} />
-        <SideItem icon={<Marker color="#2FB365" shape="square" />} label="巡检机器人研发" count={<span className="rounded bg-fill px-1 text-[10px] text-ink-3">用例</span>} />
+        <SideItem icon={<Marker color="#b87407" />} label="智慧油田数据平台" count={<span className="rounded bg-fill px-1 text-[11px] text-ink-3">后端</span>} />
+        <SideItem icon={<Marker color="#6d5bd0" shape="square" />} label="等保测评专项" count={<span className="rounded bg-fill px-1 text-[11px] text-ink-3">材料</span>} />
+        <SideItem icon={<Marker color="#12855a" shape="square" />} label="巡检机器人研发" count={<span className="rounded bg-fill px-1 text-[11px] text-ink-3">用例</span>} />
       </SideSection>
       <SideSection title="其他">
         <SideItem icon={<Sun size={14} />} label="我的休假" />
@@ -43,9 +43,9 @@ function TaskRow({ t }: { t: (typeof MY_TASKS.thisWeek)[number] }) {
       </span>
       <div className="min-w-0 flex-1">
         <p className={cx("text-[12.5px] font-medium", t.done ? "text-ink-3 line-through" : "text-ink")}>{t.title}</p>
-        <p className="mt-0.5 text-[11px]">
+        <p className="mt-0.5 text-[11.5px]">
           <span className={t.dueRed ? "text-red" : "text-ink-3"}>{t.due}</span>
-          <span className="ml-2 text-ink-4">{t.daily}</span>
+          <span className="ml-2 text-ink-3">{t.daily}</span>
         </p>
       </div>
       <Badge color={t.tagColor}>{t.tag}</Badge>
@@ -58,18 +58,18 @@ function WeekSchedule() {
     <Card className="p-4">
       <div className="mb-1 flex items-center justify-between">
         <h3 className="text-[13.5px] font-semibold">我的排程 · 本周</h3>
-        <span className="text-[11px] text-ink-3">已排 32h / 40h</span>
+        <span className="text-[11.5px] text-ink-3">已排 32h / 40h</span>
       </div>
       <div className="ml-[88px] grid grid-cols-7">
         {WEEK_DAYS.map((d, i) => (
-          <div key={d} className={cx("py-1 text-center text-[11px]", i === 2 ? "rounded-[6px] bg-accent-soft font-medium text-accent" : "text-ink-3")}>{d}</div>
+          <div key={d} className={cx("py-1 text-center text-[11.5px]", i === 2 ? "rounded-[6px] bg-accent-soft font-medium text-accent" : "text-ink-3")}>{d}</div>
         ))}
       </div>
       <div className="relative">
         <div className="absolute top-0 bottom-0 w-px bg-blue" style={{ left: `calc(88px + (100% - 88px) * ${2.5 / 7})` }} />
         {MY_SCHEDULE.map((t) => (
           <div key={t.name} className="flex items-center py-[8px]">
-            <span className="w-[88px] shrink-0 truncate pr-3 text-[12px] text-ink-2">{t.name}</span>
+            <span className="w-[88px] shrink-0 truncate pr-3 text-[12.5px] text-ink-2">{t.name}</span>
             <div className="relative flex-1">
               <div
                 className="flex h-[10px] overflow-hidden rounded-full"
@@ -91,12 +91,8 @@ export default function MyWorkPage() {
   return (
     <Shell sidebar={<MyWorkSidebar />}>
       <PageHeader
-        title={
-          <span>
-            我的工作
-            <span className="ml-3 text-[12px] font-normal text-ink-3">陈思远 · 软件研发部 · 一级工程师 · 参与 3 个项目</span>
-          </span>
-        }
+        title="我的工作"
+        sub="陈思远 · 软件研发部 · 一级工程师 · 参与 3 个项目"
         right={
           <>
             <button className="h-8 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-white">清单</button>
@@ -109,16 +105,16 @@ export default function MyWorkPage() {
         }
       />
 
-      <div className="grid grid-cols-[1fr_1.15fr] gap-3 p-7 pt-4">
+      <div className="grid grid-cols-[1fr_1.15fr] gap-3 p-6 pt-4">
         {/* 个人任务清单 */}
         <Card className="p-4">
           <div className="mb-1 flex items-center justify-between">
             <h3 className="text-[13.5px] font-semibold">个人任务清单</h3>
-            <span className="text-[11px] text-ink-4">8 项进行中</span>
+            <span className="text-[11.5px] text-ink-3">8 项进行中</span>
           </div>
-          <p className="py-1 text-[11px] text-ink-4">本周 · 6/22 - 6/28</p>
+          <p className="py-1 text-[11.5px] text-ink-3">本周 · 6/22 - 6/28</p>
           {MY_TASKS.thisWeek.map((t) => <TaskRow key={t.id} t={t} />)}
-          <p className="py-1 pt-3 text-[11px] text-ink-4">下周 · 6/29 - 7/5</p>
+          <p className="py-1 pt-3 text-[11.5px] text-ink-3">下周 · 6/29 - 7/5</p>
           {MY_TASKS.nextWeek.map((t) => <TaskRow key={t.id} t={t} />)}
         </Card>
 
@@ -129,10 +125,10 @@ export default function MyWorkPage() {
             <Card className="flex flex-col p-4">
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-[13.5px] font-semibold">阶段成果填报</h3>
-                <Badge color="#2FB365">数据中台联调</Badge>
+                <Badge color="#12855a">数据中台联调</Badge>
               </div>
               <textarea
-                className="min-h-28 w-full flex-1 resize-none rounded-sm border border-border bg-canvas p-3 text-[12.5px] outline-none placeholder:text-ink-4 focus:border-accent"
+                className="min-h-28 w-full flex-1 resize-none rounded-sm border border-border bg-canvas p-3 text-[12.5px] outline-none placeholder:text-ink-3 focus:border-accent"
                 defaultValue="本周完成了接口对齐与 3 个核心模块联调，联调用例通过率 86%…"
               />
               <div className="mt-2 flex items-center gap-2">
@@ -152,7 +148,7 @@ export default function MyWorkPage() {
             {/* 本周投入分布 */}
             <Card className="p-4">
               <h3 className="text-[13.5px] font-semibold">本周投入分布</h3>
-              <p className="mt-2 text-[19px] font-semibold">32h <span className="text-[13px] font-normal text-ink-3">/ 40h</span></p>
+              <p className="mt-2 text-[18px] font-semibold">32h <span className="text-[13px] font-normal text-ink-3">/ 40h</span></p>
               <div className="mt-3 flex flex-col gap-3">
                 {MY_DISTRIBUTION.map((d) => (
                   <div key={d.label}>

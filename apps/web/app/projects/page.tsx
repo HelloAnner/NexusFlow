@@ -12,6 +12,7 @@ import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState,measured } from "@/lib/query-state";
 import { useData } from "@/lib/data";
 import { cx, str, md, avatarColor } from "@/lib/utils";
+import { projectStatusColor, projectStatusText } from "@/lib/home";
 
 const TYPES = ["科研", "市场", "出差", "文职", "党建", "学习", "休假"];
 const LEVELS = ["公司级", "处级", "中心级"];
@@ -20,20 +21,20 @@ function ProjectsSidebar() {
   return (
     <>
       <SideSection title="视图">
-        <SideItem icon={<LayoutGrid size={14} className="text-accent" />} label="全部项目" count={24} active />
+        <SideItem icon={<LayoutGrid size={14} />} label="全部项目" count={24} active />
         <SideItem icon={<User size={14} />} label="我负责的" count={6} />
         <SideItem icon={<Users size={14} />} label="我参与的" count={11} />
         <SideItem icon={<Star size={14} />} label="我收藏的" count={4} />
       </SideSection>
       <SideSection title="按状态">
-        <SideItem icon={<Asterisk size={14} className="text-blue" />} label="进行中" count={6} />
+        <SideItem icon={<Asterisk size={14} />} label="进行中" count={6} />
         <SideItem icon={<CircleDashed size={14} />} label="待启动" count={2} />
-        <SideItem icon={<CheckCircle2 size={14} className="text-green" />} label="已完成" count={3} />
-        <SideItem icon={<AlertTriangle size={14} className="text-red" />} label="已逾期" count={1} countColor="#EE4B43" />
+        <SideItem icon={<CheckCircle2 size={14} />} label="已完成" count={3} />
+        <SideItem icon={<AlertTriangle size={14} />} label="已逾期" count={1} countColor="#d92d20" />
       </SideSection>
       <SideSection title="按级别">
-        <SideItem icon={<Flag size={14} className="text-red" />} label="公司级" count={4} />
-        <SideItem icon={<Flag size={14} className="text-orange" />} label="处级" count={7} />
+        <SideItem icon={<Flag size={14} />} label="公司级" count={4} />
+        <SideItem icon={<Flag size={14} />} label="处级" count={7} />
         <SideItem icon={<Flag size={14} />} label="中心级" count={13} />
       </SideSection>
     </>
@@ -42,15 +43,15 @@ function ProjectsSidebar() {
 
 type ProjectRow = Omit<Project,"progress"> & {progress?:number;members?:string[]};
 function normalize(items: Record<string,unknown>[]): ProjectRow[] {
- return items.map((x):ProjectRow=>({id:str(x.id),name:str(x.name),type:str(x.type,"—"),level:str(x.level),owner:str(x.owner,str(x.owner_id,"—")),ownerColor:avatarColor(str(x.owner_id)),start:str(x.start_date),end:str(x.end_date),progress:measured(x.progress),status:str(x.status,"—"),updated:str(x.updated_at,"—"),marker:"circle",color:"#878C94",members:Array.isArray(x.member_ids)?x.member_ids.filter((id):id is string=>typeof id==="string"):undefined}));
+ return items.map((x):ProjectRow=>({id:str(x.id),name:str(x.name),type:str(x.type,"—"),level:str(x.level),owner:str(x.owner,str(x.owner_id,"—")),ownerColor:avatarColor(str(x.owner_id)),start:str(x.start_date),end:str(x.end_date),progress:measured(x.progress),status:str(x.status,"—"),updated:str(x.updated_at,"—"),marker:"circle",color:"#86868f",members:Array.isArray(x.member_ids)?x.member_ids.filter((id):id is string=>typeof id==="string"):undefined}));
 }
 
 function progressColor(p: ProjectRow): string {
-  if (p.status === "完成" || (p.progress !== undefined && p.progress >= 100)) return "#AEB4BB";
-  if (p.status === "逾期") return "#2FB365";
-  if (p.type === "市场") return "#9B59F5";
-  if (p.type === "文职") return "#3B82F6";
-  return "#2FB365";
+  if (p.status === "完成" || (p.progress !== undefined && p.progress >= 100)) return "#a8a8b0";
+  if (p.status === "逾期") return "#12855a";
+  if (p.type === "市场") return "#6d5bd0";
+  if (p.type === "文职") return "#2563eb";
+  return "#12855a";
 }
 
 export default function ProjectsPage() {
@@ -66,7 +67,7 @@ export default function ProjectsPage() {
     <Shell sidebar={<ProjectsSidebar />}>
       <PageHeader
         title="项目"
-        extra={<span className="text-[12px] text-ink-3">{shown.length} 个</span>}
+        sub={`共 ${shown.length} 个项目`}
         right={
           <>
             <SearchBox placeholder="搜索项目名称 / 负责人" className="w-64" />
@@ -77,26 +78,26 @@ export default function ProjectsPage() {
         }
       />
       {/* 筛选条 */}
-      <div className="flex items-center gap-2 border-b border-border px-7 py-2.5">
+      <div className="flex items-center gap-2 border-b border-border px-6 py-2.5">
         {["全部", ...TYPES].map((t) => (
           <button
             key={t}
             onClick={() => setType(t)}
             className={cx(
-              "h-7 rounded-full px-3 text-[12px]",
+              "h-7 rounded-full px-3 text-[12.5px]",
               type === t ? "bg-ink font-medium text-white" : "border border-border bg-panel text-ink-2 hover:bg-fill",
             )}
           >
             {t}
           </button>
         ))}
-        <span className="ml-3 text-[12px] text-ink-3">级别：</span>
+        <span className="ml-3 text-[12.5px] text-ink-3">级别：</span>
         {LEVELS.map((l) => (
           <button
             key={l}
             onClick={() => setLevel(level === l ? "" : l)}
             className={cx(
-              "h-7 rounded-full px-3 text-[12px]",
+              "h-7 rounded-full px-3 text-[12.5px]",
               level === l ? "bg-ink font-medium text-white" : "border border-border bg-panel text-ink-2 hover:bg-fill",
             )}
           >
@@ -105,11 +106,11 @@ export default function ProjectsPage() {
         ))}
       </div>
 
-      <div className="p-7 pt-4">
+      <div className="p-6 pt-4">
         <Card className="overflow-hidden">
           <table className="w-full text-[12.5px]">
             <thead>
-              <tr className="border-b border-border text-left text-[11.5px] text-ink-4">
+              <tr className="border-b border-border text-left text-[11.5px] text-ink-3">
                 <th className="px-5 py-2.5 font-medium">项目名称</th>
                 <th className="px-3 py-2.5 font-medium">类型</th>
                 <th className="px-3 py-2.5 font-medium">负责人</th>
@@ -133,7 +134,7 @@ export default function ProjectsPage() {
                       {p.name}
                     </span>
                   </td>
-                  <td className="px-3 py-3"><Badge color={TYPE_COLOR[p.type] || "#878C94"}>{p.type}</Badge></td>
+                  <td className="px-3 py-3"><Badge color={TYPE_COLOR[p.type] || "#86868f"}>{p.type}</Badge></td>
                   <td className="px-3 py-3">
                     <span className="flex items-center gap-2">
                       <Avatar name={p.owner} color={p.ownerColor} size={22} />
@@ -143,7 +144,7 @@ export default function ProjectsPage() {
                   <td className="px-3 py-3 text-ink-3 tabular-nums">{md(p.start)} - {md(p.end)}</td>
                   <td className="px-3 py-3">
                     <span className="flex items-center gap-2">
-                      {p.progress !== undefined ? <><Bar value={p.progress} color={progressColor(p)} height={4} /><span className="w-8 shrink-0 text-right text-[11.5px] text-ink-3 tabular-nums">{p.progress}%</span></> : <span className="text-ink-4">—</span>}
+                      {p.progress !== undefined ? <><Bar value={p.progress} color={progressColor(p)} height={4} /><span className="w-8 shrink-0 text-right text-[11.5px] text-ink-3 tabular-nums">{p.progress}%</span></> : <span className="text-ink-3">—</span>}
                     </span>
                   </td>
                   <td className="px-3 py-3">
@@ -151,15 +152,15 @@ export default function ProjectsPage() {
                       {p.members ? p.members.map((c, i) => (
                         <span
                           key={i}
-                          className="flex h-5 w-5 items-center justify-center rounded-full border border-panel text-[9px] text-white"
-                          style={{ background: avatarColor(c) }}
+                          className="flex h-5 w-5 items-center justify-center rounded-[5px] border border-panel text-[9px] font-semibold"
+                          style={{ background: `${avatarColor(c)}1A`, color: avatarColor(c) }}
                         >
                           {c.slice(0,1)}
                         </span>
                       )) : "—"}
                     </span>
                   </td>
-                  <td className="px-3 py-3"><Badge color={STATUS_COLOR[p.status] || "#878C94"}>{p.status}</Badge></td>
+                  <td className="px-3 py-3"><Badge color={projectStatusColor(p.status)}>{projectStatusText(p.status)}</Badge></td>
                   <td className="px-5 py-3 text-right text-[11.5px] text-ink-3">{p.updated}</td>
                 </tr>
               ))}

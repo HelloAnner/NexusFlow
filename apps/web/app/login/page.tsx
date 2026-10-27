@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, User, Eye, EyeOff, Check, AlertTriangle, ExternalLink, LogIn } from "lucide-react";
+import { Lock, User, Eye, EyeOff, AlertTriangle, ExternalLink, LogIn } from "lucide-react";
 import { ApiError } from "@/lib/api";
 import { absorbPortalToken, useAuth } from "@/lib/auth";
 import pkg from "../../package.json";
@@ -10,13 +10,6 @@ import { BrandIcon } from "@/components/brand-icon";
 
 const PORTAL_URL = "http://123.57.255.204:6688";
 const VERSION = `v${pkg.version}`;
-
-const CAPABILITIES = [
-  "任务派发与分级审批：标准/后补流程，部门主任到中心主任逐级签批",
-  "负载与冲突：按人按日测算投入，全天锁定与冲突预警",
-  "甘特与资料：150 天项目甘特、版本留痕的资源库",
-  "首页指挥台：待办、风险、项目脉搏、团队负载一屏可见",
-];
 
 /** 只允许站内相对路径：先用 URL 归一化（处理 %5C / \ 等编码回退），再拦一次 `//`，避免开放跳转。 */
 function safeNext(v: string | null): string {
@@ -104,67 +97,43 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-canvas">
-      {/* 品牌面板（窄屏隐藏） */}
-      <aside className="hidden w-[420px] shrink-0 flex-col justify-between bg-[#1F2329] px-10 py-10 text-white lg:w-[480px] md:flex">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <BrandIcon size={40} />
-            <div>
-              <div className="text-[15px] font-semibold tracking-tight">NexusFlow</div>
-              <div className="text-[11.5px] text-white/55">企业项目管理综合系统</div>
-            </div>
-          </div>
-          <h1 className="mt-9 text-[22px] leading-9 font-semibold">
-            把任务、排程、负载与审批<br />收进同一张指挥台
-          </h1>
-          <ul className="mt-7 flex flex-col gap-3">
-            {CAPABILITIES.map((c) => (
-              <li key={c} className="flex gap-2.5 text-[12.5px] leading-5 text-white/70">
-                <Check size={14} className="mt-[3px] shrink-0 text-[#5B9BFF]" />
-                <span>{c}</span>
-              </li>
-            ))}
-          </ul>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-canvas px-5 py-10">
+      <div className="flex w-[400px] max-w-full flex-col gap-3.5 rounded-lg border border-border bg-panel p-6 pb-5">
+        <div className="flex items-center justify-center gap-2">
+          <BrandIcon size={30} />
+          <span className="text-[15px] font-semibold tracking-[-0.01em] text-ink">NexusFlow</span>
         </div>
-        <div className="text-[11.5px] leading-5 text-white/45">
-          {VERSION} · 环境 {env || "—"}
+
+        <div className="flex flex-col items-center gap-1 pb-1.5 text-center">
+          <h1 className="text-[18px] font-semibold tracking-[-0.01em] text-ink">欢迎回来</h1>
+          <p className="text-[12.5px] text-ink-3">登录企业项目管理综合系统</p>
         </div>
-      </aside>
 
-      {/* 表单列 */}
-      <main className="flex flex-1 flex-col items-center justify-center px-5 py-10">
-        <div className="w-[360px] max-w-full rounded-xl border border-border bg-panel p-8">
-          <div className="mb-6 flex flex-col items-center gap-2.5 md:hidden">
-            <BrandIcon size={44} />
-            <h1 className="text-[17px] font-semibold text-ink">NexusFlow</h1>
-            <p className="text-[12px] text-ink-3">企业项目管理综合系统</p>
-          </div>
-
-          <div className="mb-5 hidden md:block">
-            <h2 className="text-[18px] font-semibold text-ink">登录</h2>
-            <p className="mt-1 text-[12px] text-ink-3">使用本地账号进入工作台</p>
-          </div>
-
-          <form onSubmit={submit} className="flex flex-col gap-3">
-            <label className="flex h-9 items-center gap-2 rounded-sm border border-border px-3 focus-within:border-accent">
-              <User size={14} className="text-ink-3" />
+        <form onSubmit={submit} className="flex flex-col gap-3.5">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[12.5px] font-medium text-ink">账号</span>
+            <span className="flex items-center gap-2 rounded-[6px] border border-border bg-panel px-2.5 py-1.5 text-ink-3 transition focus-within:border-ink-4">
+              <User size={15} />
               <input
                 ref={userRef}
-                className="w-full bg-transparent text-[13px] outline-none placeholder:text-ink-4"
-                placeholder="用户名"
+                className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
+                placeholder="用户名（可使用企业邮箱格式）"
                 autoComplete="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
-            </label>
-            <label className="flex h-9 items-center gap-2 rounded-sm border border-border px-3 focus-within:border-accent">
-              <Lock size={14} className="text-ink-3" />
+            </span>
+          </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[12.5px] font-medium text-ink">密码</span>
+            <span className="flex items-center gap-2 rounded-[6px] border border-border bg-panel px-2.5 py-1.5 text-ink-3 transition focus-within:border-ink-4">
+              <Lock size={15} />
               <input
                 ref={pwdRef}
                 type={showPwd ? "text" : "password"}
-                className="w-full bg-transparent text-[13px] outline-none placeholder:text-ink-4"
-                placeholder="密码"
+                className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-ink-3"
+                placeholder="请输入密码"
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -174,49 +143,49 @@ export default function LoginPage() {
                 aria-label={showPwd ? "隐藏密码" : "显示密码"}
                 title={showPwd ? "隐藏密码" : "显示密码"}
                 onClick={() => setShowPwd((v) => !v)}
-                className="shrink-0 text-ink-3 hover:text-ink-2"
+                className="shrink-0 text-ink-3 hover:text-ink"
               >
                 {showPwd ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
-            </label>
+            </span>
+          </label>
 
-            {error && (
-              <p role="alert" className="flex items-start gap-1.5 text-[12px] leading-5 text-red">
-                <AlertTriangle size={13} className="mt-[4px] shrink-0" />{error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="mt-1 flex h-9 items-center justify-center gap-1.5 rounded-sm bg-accent text-[13px] font-medium text-white hover:opacity-90 disabled:opacity-60"
-            >
-              {loading ? "登录中…" : <><LogIn size={14} /> 登录</>}
-            </button>
-          </form>
-
-          <div className="mt-5 border-t border-border pt-4">
-            <p className="text-[11.5px] leading-5 text-ink-3">
-              也可从 Portal 门户免密进入，无需在本页输入密码。
+          {error && (
+            <p role="alert" className="flex items-start gap-1.5 text-[11.5px] leading-4 text-red">
+              <AlertTriangle size={13} className="mt-px shrink-0" />{error}
             </p>
-            <a
-              href={PORTAL_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-1.5 inline-flex items-center gap-1 text-[11.5px] text-accent hover:underline"
-            >
-              {PORTAL_URL} <ExternalLink size={11} />
-            </a>
-          </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex items-center justify-center gap-1.5 rounded-[6px] bg-ink py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-default disabled:opacity-55"
+          >
+            {loading ? "登录中…" : <><LogIn size={14} /> 登录</>}
+          </button>
+        </form>
+
+        <div className="flex items-center gap-2.5 text-[11.5px] text-ink-3">
+          <span className="h-px flex-1 bg-border" />或从门户进入<span className="h-px flex-1 bg-border" />
         </div>
 
-        <footer className="mt-6 text-center text-[11px] leading-5 text-ink-4">
-          {VERSION} · NexusFlow · 企业项目管理系统
-          <br />
-          当前环境：{env || "—"}
-          {next ? <><br />登录后返回 {next}</> : null}
-        </footer>
-      </main>
-    </div>
+        <p className="text-center text-[12.5px] text-ink-3">
+          从 Portal 门户免密进入 ·{" "}
+          <a
+            href={PORTAL_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 font-medium text-ink hover:underline"
+          >
+            打开门户 <ExternalLink size={11} />
+          </a>
+        </p>
+      </div>
+
+      <footer className="mt-5 text-center text-[11.5px] leading-5 text-ink-3">
+        {VERSION} · 环境 {env || "—"}
+        {next ? <> · 登录后返回 {next}</> : null}
+      </footer>
+    </main>
   );
 }

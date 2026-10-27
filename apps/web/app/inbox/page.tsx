@@ -14,28 +14,28 @@ import { useData } from "@/lib/data";
 import { cx, str,avatarColor } from "@/lib/utils";
 
 const KIND_COLOR: Record<string, string> = {
-  审批: "#EE4B43", 指派: "#3B82F6", 提及: "#9B59F5", 冲突: "#F2970A", 系统: "#878C94",
+  审批: "#d92d20", 指派: "#2563eb", 提及: "#6d5bd0", 冲突: "#b87407", 系统: "#86868f",
 };
 
 function InboxSidebar() {
   return (
     <>
       <SideSection title="消息分类">
-        <SideItem icon={<InboxIcon size={14} className="text-accent" />} label="全部" count={17} active />
-        <SideItem icon={<Stamp size={14} className="text-red" />} label="审批" count={4} />
-        <SideItem icon={<Send size={14} className="text-blue" />} label="指派" count={5} />
-        <SideItem icon={<AtSign size={14} className="text-purple" />} label="@ 提及" count={2} />
-        <SideItem icon={<AlertTriangle size={14} className="text-orange" />} label="冲突预警" count={3} />
+        <SideItem icon={<InboxIcon size={14} />} label="全部" count={17} active />
+        <SideItem icon={<Stamp size={14} />} label="审批" count={4} />
+        <SideItem icon={<Send size={14} />} label="指派" count={5} />
+        <SideItem icon={<AtSign size={14} />} label="@ 提及" count={2} />
+        <SideItem icon={<AlertTriangle size={14} />} label="冲突预警" count={3} />
         <SideItem icon={<Bell size={14} />} label="系统通知" count={3} />
       </SideSection>
       <SideSection title="按项目">
-        <SideItem icon={<Marker color="#F2970A" />} label="智慧油田数据平台" count={8} />
-        <SideItem icon={<Marker color="#9B59F5" shape="square" />} label="等保测评专项" count={4} />
-        <SideItem icon={<Marker color="#F2970A" shape="square" />} label="北线调度优化" count={3} />
+        <SideItem icon={<Marker color="#b87407" />} label="智慧油田数据平台" count={8} />
+        <SideItem icon={<Marker color="#6d5bd0" shape="square" />} label="等保测评专项" count={4} />
+        <SideItem icon={<Marker color="#b87407" shape="square" />} label="北线调度优化" count={3} />
       </SideSection>
       <SideSection title="其他">
         <SideItem icon={<Archive size={14} />} label="已归档" />
-        <SideItem icon={<CheckCheck size={14} className="text-green" />} label="全部标为已读" />
+        <SideItem icon={<CheckCheck size={14} />} label="全部标为已读" />
       </SideSection>
     </>
   );
@@ -61,8 +61,8 @@ export default function InboxPage() {
     <Shell sidebar={<InboxSidebar />}>
       <PageHeader
         title="收件箱"
-        extra={<Badge color="#878C94">已加载 {items.length} 条</Badge>}
-        right={<button className="text-[12.5px] text-accent">全部标为已读</button>}
+        sub={`已加载 ${items.length} 条消息`}
+        right={<button className="text-[12.5px] font-medium text-ink-2 hover:text-ink">全部标为已读</button>}
       />
 
       <div className="grid grid-cols-[1.1fr_1.4fr] gap-0">
@@ -74,7 +74,7 @@ export default function InboxPage() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={cx(
-                  "h-7 rounded-full px-3 text-[12px]",
+                  "h-7 rounded-full px-3 text-[12.5px]",
                   filter === f ? "bg-ink font-medium text-white" : "border border-border bg-panel text-ink-2 hover:bg-fill",
                 )}
               >
@@ -99,7 +99,7 @@ export default function InboxPage() {
                     <span className="truncate text-[12.5px] font-medium text-ink">{m.title}</span>
                   </div>
                   <p className="mt-0.5 truncate text-[11.5px] text-ink-2">{m.desc}</p>
-                  <p className="mt-0.5 text-[10.5px] text-ink-4">{m.actor} · {m.time}</p>
+                  <p className="mt-0.5 text-[11.5px] text-ink-3">{m.actor} · {m.time}</p>
                 </div>
               </button>
             ))}
@@ -115,8 +115,8 @@ export default function InboxPage() {
                 <div className="flex items-center gap-2">
                   <Badge color={KIND_COLOR[selected.kind]}>{selected.kind}</Badge>
                   <h2 className="text-[15px] font-semibold">{selected.title}</h2>
-                  {selected.overdue && <Badge color="#F2970A">{selected.overdue}</Badge>}
-                  <span className="ml-auto text-[11px] text-ink-4">发起人 {selected.actor} · 提交于 6/18 16:20</span>
+                  {selected.overdue && <Badge color="#b87407">{selected.overdue}</Badge>}
+                  <span className="ml-auto text-[11.5px] text-ink-3">发起人 {selected.actor} · 提交于 6/18 16:20</span>
                 </div>
                 <p className="mt-3 text-[12.5px] leading-6 text-ink-2">
                   项目概述：面向北线 3 个站场的调度优化，覆盖排产算法、车辆路径与人员排班。计划周期 6/01 - 8/15，涉及市场与研发两个部门协同。立项书包含预算、人员计划与风险评估，详细内容见附件…
@@ -124,7 +124,7 @@ export default function InboxPage() {
                 <div className="mt-4 grid grid-cols-4 gap-3 rounded-md bg-fill/60 p-3.5">
                   {selected.detail.meta.map(([k, v]) => (
                     <div key={k}>
-                      <p className="text-[10.5px] text-ink-4">{k}</p>
+                      <p className="text-[11.5px] text-ink-3">{k}</p>
                       <p className="mt-0.5 text-[13px] font-semibold">{v}</p>
                     </div>
                   ))}
@@ -139,7 +139,7 @@ export default function InboxPage() {
                 </div>
                 <p className="mt-4 mb-1.5 text-[11.5px] text-ink-3">审批意见</p>
                 <input
-                  className="h-9 w-full rounded-sm border border-border px-3 text-[12.5px] outline-none placeholder:text-ink-4 focus:border-accent"
+                  className="h-9 w-full rounded-sm border border-border px-3 text-[12.5px] outline-none placeholder:text-ink-3 focus:border-accent"
                   placeholder="填写审批意见（可选）…"
                 />
                 <div className="mt-3 flex gap-2">
@@ -159,8 +159,8 @@ export default function InboxPage() {
                   <div key={f.name} className="flex items-center gap-2.5 border-b border-border/60 py-2.5 last:border-0">
                     <Avatar name={f.name} color={f.color} size={26} />
                     <span className="text-[12.5px] font-medium">{f.name}</span>
-                    <span className="text-[12px] text-ink-3">{f.action}</span>
-                    <span className="ml-auto text-[11px] text-ink-4 tabular-nums">{f.time}</span>
+                    <span className="text-[12.5px] text-ink-3">{f.action}</span>
+                    <span className="ml-auto text-[11.5px] text-ink-3 tabular-nums">{f.time}</span>
                   </div>
                 ))}
               </Card>
@@ -172,7 +172,7 @@ export default function InboxPage() {
                 <h2 className="text-[15px] font-semibold">{selected?.title}</h2>
               </div>
               <p className="mt-3 text-[12.5px] text-ink-2">{selected?.desc}</p>
-              <p className="mt-2 text-[11px] text-ink-4">{selected?.actor} · {selected?.time}</p>
+              <p className="mt-2 text-[11.5px] text-ink-3">{selected?.actor} · {selected?.time}</p>
             </Card>
           )}
         </div>

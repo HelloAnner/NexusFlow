@@ -51,8 +51,8 @@ export function IconRail() {
               key={n.key}
               href={n.href}
               className={cx(
-                "relative flex h-10 w-10 items-center justify-center rounded-[10px]",
-                active ? "bg-accent-soft text-accent" : "text-ink-3 hover:bg-fill",
+                "relative flex h-10 w-10 items-center justify-center rounded-[8px] transition-colors",
+                active ? "bg-accent-soft text-ink" : "text-ink-3 hover:bg-fill hover:text-ink",
               )}
             >
               <Icon size={19} strokeWidth={1.7} />
@@ -66,13 +66,13 @@ export function IconRail() {
         })}
       </div>
       <div className="mt-auto flex flex-col items-center gap-1.5">
-        <button className="flex h-10 w-10 items-center justify-center rounded-[10px] text-ink-3 hover:bg-fill">
+        <button className="flex h-10 w-10 items-center justify-center rounded-[8px] text-ink-3 hover:bg-fill hover:text-ink">
           <Bell size={19} strokeWidth={1.7} />
         </button>
-        <button className="flex h-10 w-10 items-center justify-center rounded-[10px] text-ink-3 hover:bg-fill">
+        <button className="flex h-10 w-10 items-center justify-center rounded-[8px] text-ink-3 hover:bg-fill hover:text-ink">
           <Settings size={19} strokeWidth={1.7} />
         </button>
-        <span className="mt-1 flex h-9 w-9 items-center justify-center rounded-full bg-accent text-[13px] font-medium text-white">
+        <span className="mt-1 flex h-8 w-8 items-center justify-center rounded-[7px] bg-fill text-[12.5px] font-semibold text-ink-2">
           {(user?.name || "陈").slice(0, 1)}
         </span>
       </div>
@@ -83,17 +83,17 @@ export function IconRail() {
 export function SidebarFrame({ children }: { children: React.ReactNode }) {
   return (
     <aside className="flex w-[244px] shrink-0 flex-col border-r border-border bg-panel">
-      <div className="px-4 pt-4">
-        <div className="flex h-9 items-center gap-2 rounded-sm bg-fill px-3 text-ink-4">
+      <div className="px-3 pt-3.5">
+        <div className="flex h-8 items-center gap-2 rounded-[6px] border border-border bg-panel px-2.5 text-ink-3">
           <Search size={14} />
           <input
-            className="w-full bg-transparent text-[12.5px] text-ink outline-none placeholder:text-ink-4"
+            className="w-full bg-transparent text-[12.5px] text-ink outline-none placeholder:text-ink-3"
             placeholder="搜索或跳转"
           />
-          <kbd className="rounded border border-border bg-panel px-1 py-0.5 text-[10px] text-ink-3">⌘K</kbd>
+          <kbd className="rounded-[4px] border border-border px-1 py-0.5 text-[11px] text-ink-3">⌘K</kbd>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto pb-4">{children}</div>
+      <div className="flex-1 overflow-y-auto px-1 pb-4">{children}</div>
     </aside>
   );
 }
@@ -112,7 +112,7 @@ export function Shell({ sidebar, children }: { sidebar: React.ReactNode; childre
   }, [checked, user, router]);
 
   if (!checked || !user) {
-    return <div className="flex h-screen items-center justify-center bg-canvas text-[12.5px] text-ink-4">加载中…</div>;
+    return <div className="flex h-screen items-center justify-center bg-canvas text-[12.5px] text-ink-3">加载中…</div>;
   }
 
   return (

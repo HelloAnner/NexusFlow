@@ -1,33 +1,36 @@
 @import "tailwindcss";
 
+/* 设计 token 与 Portal 门户一致：单一白底页面，发丝线分隔，单色强调（主操作反相为近黑）。 */
 @theme {
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
 
-  --color-canvas: #FAFAF9;
-  --color-panel: #FFFFFF;
-  --color-fill: #F4F4F2;
-  --color-border: #E9E9E7;
+  --color-canvas: #ffffff;
+  --color-panel: #ffffff;
+  --color-fill: #f5f4f2;
+  --color-border: rgba(17, 17, 17, 0.08);
+  --color-border-strong: rgba(17, 17, 17, 0.18);
 
-  --color-ink: #1F2329;
-  --color-ink-2: #5F666D;
-  --color-ink-3: #878C94;
-  --color-ink-4: #AEB4BB;
+  --color-ink: #16161a;
+  --color-ink-2: #4a4a52;
+  --color-ink-3: #86868f;
+  --color-ink-4: #a8a8b0;
 
-  --color-accent: #2F6FED;
-  --color-accent-soft: #EAF1FE;
+  --color-accent: #16161a;
+  --color-accent-soft: rgba(17, 17, 17, 0.05);
 
-  --color-green: #2FB365;
-  --color-purple: #9B59F5;
-  --color-orange: #F2970A;
-  --color-blue: #3B82F6;
-  --color-pink: #EC4899;
-  --color-red: #EE4B43;
+  --color-green: #12855a;
+  --color-purple: #6d5bd0;
+  --color-orange: #b87407;
+  --color-blue: #2563eb;
+  --color-pink: #b04a7c;
+  --color-red: #d92d20;
 
   --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 14px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
 }
 
 html, body {
@@ -35,10 +38,14 @@ html, body {
   background: var(--color-canvas);
   color: var(--color-ink);
   font-size: 13px;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+::selection { background: rgba(17, 17, 17, 0.12); }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #D9D9D6 transparent;
+  scrollbar-color: rgba(17, 17, 17, 0.16) transparent;
 }

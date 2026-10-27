@@ -7,8 +7,8 @@ import { cx, initial } from "@/lib/utils";
 export function Avatar({ name, color, size = 24, className }: { name: string; color: string; size?: number; className?: string }) {
   return (
     <span
-      className={cx("inline-flex shrink-0 items-center justify-center rounded-full font-medium text-white", className)}
-      style={{ width: size, height: size, background: color, fontSize: size * 0.42 }}
+      className={cx("inline-flex shrink-0 items-center justify-center rounded-[7px] font-semibold", className)}
+      style={{ width: size, height: size, background: `${color}1A`, color, fontSize: size * 0.42 }}
     >
       {initial(name)}
     </span>
@@ -18,7 +18,7 @@ export function Avatar({ name, color, size = 24, className }: { name: string; co
 export function Badge({ color, children, className }: { color: string; children: React.ReactNode; className?: string }) {
   return (
     <span
-      className={cx("inline-flex items-center rounded-[6px] px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap", className)}
+      className={cx("inline-flex items-center gap-1 rounded-[4px] px-[7px] py-px text-[11.5px] font-medium whitespace-nowrap", className)}
       style={{ color, background: `${color}1A` }}
     >
       {children}
@@ -38,12 +38,15 @@ export function Bar({ value, color, className, height = 5 }: { value: number; co
   );
 }
 
-export function PageHeader({ title, extra, right, className }: { title: React.ReactNode; extra?: React.ReactNode; right?: React.ReactNode; className?: string }) {
+export function PageHeader({ title, sub, extra, right, className }: { title: React.ReactNode; sub?: React.ReactNode; extra?: React.ReactNode; right?: React.ReactNode; className?: string }) {
   return (
-    <div className={cx("flex items-center gap-3 border-b border-border bg-canvas px-7 py-4", className)}>
-      <h1 className="text-[17px] font-semibold text-ink">{title}</h1>
+    <div className={cx("flex items-center gap-3 px-6 pt-5 pb-1", className)}>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <h1 className="text-[18px] font-semibold tracking-[-0.01em] text-ink">{title}</h1>
+        {sub ? <p className="text-[12.5px] text-ink-3">{sub}</p> : null}
+      </div>
       {extra}
-      <div className="ml-auto flex items-center gap-2.5">{right}</div>
+      <div className="flex shrink-0 items-center gap-2.5">{right}</div>
     </div>
   );
 }
@@ -52,7 +55,7 @@ export function SearchBox({ placeholder, className }: { placeholder: string; cla
   return (
     <div className={cx("flex h-8 items-center gap-2 rounded-sm border border-border bg-panel px-2.5 text-ink-3", className)}>
       <Search size={14} />
-      <input className="w-full bg-transparent text-[12.5px] text-ink outline-none placeholder:text-ink-4" placeholder={placeholder} />
+      <input className="w-full bg-transparent text-[12.5px] text-ink outline-none placeholder:text-ink-3" placeholder={placeholder} />
     </div>
   );
 }
@@ -60,12 +63,12 @@ export function SearchBox({ placeholder, className }: { placeholder: string; cla
 export function SideSection({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = React.useState(defaultOpen);
   return (
-    <div className="px-3 pt-4">
-      <button className="flex w-full items-center justify-between px-2 pb-1.5 text-[11px] text-ink-3" onClick={() => setOpen(!open)}>
+    <div className="px-2 pt-3.5">
+      <button className="flex w-full items-center justify-between px-2 pb-1 text-[11.5px] font-medium tracking-[0.02em] text-ink-3" onClick={() => setOpen(!open)}>
         <span>{title}</span>
         <ChevronDown size={12} className={cx("transition-transform", !open && "-rotate-90")} />
       </button>
-      {open && <div className="flex flex-col gap-0.5">{children}</div>}
+      {open && <div className="flex flex-col">{children}</div>}
     </div>
   );
 }
@@ -80,15 +83,15 @@ export function SideItem({
     <button
       onClick={onClick}
       className={cx(
-        "flex w-full items-center gap-2 rounded-sm px-2 py-[5px] text-left text-[12.5px]",
-        active ? "bg-accent-soft font-medium text-ink" : "text-ink-2 hover:bg-fill",
+        "flex w-full items-center gap-2 rounded-[6px] px-2 py-[7px] text-left text-[13px] font-medium transition-colors",
+        active ? "bg-accent-soft text-ink" : "text-ink-2 hover:bg-fill hover:text-ink",
         bold && "font-semibold",
       )}
     >
       {icon && <span className="flex w-4 shrink-0 items-center justify-center text-ink-3">{icon}</span>}
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {count !== undefined && (
-        <span className="text-[11px]" style={{ color: countColor || "#AEB4BB" }}>{count}</span>
+        <span className="text-[11.5px]" style={{ color: countColor || "#a8a8b0" }}>{count}</span>
       )}
     </button>
   );
@@ -117,20 +120,20 @@ export function Marker({ color, shape = "circle", size = 14 }: { color: string; 
 }
 
 export function Loading({ text = "加载中…" }: { text?: string }) {
-  return <div className="flex items-center justify-center py-14 text-[12.5px] text-ink-4">{text}</div>;
+  return <div className="flex items-center justify-center py-14 text-[12.5px] text-ink-3">{text}</div>;
 }
 
 export function Empty({ text = "暂无数据" }: { text?: string }) {
-  return <div className="flex flex-col items-center justify-center gap-2 py-14 text-[12.5px] text-ink-4">{text}</div>;
+  return <div className="flex flex-col items-center justify-center gap-2 py-14 text-[12.5px] text-ink-3">{text}</div>;
 }
 
 export const STATUS_COLOR: Record<string, string> = {
-  正常: "#2FB365", 风险: "#F2970A", 逾期: "#EE4B43", 完成: "#878C94", 已完成: "#2FB365",
-  未启动: "#878C94", 过载: "#EE4B43", 饱和: "#F2970A", 空闲: "#2FB365", 全天锁定: "#5F666D",
-  进行中: "#3B82F6",
+  正常: "#12855a", 风险: "#b87407", 逾期: "#d92d20", 完成: "#86868f", 已完成: "#12855a",
+  未启动: "#86868f", 过载: "#d92d20", 饱和: "#b87407", 空闲: "#12855a", 全天锁定: "#4a4a52",
+  进行中: "#2563eb",
 };
 
 export const TYPE_COLOR: Record<string, string> = {
-  科研: "#2FB365", 市场: "#9B59F5", 出差: "#F2970A", 文职: "#3B82F6",
-  党建: "#EC4899", 学习: "#2FB365", 休假: "#878C94",
+  科研: "#12855a", 市场: "#6d5bd0", 出差: "#b87407", 文职: "#2563eb",
+  党建: "#b04a7c", 学习: "#12855a", 休假: "#86868f",
 };

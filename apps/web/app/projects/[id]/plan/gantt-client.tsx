@@ -17,7 +17,7 @@ const ROW_H = 40;
 const GROUP_H = 40;
 const LABEL_W = 210;
 function GanttSidebar({project,groups}:{project:Record<string,unknown>;groups:GanttGroup[]}) {
- return <SideSection title="项目计划"><SideItem icon={<Marker color="#F2970A" />} label={str(project.name)} active bold />{groups.map((group,i)=><SideItem key={i} icon={<Marker color={group.typeColor} />} label={`${group.type} · ${group.owner}`} />)}</SideSection>;
+ return <SideSection title="项目计划"><SideItem icon={<Marker color="#b87407" />} label={str(project.name)} active bold />{groups.map((group,i)=><SideItem key={i} icon={<Marker color={group.typeColor} />} label={`${group.type} · ${group.owner}`} />)}</SideSection>;
 }
 
 type Row = { kind: "group"; group: GanttGroup } | { kind: "task"; group: GanttGroup; task: GanttTask };
@@ -57,14 +57,14 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
   return (
     <Shell sidebar={<GanttSidebar project={project} groups={groups} />}>
       {/* 项目页头 */}
-      <div className="flex items-start justify-between px-7 pt-5">
+      <div className="flex items-start justify-between px-6 pt-5">
         <div>
           <div className="flex items-center gap-2.5">
-            <Marker color="#F2970A" size={18} />
-            <h1 className="text-[17px] font-semibold">{str(project.name)}</h1>
-            <Badge color="#878C94">{str(project.status,"—")}</Badge>
+            <Marker color="#b87407" size={18} />
+            <h1 className="text-[18px] font-semibold">{str(project.name)}</h1>
+            <Badge color="#86868f">{str(project.status,"—")}</Badge>
           </div>
-          <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-ink-3">
+          <p className="mt-1.5 flex items-center gap-1.5 text-[12.5px] text-ink-3">
             <CornerUpLeft size={12} />
             <span className="font-medium text-ink">{str(project.name)}</span>
           </p>
@@ -80,7 +80,7 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
       </div>
 
       {/* 页签 */}
-      <div className="flex items-center gap-5 border-b border-border px-7 text-[12.5px]">
+      <div className="flex items-center gap-5 border-b border-border px-6 text-[12.5px]">
         {[
           ["概览", ""], ["计划", ""], ["成员", ""], ["问题", ""], ["资料", ""], ["动态", ""],
         ].map(([t, c]) => (
@@ -92,13 +92,13 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
             )}
           >
             {t}
-            {c && <span className={cx("text-[11px]", t === "动态" ? "text-red" : "text-ink-4")}>{c}</span>}
+            {c && <span className={cx("text-[11.5px]", t === "动态" ? "text-red" : "text-ink-3")}>{c}</span>}
           </button>
         ))}
       </div>
 
       {/* 工具栏 */}
-      <div className="flex items-center justify-between px-7 py-2.5">
+      <div className="flex items-center justify-between px-6 py-2.5">
         <div className="flex items-center gap-2">
           <div className="flex rounded-sm bg-fill p-0.5">
             {(["周", "月", "阶段"] as const).map((s) => (
@@ -116,7 +116,7 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
             <SlidersHorizontal size={12} /> 筛选
           </button>
         </div>
-        <div className="flex items-center gap-3 text-[11px] text-ink-3">
+        <div className="flex items-center gap-3 text-[11.5px] text-ink-3">
           <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-green" />已完成</span>
           <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-ink-4" />进行中</span>
           <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full border border-ink-4" />计划</span>
@@ -125,16 +125,16 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
       </div>
 
       {/* 甘特主体 */}
-      <div className="px-7 pb-7">
+      <div className="px-6 pb-6">
         <div className="overflow-hidden rounded-lg border border-border bg-panel">
           {/* 刻度头 */}
           <div className="flex border-b border-border">
-            <div className="shrink-0 px-4 py-2 text-[11.5px] text-ink-4" style={{ width: LABEL_W }}>任务 / 工作流</div>
+            <div className="shrink-0 px-4 py-2 text-[11.5px] text-ink-3" style={{ width: LABEL_W }}>任务 / 工作流</div>
             <div className="relative flex-1">
               {ticks.map((d) => (
                 <div key={d} className="absolute top-0 py-1.5" style={{ left: `${(d / GANTT_TOTAL_DAYS) * 100}%` }}>
-                  <p className={cx("pl-1 text-[12px] font-semibold", d === GANTT_TODAY_DAY ? "text-blue" : "text-ink")}>Day {d}</p>
-                  <p className={cx("pl-1 text-[10.5px]", d === GANTT_TODAY_DAY ? "text-blue" : "text-ink-4")}>{mdCn(addDays(GANTT_START, d))}</p>
+                  <p className={cx("pl-1 text-[12.5px] font-semibold", d === GANTT_TODAY_DAY ? "text-blue" : "text-ink")}>Day {d}</p>
+                  <p className={cx("pl-1 text-[11.5px]", d === GANTT_TODAY_DAY ? "text-blue" : "text-ink-3")}>{mdCn(addDays(GANTT_START, d))}</p>
                 </div>
               ))}
               <div className="h-[46px]" />
@@ -148,18 +148,18 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
               {rows.map((r, i) =>
                 r.kind === "group" ? (
                   <div key={i} className="flex items-center gap-2 px-4" style={{ height: GROUP_H }}>
-                    <span className="rounded-[6px] px-1.5 py-0.5 text-[11px] font-medium text-white" style={{ background: r.group.typeColor }}>
+                    <span className="rounded-[6px] px-1.5 py-0.5 text-[11.5px] font-medium text-white" style={{ background: r.group.typeColor }}>
                       {r.group.type}
                     </span>
                     <Avatar name={r.group.owner} color={r.group.ownerColor} size={20} />
-                    <span className="text-[12px] text-ink-2">{r.group.owner}</span>
+                    <span className="text-[12.5px] text-ink-2">{r.group.owner}</span>
                   </div>
                 ) : (
                   <button
                     key={i}
                     onClick={() => setSelected(r.task.id === selected ? null : r.task.id)}
                     className={cx(
-                      "flex w-full items-center px-4 pl-11 text-left text-[12px]",
+                      "flex w-full items-center px-4 pl-11 text-left text-[12.5px]",
                       selected === r.task.id ? "bg-accent-soft font-semibold text-ink" : "text-ink-2 hover:bg-fill",
                     )}
                     style={{ height: ROW_H }}
@@ -191,7 +191,7 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
                 ))}
                 {/* 行分隔线 */}
                 {rows.map((r, i) => (
-                  <line key={i} x1={0} y1={rowY(i, r.kind)} x2={CHART_W} y2={rowY(i, r.kind)} stroke="#F4F4F2" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+                  <line key={i} x1={0} y1={rowY(i, r.kind)} x2={CHART_W} y2={rowY(i, r.kind)} stroke="#f5f4f2" strokeWidth={1} vectorEffect="non-scaling-stroke" />
                 ))}
                 {/* 任务条 */}
                 {rows.map((r, i) => {
@@ -215,19 +215,19 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
                   // 逾期延伸（红色描边段）
                   if (t.overdueTo && t.overdueTo > t.end) {
                     parts.push(
-                      <rect key="ov" x={t.end * DAY_W} y={y} width={(t.overdueTo - t.end) * DAY_W} height={10} rx={5} fill="#EE4B43" fillOpacity={0.08} stroke="#EE4B43" strokeWidth={1.5} />,
+                      <rect key="ov" x={t.end * DAY_W} y={y} width={(t.overdueTo - t.end) * DAY_W} height={10} rx={5} fill="#d92d20" fillOpacity={0.08} stroke="#d92d20" strokeWidth={1.5} />,
                     );
                   }
                   // 行尾说明文字
                   if (t.note) {
                     parts.push(
-                      <text key="n" x={Math.min((t.overdueTo || t.end) * DAY_W + 8, CHART_W - 8)} y={y + 9} fontSize={11} fill="#878C94">{t.note}</text>,
+                      <text key="n" x={Math.min((t.overdueTo || t.end) * DAY_W + 8, CHART_W - 8)} y={y + 9} fontSize={11} fill="#86868f">{t.note}</text>,
                     );
                   }
                   if (t.overdueLabel) {
                     // 红字标签画在逾期延伸条内部右端，避免超出 viewBox 被裁剪
                     parts.push(
-                      <text key="o" x={(t.overdueTo || t.end) * DAY_W - 8} y={y + 9} fontSize={11} fill="#EE4B43" textAnchor="end">{t.overdueLabel}</text>,
+                      <text key="o" x={(t.overdueTo || t.end) * DAY_W - 8} y={y + 9} fontSize={11} fill="#d92d20" textAnchor="end">{t.overdueLabel}</text>,
                     );
                   }
                   return (
@@ -237,7 +237,7 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
                   );
                 })}
                 {/* 今天蓝线 */}
-                <line x1={GANTT_TODAY_DAY * DAY_W} y1={0} x2={GANTT_TODAY_DAY * DAY_W} y2={totalH} stroke="#3B82F6" strokeWidth={1.6} vectorEffect="non-scaling-stroke" />
+                <line x1={GANTT_TODAY_DAY * DAY_W} y1={0} x2={GANTT_TODAY_DAY * DAY_W} y2={totalH} stroke="#2563eb" strokeWidth={1.6} vectorEffect="non-scaling-stroke" />
               </svg>
 
               {/* 任务弹层 */}
@@ -250,7 +250,7 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
                   }}
                 >
                   <h4 className="mb-2.5 text-[13.5px] font-semibold">{selectedTask.task.name}</h4>
-                  <div className="flex flex-col gap-2 text-[12px]">
+                  <div className="flex flex-col gap-2 text-[12.5px]">
                     <div className="flex items-center justify-between">
                       <span className="text-ink-3">负责人</span>
                       <span className="flex items-center gap-1.5">

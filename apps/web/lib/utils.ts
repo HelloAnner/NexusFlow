@@ -2,7 +2,7 @@ export const cx = (...xs: (string | false | null | undefined)[]) => xs.filter(Bo
 
 export const DEMO_TODAY = "2025-06-24"; // 与设计稿一致的演示「今天」（周三）
 
-export const AVATAR_COLORS = ["#2FB365", "#3B82F6", "#9B59F5", "#EC4899", "#F2970A", "#5F666D"];
+export const AVATAR_COLORS = ["#12855a", "#2563eb", "#6d5bd0", "#b04a7c", "#b87407", "#4a4a52"];
 
 export function avatarColor(name: string): string {
   let h = 0;

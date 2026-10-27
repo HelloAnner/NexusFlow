@@ -17,21 +17,21 @@ function FilesSidebar() {
   return (
     <>
       <SideSection title="资料目录">
-        <SideItem icon={<FolderOpen size={14} className="text-accent" />} label="全部资料" count={1284} active />
+        <SideItem icon={<FolderOpen size={14} />} label="全部资料" count={1284} active />
         <SideItem icon={<FileText size={14} />} label="个人报告" count={312} />
         <SideItem icon={<FileBarChart size={14} />} label="整体报告" count={86} />
-        <SideItem icon={<Presentation size={14} className="text-orange" />} label="汇报 PPT" count={154} />
-        <SideItem icon={<FileBadge size={14} className="text-purple" />} label="申报报告" count={42} />
-        <SideItem icon={<Database size={14} className="text-blue" />} label="数据集" count={230} />
+        <SideItem icon={<Presentation size={14} />} label="汇报 PPT" count={154} />
+        <SideItem icon={<FileBadge size={14} />} label="申报报告" count={42} />
+        <SideItem icon={<Database size={14} />} label="数据集" count={230} />
         <SideItem icon={<NotebookPen size={14} />} label="会议纪要" count={178} />
       </SideSection>
       <SideSection title="按项目">
-        <SideItem icon={<Marker color="#F2970A" />} label="智慧油田数据平台" count={486} />
-        <SideItem icon={<Marker color="#2FB365" shape="square" />} label="巡检机器人研发" count={204} />
-        <SideItem icon={<Marker color="#9B59F5" shape="square" />} label="等保测评专项" count={97} />
+        <SideItem icon={<Marker color="#b87407" />} label="智慧油田数据平台" count={486} />
+        <SideItem icon={<Marker color="#12855a" shape="square" />} label="巡检机器人研发" count={204} />
+        <SideItem icon={<Marker color="#6d5bd0" shape="square" />} label="等保测评专项" count={97} />
       </SideSection>
       <SideSection title="其他">
-        <SideItem icon={<Star size={14} className="text-orange" />} label="我的收藏" count={12} />
+        <SideItem icon={<Star size={14} />} label="我的收藏" count={12} />
         <SideItem icon={<Trash2 size={14} />} label="回收站" />
       </SideSection>
     </>
@@ -39,21 +39,21 @@ function FilesSidebar() {
 }
 
 const FTYPE_ICON: Record<string, { icon: React.ComponentType<{ size?: number | string }>; color: string }> = {
-  pdf: { icon: FileText, color: "#EE4B43" },
-  word: { icon: FileText, color: "#3B82F6" },
-  ppt: { icon: Presentation, color: "#F2970A" },
-  excel: { icon: FileSpreadsheet, color: "#2FB365" },
-  data: { icon: Database, color: "#3B82F6" },
-  video: { icon: FileVideo, color: "#9B59F5" },
-  image: { icon: FileImage, color: "#EC4899" },
-  other: { icon: File, color: "#878C94" },
+  pdf: { icon: FileText, color: "#d92d20" },
+  word: { icon: FileText, color: "#2563eb" },
+  ppt: { icon: Presentation, color: "#b87407" },
+  excel: { icon: FileSpreadsheet, color: "#12855a" },
+  data: { icon: Database, color: "#2563eb" },
+  video: { icon: FileVideo, color: "#6d5bd0" },
+  image: { icon: FileImage, color: "#b04a7c" },
+  other: { icon: File, color: "#86868f" },
 };
 
 const FILTERS = ["全部类型", "Word", "PPT", "PDF", "Excel", "数据"];
 
 type FileRow=Omit<FileItem,"ftype"> & {ftype:string};
 function normalize(items: Record<string,unknown>[]): FileRow[] {
- return items.map((x):FileRow=>({id:str(x.id),name:str(x.name),attr:str(x.category,"—"),attrColor:"#878C94",task:str(x.task,str(x.task_id,"—")),uploader:str(x.uploader,str(x.uploaded_by,"—")),time:str(x.created_at,"—"),size:measured(x.size_bytes)!==undefined?`${x.size_bytes} B`:"—",ftype:str(x.ftype,"other")}));
+ return items.map((x):FileRow=>({id:str(x.id),name:str(x.name),attr:str(x.category,"—"),attrColor:"#86868f",task:str(x.task,str(x.task_id,"—")),uploader:str(x.uploader,str(x.uploaded_by,"—")),time:str(x.created_at,"—"),size:measured(x.size_bytes)!==undefined?`${x.size_bytes} B`:"—",ftype:str(x.ftype,"other")}));
 }
 
 export default function FilesPage() {
@@ -66,12 +66,7 @@ export default function FilesPage() {
     <Shell sidebar={<FilesSidebar />}>
       <PageHeader
         title="资料库"
-        extra={
-          <>
-            <span className="rounded bg-fill px-1.5 py-0.5 text-[11px] text-ink-3">已加载 {files.length} 份</span>
-            <span className="text-[12px] text-ink-3">当前可见资料</span>
-          </>
-        }
+        sub={`当前可见资料 ${files.length} 份`}
         right={
           <>
             <SearchBox placeholder="搜索文件名 / 上传人" className="w-56" />
@@ -82,11 +77,11 @@ export default function FilesPage() {
         }
       />
 
-      <div className="grid grid-cols-[240px_1fr] gap-3 p-7 pt-4">
+      <div className="grid grid-cols-[240px_1fr] gap-3 p-6 pt-4">
         {/* 目录 */}
         <Card className="self-start p-4">
           <h3 className="text-[13.5px] font-semibold">目录</h3>
-          <p className="mt-0.5 mb-2 text-[10.5px] text-ink-4">按任务归档 · 资料 + 属性</p>
+          <p className="mt-0.5 mb-2 text-[11.5px] text-ink-3">按任务归档 · 资料 + 属性</p>
           {[
             { icon: FolderOpen, name: "全部资料", count: 1284 },
             { icon: FileText, name: "个人报告", count: 312 },
@@ -99,13 +94,13 @@ export default function FilesPage() {
             <div key={d.name} className={cx("flex items-center gap-2 rounded-sm px-2 py-1.5 text-[12.5px]", i === 0 ? "text-ink" : "text-ink-2 hover:bg-fill")}>
               <d.icon size={13} className="text-ink-3" />
               <span className="flex-1">{d.name}</span>
-              <span className="text-[11px] text-ink-4">{d.count}</span>
+              <span className="text-[11.5px] text-ink-3">{d.count}</span>
             </div>
           ))}
           <div className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-[12.5px] text-ink-2 hover:bg-fill">
             <FolderOpen size={13} className="text-ink-3" />
             <span className="flex-1">代码仓库</span>
-            <span className="text-[11px] text-ink-4">—</span>
+            <span className="text-[11.5px] text-ink-3">—</span>
           </div>
         </Card>
 
@@ -117,7 +112,7 @@ export default function FilesPage() {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={cx(
-                  "h-7 rounded-full px-3 text-[12px]",
+                  "h-7 rounded-full px-3 text-[12.5px]",
                   filter === f ? "bg-ink font-medium text-white" : "border border-border bg-panel text-ink-2 hover:bg-fill",
                 )}
               >
@@ -129,7 +124,7 @@ export default function FilesPage() {
           <Card className="overflow-hidden">
             <table className="w-full text-[12.5px]">
               <thead>
-                <tr className="border-b border-border text-left text-[11.5px] text-ink-4">
+                <tr className="border-b border-border text-left text-[11.5px] text-ink-3">
                   <th className="px-5 py-2.5 font-medium">文件名称</th>
                   <th className="px-3 py-2.5 font-medium">属性</th>
                   <th className="px-3 py-2.5 font-medium">所属任务</th>
@@ -157,7 +152,7 @@ export default function FilesPage() {
                       <td className="px-3 py-3 text-ink-2">{f.uploader}</td>
                       <td className="px-3 py-3 text-[11.5px] text-ink-3">{f.time}</td>
                       <td className="px-3 py-3 text-right text-[11.5px] text-ink-3 tabular-nums">{f.size}</td>
-                      <td className="px-3 py-3 text-ink-4"><Download size={14} /></td>
+                      <td className="px-3 py-3 text-ink-3"><Download size={14} /></td>
                     </tr>
                   );
                 })}
