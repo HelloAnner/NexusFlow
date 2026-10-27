@@ -93,7 +93,8 @@ export function portalAllows(user:User,path:string,method:string) {
   const is=(prefix:string)=>path===prefix||path.startsWith(`${prefix}/`);
   const read=method==="GET",write=["POST","PUT","PATCH","DELETE"].includes(method);
   let required:string|undefined;
-  if(path==="/api/auth/me"||path==="/api/home"||path==="/api/gantt"||is("/api/load")||is("/api/tools"))required=read?"nexusflow:task:read":undefined;
+  if(is("/api/v1/rbac"))required=read?"nexusflow:project:read":"nexusflow:admin";
+  else if(path==="/api/auth/me"||path==="/api/home"||path==="/api/gantt"||is("/api/load")||is("/api/tools"))required=read?"nexusflow:task:read":undefined;
   else if(is("/api/tasks"))required=read?"nexusflow:task:read":write?"nexusflow:task:write":undefined;
   else if(is("/api/task_assignments"))required=read?"nexusflow:task:read":write?"nexusflow:task:write":undefined;
   else if(is("/api/projects"))required=read?"nexusflow:project:read":write?"nexusflow:project:write":undefined;

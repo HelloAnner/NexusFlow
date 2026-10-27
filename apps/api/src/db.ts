@@ -47,7 +47,20 @@ export async function migrate() {
     status text NOT NULL DEFAULT 'active', portal_tenant_id text,
     created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now())`;
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS tenants_portal_idx ON nexusflow.tenants(portal_tenant_id) WHERE portal_tenant_id IS NOT NULL`;
-  // Portal 同步会修改 code；回填遇到已有 id、code 或 Portal 绑定时都保留原租户。
+  // 统一 RBAC：个人级权限覆盖。角色/组织基线仍由 permissions.ts 计算。
+  await sql`CREATE TABLE IF NOT EXISTS nexusflow.permission_override (
+    tenant_id text NOT NULL,
+    subject_type text NOT NULL DEFAULT 'user' CHECK (subject_type IN ('user')),
+    subject_id text NOT NULL,
+    entity_type text NOT NULL,
+    entity_id text NOT NULL,
+    action text NOT NULL CHECK (action IN ('view','edit','manage')),
+    effect text NOT NULL CHECK (effect IN ('allow','deny')),
+    updated_by text,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (tenant_id, subject_type, subject_id, entity_type, entity_id, action))`;
+  await sql`CREATE INDEX IF NOT EXISTS permission_override_subject_idx ON nexusflow.permission_override(tenant_id,subject_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS permission_override_entity_idx ON nexusflow.permission_override(tenant_id,entity_type,entity_id)`;
   await sql`INSERT INTO nexusflow.tenants (id,code,name,status,portal_tenant_id)
     SELECT DISTINCT tenant_id,tenant_id,tenant_id,'active',
       CASE WHEN tenant_id ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' THEN tenant_id ELSE NULL END

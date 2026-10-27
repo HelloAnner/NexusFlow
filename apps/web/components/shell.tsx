@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutGrid, Inbox, Briefcase, ClipboardList, Calendar, Users, Folder, Wrench,
+  LayoutGrid, Inbox, Briefcase, ClipboardList, Calendar, Users, Folder, Wrench, ShieldCheck,
 } from "lucide-react";
 import { cx, initial } from "@/lib/utils";
 import { useAuth, absorbPortalToken } from "@/lib/auth";
@@ -48,6 +48,7 @@ function activeKey(pathname: string): string {
   if (pathname.startsWith("/team")) return "team";
   if (pathname.startsWith("/files")) return "files";
   if (pathname.startsWith("/tools")) return "tools";
+  if (pathname.startsWith("/settings")) return "settings";
   return "";
 }
 
@@ -56,6 +57,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const key = activeKey(pathname);
   const router = useRouter();
   const { user, checked, fetchMe } = useAuth();
+  const manage = Boolean(user && ["super_admin", "center_director", "center_deputy", "department_director", "department_deputy"].includes(user.role));
 
   useEffect(() => {
     absorbPortalToken();
@@ -79,6 +81,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </Link>
 
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
+          {manage ? (
+            <div>
+              <p className="px-2 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.02em] text-ink-3">管理</p>
+              <div className="flex flex-col gap-0.5">
+                <Link
+                  href="/settings/permissions"
+                  aria-current={key === "settings" ? "page" : undefined}
+                  className={cx(
+                    "flex items-center gap-2 rounded-[6px] px-2 py-[7px] text-[13px] font-medium transition-colors",
+                    key === "settings" ? "bg-accent-soft text-ink" : "text-ink-2 hover:bg-fill hover:text-ink",
+                  )}
+                >
+                  <ShieldCheck size={16} strokeWidth={1.7} className="shrink-0" />
+                  <span className="min-w-0 flex-1 truncate">权限管理</span>
+                </Link>
+              </div>
+            </div>
+          ) : null}
+
           {NAV.map((group) => (
             <div key={group.section}>
               <p className="px-2 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.02em] text-ink-3">{group.section}</p>

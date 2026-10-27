@@ -28,6 +28,8 @@ import { registerRoutes as registerAdmin,registerRecords as registerAdminRecords
 import { registerRoutes as registerSeed,registerRecords as registerSeedRecords } from "./domains/seed/routes.ts";
 import { registerRoutes as registerGantt,registerRecords as registerGanttRecords } from "./domains/gantt/routes.ts";
 import { registerPortalSync } from "./domains/portal_sync.ts";
+import { registerRbac } from "./rbac.ts";
+import { withRbacContext } from "./rbac.ts";
 app.use("*",async(c,next)=>{
  const supplied=c.req.header("x-request-id"),request_id=supplied&&/^[a-zA-Z0-9._-]{1,128}$/.test(supplied)?supplied:crypto.randomUUID();
  c.set("request_id",request_id);c.header("x-request-id",request_id);
@@ -41,7 +43,7 @@ app.use("*",async(c,next)=>{
  });
 });
 const publicPaths=new Set(["/api/auth/login","/api/auth/logout","/api/auth/register"]);
-app.use("/api/*",async(c,next)=>{if(publicPaths.has(c.req.path)||c.req.path.startsWith("/api/portal/sync/v1")||c.req.path==="/api/system/version"&&c.req.method==="GET"||portalFilesPublicPath.test(c.req.path))return next();const user=await currentUser(c);if(!user)return c.json({error:"unauthorized"},401);
+app.use("/api/*",async(c,next)=>{if(publicPaths.has(c.req.path)||c.req.path.startsWith("/api/portal/sync/v1")||c.req.path.startsWith("/api/portal/rbac/v1")||c.req.path==="/api/system/version"&&c.req.method==="GET"||portalFilesPublicPath.test(c.req.path))return next();const loadedUser=await currentUser(c);if(!loadedUser)return c.json({error:"unauthorized"},401);const user=await withRbacContext(loadedUser);
  const registered=app.routes.some(route=>!route.path.includes("*")&&(route.method===c.req.method||route.method==="ALL")&&new RegExp("^"+route.path.replace(/:[^/]+/g,"[^/]+")+"$").test(c.req.path));
  if(!registered)return c.json({error:"not found"},404);
  if(!portalAllows(user,c.req.path,c.req.method))return c.json({error:"forbidden"},403);c.set("user",user);await next();});
@@ -72,6 +74,7 @@ registerAdmin(app);
 registerSeed(app);
 registerGantt(app);
 registerPortalSync(app);
+registerRbac(app);
 registerOrgRecords(app);
 registerPeopleRecords(app);
 registerProjectsRecords(app);

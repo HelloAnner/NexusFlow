@@ -1,11 +1,27 @@
 import type { Context } from "hono";
 import { sql } from "./db.ts";
 
-export type User = { id:string; username:string; role:string; tenant_id:string|null; org_id:string|null; portal_permissions:string[]|null };
+export type User = {
+  id:string; username:string; role:string; tenant_id:string|null; org_id:string|null; portal_permissions:string[]|null;
+  /** 由 rbac.withRbacContext 注入；无覆盖时不设置。 */
+  feature_denies?:string[];
+  project_overrides?:Record<string,Record<string,"allow"|"deny">>;
+};
 const managers = new Set(["super_admin","center_director","center_deputy","department_director","department_deputy"]);
 const scopedManagers = new Set(["center_deputy","department_director","department_deputy"]);
 export function canManage(user:User) { return managers.has(user.role); }
+export function featureDenied(user:User,id:string,action:"view"|"edit"|"manage") {
+  return Boolean(user.feature_denies?.includes(`${id}:${action}`));
+}
+const FEATURE_BY_KIND:Record<string,[string,"view"|"edit"|"manage"]>={
+  orgs:["org","manage"], people:["people","manage"], invitations:["people","manage"],
+  config:["config","manage"], projects:["project","edit"], dispatch:["dispatch","manage"],
+  approvals:["approval","manage"], reports:["report","view"],
+  visibility_grants:["project","edit"],
+};
 export function allowedAction(user:User,kind:string,action:"read"|"write") {
+  const feature=FEATURE_BY_KIND[kind];
+  if(feature&&featureDenied(user,feature[0],action==="read"?"view":feature[1]))return false;
   if(action==="read")return true;
   if(user.role==="super_admin"||user.role==="center_director")return true;
   if(["admin","config","orgs","people","visibility_grants","invitations"].includes(kind))return scopedManagers.has(user.role);
@@ -56,6 +72,11 @@ async function relatedOrg(user:User,kind:string,data:Record<string,unknown>):Pro
 async function isProjectMember(user:User,p:Record<string,any>) {const d=p.data as Record<string,unknown>;return d.owner_id===user.id||(Array.isArray(d.member_ids)&&d.member_ids.includes(user.id));}
 export async function canProjectAction(user:User,projectId:string,action:"view"|"edit"|"dispatch"="edit") {
   const p=await project(user,projectId);if(!p)return false;
+  const featureAction=action==="dispatch"?"manage":action;
+  if(featureDenied(user,"project",featureAction))return false;
+  const override=user.project_overrides?.[projectId]?.[featureAction];
+  if(override==="deny")return false;
+  if(override==="allow")return true;
   const d=p.data as Record<string,unknown>,member=await isProjectMember(user,p),within=await orgWithin(user,String(d.org_id||"")||null);
   if(["super_admin","center_director"].includes(user.role))return true;
   if((d.visibility==="hidden"||d.visibility==="restricted")&&!member)return grant(user,projectId,action);
@@ -76,7 +97,12 @@ export async function canReadRecord(user:User,kind:string,row:{id?:string;tenant
   }
   if(kind==="tools")return true;
   if(kind==="projects"){
-    const within=await orgWithin(user,String(d.org_id||"")||null),member=d.owner_id===user.id||(Array.isArray(d.member_ids)&&d.member_ids.includes(user.id)),viewGrant=await grant(user,String(row.id||d.id||""),"view");
+    const projectId=String(row.id||d.id||"");
+    if(featureDenied(user,"project","view"))return false;
+    const override=user.project_overrides?.[projectId]?.view;
+    if(override==="deny")return false;
+    if(override==="allow")return true;
+    const within=await orgWithin(user,String(d.org_id||"")||null),member=d.owner_id===user.id||(Array.isArray(d.member_ids)&&d.member_ids.includes(user.id)),viewGrant=await grant(user,projectId,"view");
     if(["hidden","restricted"].includes(String(d.visibility))&&!member&&!(["super_admin","center_director"].includes(user.role))&&!viewGrant)return false;
     return ["super_admin","center_director"].includes(user.role)||(canManage(user)&&within)||member||viewGrant;
   }
