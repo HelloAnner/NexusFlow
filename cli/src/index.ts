@@ -35,6 +35,6 @@ version: public service commit; version --local: compiled CLI commit.
 verify b0 --commit SHA: read regression, temporary admin session; no seed or business writes.
 Set NEXUSFLOW_URL, NEXUSFLOW_BASE_PATH, NEXUSFLOW_TOKEN. --json for compact JSON.
 Portal read-only files: set PORTAL_INTERNAL_TOKEN (or --token) and pass --portal-user-id/--portal-tenant-id; files upload --scope personal|space.
-portal-sync status|tenants|members --tenant-id ID|selftest: exercise the internal sync endpoints with PORTAL_INTERNAL_TOKEN.
+portal-sync status|tenants|members --tenant-id ID|password --portal-user-id ID --password PW|selftest: exercise the internal sync endpoints with PORTAL_INTERNAL_TOKEN.
 Login uses NEXUSFLOW_USER/PASSWORD; login/register --token-file PATH saves a private token without printing it.`);}
 if(import.meta.main)main().catch(e=>{console.error(`nexusflow: ${e instanceof Error?e.message:"command failed"}`);process.exitCode=1});

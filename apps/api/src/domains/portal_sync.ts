@@ -307,4 +307,35 @@ export function registerPortalSync(app: ApiApp): void {
       return fail(c, 422, "invalid_request", error instanceof Error ? error.message : String(error));
     }
   });
+
+  // Portal 下发密码：各系统哈希算法不同，收到明文后用自己的算法重新哈希。
+  app.put(`${PREFIX}/users/:portalUserId/password`, async (c) => {
+    if (!tokenOk(c.req.header("X-Portal-Internal-Token") ?? "")) return fail(c, 404, "not_found", "Not found");
+    if (!sql) return fail(c, 503, "db_unavailable", "database unavailable");
+    try {
+      const portalUserId = c.req.param("portalUserId");
+      const body = await c.req.json() as Record<string, unknown>;
+      if (typeof body.password !== "string" || body.password.length === 0 || Buffer.byteLength(body.password, "utf8") > 72) {
+        return fail(c, 422, "invalid_password", "invalid password");
+      }
+      const linked = await sql`
+        SELECT id FROM nexusflow.users WHERE portal_id=${portalUserId}
+      `;
+      if (!linked.length) return fail(c, 404, "local_user_not_found", "local user not found");
+      const passwordHash = await bcrypt.hash(body.password, 12);
+      let updated = 0;
+      let revoked = 0;
+      for (const row of linked) {
+        const localUserId = String(row.id);
+        const result = await sql`
+          UPDATE nexusflow.users SET password_hash=${passwordHash}, updated_at=now() WHERE id=${localUserId}
+        `;
+        updated += Number(result.count ?? 0);
+        try { await revokeUserSessions(localUserId); revoked += 1; } catch { /* session store unavailable */ }
+      }
+      return c.json({ portal_user_id: portalUserId, local_users_updated: updated, sessions_revoked: revoked });
+    } catch (error) {
+      return fail(c, 422, "invalid_request", error instanceof Error ? error.message : String(error));
+    }
+  });
 }
