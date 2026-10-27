@@ -11,7 +11,10 @@ import { useAuth } from "@/lib/auth";
 import { toast, errorText } from "@/components/feedback";
 import { avatarColor, cx, num, str } from "@/lib/utils";
 
-const TYPES = ["科研", "市场", "出差", "文职", "党建", "学习", "休假"];
+const TYPES: [string, string][] = [
+  ["research-company", "科研·公司级"], ["research-department", "科研·处级"], ["research-center", "科研·中心级"],
+  ["market", "市场"], ["business-trip", "出差"], ["clerical", "文职"], ["party", "党建"], ["learning", "学习"], ["leave", "休假"],
+];
 
 type PersonRec = { id?: string; name?: string; title?: string; department?: string; user_id?: string; status?: string };
 type LoadRow = { person_id?: string; ratio?: number; hours?: number; capacity?: number };
@@ -41,7 +44,7 @@ export default function DispatchNewPage() {
   const loads = (Array.isArray((loadQ.data as { items?: LoadRow[] })?.items) ? (loadQ.data as { items: LoadRow[] }).items : []) as LoadRow[];
   const loadOf = (person: PersonRec) => loads.find((l) => l.person_id === (person.user_id || person.id));
 
-  const [form, setForm] = useState({ name: "", type: "科研", projectId: "", description: "", ownerId: "", start: today, end: today, hours: "4" });
+  const [form, setForm] = useState({ name: "", type: "research-company", projectId: "", description: "", ownerId: "", start: today, end: today, hours: "4" });
   const [members, setMembers] = useState<string[]>([]);
   const [workflow, setWorkflow] = useState<"standard" | "supplemental">("standard");
   const [pick, setPick] = useState("");
@@ -63,14 +66,9 @@ export default function DispatchNewPage() {
       const task = await api<{ id: string }>("/tasks", { method: "POST", body: JSON.stringify({
         name: form.name.trim(), type: form.type, description: form.description,
         project_id: form.projectId || undefined, owner_id: form.ownerId, owner: owner?.name ?? "",
-        member_ids: members, start_date: form.start, end_date: form.end, daily_hours: hours, status: "draft",
+        member_ids: members, start_date: form.start, end_date: form.end, daily_hours: hours,
+        all_day: false, status: "draft",
       }) });
-      const assignees = [...new Set([form.ownerId, ...members])];
-      for (const userId of assignees) {
-        await api(`/tasks/${task.id}/assignments`, { method: "POST", body: JSON.stringify({
-          user_id: userId, start_date: form.start, end_date: form.end, daily_hours: hours, all_day: false,
-        }) });
-      }
       const dispatch = await api<{ id: string }>("/dispatch", { method: "POST", body: JSON.stringify({
         task_id: task.id, requester_id: user?.id, workflow, target_org_ids: [], status: "draft",
       }) });
@@ -104,16 +102,16 @@ export default function DispatchNewPage() {
         <Card className="p-5">
           <Field label="任务类型">
             <div className="flex flex-wrap gap-2">
-              {TYPES.map((t) => (
+              {TYPES.map(([code, label]) => (
                 <button
-                  key={t}
-                  onClick={() => setForm({ ...form, type: t })}
+                  key={code}
+                  onClick={() => setForm({ ...form, type: code })}
                   className={cx(
                     "h-7 rounded-full px-3 text-[12.5px]",
-                    form.type === t ? "bg-ink font-medium text-white" : "border border-border text-ink-2 hover:bg-fill",
+                    form.type === code ? "bg-ink font-medium text-white" : "border border-border text-ink-2 hover:bg-fill",
                   )}
                 >
-                  {t}
+                  {label}
                 </button>
               ))}
             </div>

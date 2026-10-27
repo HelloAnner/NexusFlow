@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { api, apiBase, ApiError } from "./api";
 
-export type SessionUser = { id: string; username: string; name: string; role: string };
+export type SessionUser = { id: string; username: string; name: string; role: string; orgId?: string };
 
 type AuthState = {
   user: SessionUser | null;
@@ -20,12 +20,13 @@ export const useAuth = create<AuthState>((set, get) => ({
   setUser: (user) => set({ user, checked: true }),
   fetchMe: async () => {
     try {
-      const me = await api<{ id: string; username: string; role: string }>("/auth/me");
+      const me = await api<{ id: string; username: string; role: string; org_id?: string }>("/auth/me");
       const user: SessionUser = {
         id: me.id,
         username: me.username,
         name: me.username,
         role: me.role,
+        orgId: me.org_id,
       };
       set({ user, checked: true });
       return user;

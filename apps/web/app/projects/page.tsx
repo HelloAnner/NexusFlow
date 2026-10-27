@@ -56,7 +56,7 @@ export default function ProjectsPage() {
     setSaving(true);
     try {
       await api("/projects", { method: "POST", body: JSON.stringify({
-        name: form.name.trim(), type: form.type, level: form.level, status: "planning",
+        name: form.name.trim(), type: form.type, level: form.level, status: "planning", org_id: user?.orgId,
         owner: user?.name || "", owner_id: user?.id, start_date: form.start_date, end_date: form.end_date, progress: 0,
       }) });
       toast("项目已创建");
