@@ -10,18 +10,18 @@ import type {
 } from "@/lib/rbac/panel";
 
 const adapter: RbacAdapter = {
-  loadCatalog: () => api<RbacCatalog>("/api/v1/rbac/catalog"),
-  loadSubjects: () => api<{ items: RbacSubject[] }>("/api/v1/rbac/subjects"),
+  loadCatalog: () => api<RbacCatalog>("/v1/rbac/catalog"),
+  loadSubjects: () => api<{ items: RbacSubject[] }>("/v1/rbac/subjects"),
   loadMatrix: (subjectId) =>
-    api<RbacMatrix>(`/api/v1/rbac/matrix?subject_id=${encodeURIComponent(subjectId)}`),
+    api<RbacMatrix>(`/v1/rbac/matrix?subject_id=${encodeURIComponent(subjectId)}`),
   setCell: (input) =>
-    api<{ cell: RbacMatrix["cells"][number] }>("/api/v1/rbac/matrix", {
+    api<{ cell: RbacMatrix["cells"][number] }>("/v1/rbac/matrix", {
       method: "PUT",
       body: JSON.stringify(input),
     }),
   resetAll: (subjectId) =>
     api<{ removed: number }>(
-      `/api/v1/rbac/matrix?subject_id=${encodeURIComponent(subjectId)}`,
+      `/v1/rbac/matrix?subject_id=${encodeURIComponent(subjectId)}`,
       { method: "DELETE" },
     ),
 };
