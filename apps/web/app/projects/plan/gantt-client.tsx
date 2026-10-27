@@ -17,7 +17,7 @@ import { Modal, Field, inputCls, toast, errorText } from "@/components/feedback"
 const CHART_W = 1500;
 const ROW_H = 40;
 const GROUP_H = 40;
-const LABEL_W = 210;
+const LABEL_W = 280;
 
 const TYPE_LABEL: Record<string,string> = {
  "research-company":"科研·公司级","research-department":"科研·处级","research-center":"科研·中心级",
@@ -32,7 +32,7 @@ const STATUS_TEXT: Record<string,string> = {
 };
 
 /** /api/gantt 返回扁平任务，这里按「类型 · 负责人」组装成甘特分组。 */
-function groupsFromTasks(project: Record<string, unknown>, items: unknown[]): GanttGroup[] {
+function groupsFromTasks(project: Record<string, unknown>, items: unknown[], nameOf: Map<string, string>): GanttGroup[] {
  const start = str(project.start_date), end = str(project.end_date);
  if (!start || !end) return [];
  const days = Math.max(1, dayDiff(start, end));
@@ -45,7 +45,7 @@ function groupsFromTasks(project: Record<string, unknown>, items: unknown[]): Ga
   const s = dayDiff(start, str(t.start_date)), e = dayDiff(start, str(t.end_date));
   if (!Number.isFinite(s) || !Number.isFinite(e) || e < s) continue;
   const status = str(t.status, "draft");
-  const owner = str(t.owner, str(t.owner_id, "未指派"));
+  const owner = str(t.owner, nameOf.get(str(t.owner_id)) ?? str(t.owner_id, "未指派"));
   const typeCode = str(t.type, "other");
   const typeLabel = TYPE_LABEL[typeCode] ?? "其他";
   const closed = ["done", "archived"].includes(status);
@@ -82,9 +82,12 @@ export default function GanttClient() {
 function PlanQueries({id}:{id:string}){
  const projects=useData<unknown[]>("projects","/projects");
  const tasks=useData<unknown[]>(`plan-${id}`,`/gantt?project_id=${encodeURIComponent(id)}`);
+ const people=useData<unknown[]>("people","/people");
  const projectRows=recordQueryState(projects);
  const project=projectRows.kind==="ready"?projectRows.items.find(row=>row.id===id):undefined;
- const grouped=project&&tasks.data?queryState({...tasks,data:[...groupsFromTasks(project,tasks.data)]}):queryState(tasks);
+ const nameOf=new Map<string,string>();
+ for(const person of people.data??[]){if(!person||typeof person!=="object")continue;const row=person as Record<string,unknown>;if(typeof row.user_id==="string"&&typeof row.name==="string")nameOf.set(row.user_id,row.name);}
+ const grouped=project&&tasks.data?queryState({...tasks,data:[...groupsFromTasks(project,tasks.data,nameOf)]}):queryState(tasks);
  const state=projectPlanState(id,projectRows,grouped);
  if(state.kind!=="ready")return <Shell><PageHeader title="项目计划" /><QueryNotice state={state} retry={()=>Promise.all([projects.refetch(),tasks.refetch()])} emptyText={state.kind==="empty"?state.message:"暂无项目任务"} /></Shell>;
  if(!state.groups.length)return <Shell><PageHeader title="项目计划" /><Empty text="暂无项目任务" /></Shell>;
@@ -188,11 +191,11 @@ function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,
               {rows.map((r, i) =>
                 r.kind === "group" ? (
                   <div key={i} className="flex items-center gap-2 px-4" style={{ height: GROUP_H }}>
-                    <span className="rounded-[6px] px-1.5 py-0.5 text-[11.5px] font-medium text-white" style={{ background: r.group.typeColor }}>
-                      {r.group.type}
+                    <span className="shrink-0 rounded-[6px] px-1.5 py-0.5 text-[11.5px] font-medium whitespace-nowrap text-white" style={{ background: r.group.typeColor }}>
+                      {r.group.type.split("·")[0]}
                     </span>
                     <Avatar name={r.group.owner} color={r.group.ownerColor} size={20} />
-                    <span className="text-[12.5px] text-ink-2">{r.group.owner}</span>
+                    <span className="truncate text-[12.5px] text-ink-2">{r.group.owner}</span>
                   </div>
                 ) : (
                   <button
