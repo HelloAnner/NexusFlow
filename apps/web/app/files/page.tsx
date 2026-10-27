@@ -2,41 +2,19 @@
 
 import React, { useState } from "react";
 import {
-  FolderOpen, FileText, FileBarChart, Presentation, FileBadge, Database, NotebookPen, Star, Trash2,
-  Upload, Download, File, FileSpreadsheet, FileVideo, FileImage,
+  FolderOpen, FileText, FileBarChart, Presentation, FileBadge, Database,
+  NotebookPen, Upload, Download, File, FileSpreadsheet, FileVideo,
+  FileImage,
 } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Card, Badge, PageHeader, SearchBox, Marker } from "@/components/ui";
+import {
+  Card, Badge, PageHeader, SearchBox,
+} from "@/components/ui";
 import type { FileItem } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState,measured } from "@/lib/query-state";
 import { useData } from "@/lib/data";
 import { cx, str } from "@/lib/utils";
-
-function FilesSidebar() {
-  return (
-    <>
-      <SideSection title="资料目录">
-        <SideItem icon={<FolderOpen size={14} />} label="全部资料" count={1284} active />
-        <SideItem icon={<FileText size={14} />} label="个人报告" count={312} />
-        <SideItem icon={<FileBarChart size={14} />} label="整体报告" count={86} />
-        <SideItem icon={<Presentation size={14} />} label="汇报 PPT" count={154} />
-        <SideItem icon={<FileBadge size={14} />} label="申报报告" count={42} />
-        <SideItem icon={<Database size={14} />} label="数据集" count={230} />
-        <SideItem icon={<NotebookPen size={14} />} label="会议纪要" count={178} />
-      </SideSection>
-      <SideSection title="按项目">
-        <SideItem icon={<Marker color="#b87407" />} label="智慧油田数据平台" count={486} />
-        <SideItem icon={<Marker color="#12855a" shape="square" />} label="巡检机器人研发" count={204} />
-        <SideItem icon={<Marker color="#6d5bd0" shape="square" />} label="等保测评专项" count={97} />
-      </SideSection>
-      <SideSection title="其他">
-        <SideItem icon={<Star size={14} />} label="我的收藏" count={12} />
-        <SideItem icon={<Trash2 size={14} />} label="回收站" />
-      </SideSection>
-    </>
-  );
-}
 
 const FTYPE_ICON: Record<string, { icon: React.ComponentType<{ size?: number | string }>; color: string }> = {
   pdf: { icon: FileText, color: "#d92d20" },
@@ -59,11 +37,11 @@ function normalize(items: Record<string,unknown>[]): FileRow[] {
 export default function FilesPage() {
   const query=useData<unknown[]>("files", "/files"),state=recordQueryState(query);
   const [filter, setFilter] = useState("全部类型");
-  if(state.kind!=="ready")return <Shell sidebar={<></>}><PageHeader title="资料库" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无资料" /></Shell>;
+  if(state.kind!=="ready")return <Shell><PageHeader title="资料库" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无资料" /></Shell>;
   const files=normalize(state.items);
 
   return (
-    <Shell sidebar={<FilesSidebar />}>
+    <Shell>
       <PageHeader
         title="资料库"
         sub={`当前可见资料 ${files.length} 份`}

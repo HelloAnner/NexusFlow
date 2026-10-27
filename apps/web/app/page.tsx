@@ -2,23 +2,22 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Zap, AlarmClock, GitBranch, Stamp, Activity, Plus, PenLine, Send, Upload, Wrench,
+  Zap, AlarmClock, GitBranch, Stamp, Activity, Plus, PenLine, Wrench,
   AlertTriangle, UserX, FileWarning, CalendarClock, Bell, ChevronRight, RefreshCw,
   FileOutput, Languages, BookOpen, MessageCircle, NotebookPen, CalendarCheck, BarChart3, LogOut,
 } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Card, Badge, Avatar, Bar, Marker, Empty } from "@/components/ui";
+import { Card, Badge, Avatar, Bar, Empty } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { cx, md, num, str } from "@/lib/utils";
 import {
-  HEAT_COLOR, avgTeamRatio, dateLabel, dayLabel, focusRows, greetingAt, heatLevel, overloadedPeople,
-  projectStatusColor, projectStatusText, riskGroups, roleLabel, itemRows, timelineBars,
-  todayDueCount, todayISO, overdueCount, TOOL_COLOR, TOOL_ICON,
-  type HomeResponse, type ProjectRow, type ToolRow, type TeamLoadPerson,
+  HEAT_COLOR, avgTeamRatio, dateLabel, dayLabel, focusRows, greetingAt,
+  heatLevel, overloadedPeople, projectStatusColor, projectStatusText, riskGroups, roleLabel,
+  itemRows, timelineBars, todayDueCount, todayISO, overdueCount, TOOL_COLOR,
+  TOOL_ICON, type HomeResponse, type ProjectRow, type ToolRow, type TeamLoadPerson,
 } from "@/lib/home";
 
 type IconC = React.ComponentType<{ size?: number | string; className?: string; style?: React.CSSProperties }>;
@@ -91,37 +90,6 @@ function StatCell({ icon, label, value, sub, subColor, last }: { icon: string; l
   );
 }
 
-// ---------- 侧边栏（真实数据） ----------
-function HomeSidebar({ projects, pending, error }: { projects: ProjectRow[]; pending: boolean; error: boolean }) {
-  const router = useRouter();
-  const active = projects.filter((p) => str(p.status, "") === "active").slice(0, 4);
-  return (
-    <>
-      <SideSection title="常用入口">
-        <SideItem icon={<Plus size={14} />} label="新建任务" onClick={() => router.push("/dispatch/new")} />
-        <SideItem icon={<Send size={14} />} label="发起任务派发" onClick={() => router.push("/dispatch/new")} />
-        <SideItem icon={<PenLine size={14} />} label="我的工作" onClick={() => router.push("/my-work")} />
-        <SideItem icon={<Upload size={14} />} label="上传资料" onClick={() => router.push("/files")} />
-        <SideItem icon={<Wrench size={14} />} label="工具台" onClick={() => router.push("/tools")} />
-      </SideSection>
-      <SideSection title="进行中项目">
-        {pending && <SideItem icon={<Marker color="#a8a8b0" />} label="加载中…" />}
-        {!pending && error && <SideItem icon={<Marker color="#d92d20" />} label="暂不可用" />}
-        {!pending && !error && (active.length
-          ? active.map((p) => (
-            <SideItem
-              key={str(p.id, str(p.name))}
-              icon={<Marker color={projectStatusColor(p.status)} />}
-              label={str(p.name, "未命名项目")}
-              onClick={() => router.push(`/projects/${p.id}/plan`)}
-            />
-          ))
-          : <SideItem icon={<Marker color="#a8a8b0" />} label="暂无进行中项目" />)}
-      </SideSection>
-    </>
-  );
-}
-
 // ---------- 页面 ----------
 export default function HomePage() {
   const user = useAuth((s) => s.user);
@@ -189,7 +157,7 @@ export default function HomePage() {
   const retryAll = () => { homeQ.refetch(); projectsQ.refetch(); toolsQ.refetch(); };
 
   return (
-    <Shell sidebar={<HomeSidebar projects={itemRows<ProjectRow>(projectsQ.data)} pending={projectsQ.isPending} error={projectsQ.isError} />}>
+    <Shell>
       {/* 页头 */}
       <div className="flex items-start justify-between px-6 pt-5">
         <div>

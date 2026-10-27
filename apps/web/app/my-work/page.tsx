@@ -1,34 +1,12 @@
 "use client";
 
 import React from "react";
-import { Zap, CalendarDays, CalendarRange, CheckCircle2, Sun, BookOpen, Paperclip, SquarePen } from "lucide-react";
+import { CheckCircle2, Paperclip, SquarePen } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Card, Badge, PageHeader, Marker } from "@/components/ui";
+import { Card, Badge, PageHeader } from "@/components/ui";
 import { MY_TASKS, MY_SCHEDULE, MY_DISTRIBUTION, WEEK_DAYS } from "@/lib/demo";
 import { useData } from "@/lib/data";
 import { cx } from "@/lib/utils";
-
-function MyWorkSidebar() {
-  return (
-    <>
-      <SideSection title="任务分组">
-        <SideItem icon={<Zap size={14} />} label="今天" count={4} active />
-        <SideItem icon={<CalendarDays size={14} />} label="本周" count={8} />
-        <SideItem icon={<CalendarRange size={14} />} label="下周" count={3} />
-        <SideItem icon={<CheckCircle2 size={14} />} label="已完成" count={21} />
-      </SideSection>
-      <SideSection title="我的项目">
-        <SideItem icon={<Marker color="#b87407" />} label="智慧油田数据平台" count={<span className="rounded bg-fill px-1 text-[11px] text-ink-3">后端</span>} />
-        <SideItem icon={<Marker color="#6d5bd0" shape="square" />} label="等保测评专项" count={<span className="rounded bg-fill px-1 text-[11px] text-ink-3">材料</span>} />
-        <SideItem icon={<Marker color="#12855a" shape="square" />} label="巡检机器人研发" count={<span className="rounded bg-fill px-1 text-[11px] text-ink-3">用例</span>} />
-      </SideSection>
-      <SideSection title="其他">
-        <SideItem icon={<Sun size={14} />} label="我的休假" />
-        <SideItem icon={<BookOpen size={14} />} label="我的学习" />
-      </SideSection>
-    </>
-  );
-}
 
 function TaskRow({ t }: { t: (typeof MY_TASKS.thisWeek)[number] }) {
   return (
@@ -89,7 +67,7 @@ export default function MyWorkPage() {
   // 真实任务数据（demo 兜底）
   useData("my-tasks", "/tasks", MY_TASKS);
   return (
-    <Shell sidebar={<MyWorkSidebar />}>
+    <Shell>
       <PageHeader
         title="我的工作"
         sub="陈思远 · 软件研发部 · 一级工程师 · 参与 3 个项目"

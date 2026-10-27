@@ -1,9 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Building2, Layers, Users2, Sparkles, UserPlus, ChevronRight, Building } from "lucide-react";
+import {
+  Building2, Users2, UserPlus, ChevronRight,
+} from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Card, Badge, Avatar, Bar, PageHeader, SearchBox, Empty, STATUS_COLOR } from "@/components/ui";
+import {
+  Card, Badge, Avatar, Bar, PageHeader, SearchBox,
+  Empty, STATUS_COLOR,
+} from "@/components/ui";
 import { ORG_TREE,type Person } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState,measured } from "@/lib/query-state";
@@ -11,27 +16,6 @@ import { useData } from "@/lib/data";
 import { cx, str, avatarColor } from "@/lib/utils";
 
 const SKILLS = ["全部", "前端", "后端", "Python", "Go", "报告撰写", "PPT 制作", "需求对接", "运维"];
-
-function TeamSidebar() {
-  return (
-    <>
-      <SideSection title="单位层级">
-        <SideItem icon={<Building2 size={14} />} label="创新中心" count={86} active />
-        <SideItem icon={<Layers size={14} />} label="二级单位 · 勘探开发" />
-        <SideItem icon={<Building size={14} />} label="公司总部" />
-      </SideSection>
-      <SideSection title="部门">
-        {ORG_TREE.departments.map((d) => (
-          <SideItem key={d.name} icon={<Users2 size={14} />} label={d.name} count={d.count} />
-        ))}
-      </SideSection>
-      <SideSection title="创新工作室">
-        <SideItem icon={<Sparkles size={14} />} label="AI 应用工作室" count={9} />
-        <SideItem icon={<Users2 size={14} />} label="数字孪生工作室" count={7} />
-      </SideSection>
-    </>
-  );
-}
 
 type PersonRow=Omit<Person,"load"|"skills"|"projects"> & {load?:number;skills?:string[];projects?:string[]};
 function normalize(items: Record<string,unknown>[]): PersonRow[] {
@@ -43,12 +27,12 @@ const loadColor = (v: number) => (v >= 90 ? "#d92d20" : v >= 75 ? "#b87407" : v 
 export default function TeamPage() {
   const query=useData<unknown[]>("people", "/people"),state=recordQueryState(query);
   const [skill, setSkill] = useState("全部");
-  if(state.kind!=="ready")return <Shell sidebar={<></>}><PageHeader title="团队" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无人员" /></Shell>;
+  if(state.kind!=="ready")return <Shell><PageHeader title="团队" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无人员" /></Shell>;
   const people=normalize(state.items);
   const shown = people.filter((p) => skill === "全部" || p.skills?.some((s) => s.includes(skill)));
 
   return (
-    <Shell sidebar={<TeamSidebar />}>
+    <Shell>
       <PageHeader
         title="团队"
         sub={`已加载 ${people.length} 人`}

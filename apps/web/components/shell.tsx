@@ -4,21 +4,38 @@ import React, { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutGrid, Inbox, Briefcase, ClipboardList, Calendar, Users, Folder, Wrench, Bell, Settings, Search,
+  LayoutGrid, Inbox, Briefcase, ClipboardList, Calendar, Users, Folder, Wrench,
 } from "lucide-react";
-import { cx } from "@/lib/utils";
+import { cx, initial } from "@/lib/utils";
 import { useAuth, absorbPortalToken } from "@/lib/auth";
 import { BrandIcon } from "@/components/brand-icon";
+import { roleLabel } from "@/lib/home";
 
+/** 一级导航：侧栏只放全局入口，页面内的筛选/目录留在页面里。 */
 const NAV = [
-  { href: "/", icon: LayoutGrid, key: "home" },
-  { href: "/inbox", icon: Inbox, key: "inbox", badge: 3 },
-  { href: "/projects", icon: Briefcase, key: "projects" },
-  { href: "/my-work", icon: ClipboardList, key: "mywork", badge: 17 },
-  { href: "/load", icon: Calendar, key: "load" },
-  { href: "/team", icon: Users, key: "team" },
-  { href: "/files", icon: Folder, key: "files" },
-  { href: "/tools", icon: Wrench, key: "tools" },
+  {
+    section: "工作台",
+    items: [
+      { href: "/", icon: LayoutGrid, key: "home", label: "首页" },
+      { href: "/inbox", icon: Inbox, key: "inbox", label: "收件箱" },
+      { href: "/my-work", icon: ClipboardList, key: "mywork", label: "我的工作" },
+    ],
+  },
+  {
+    section: "项目与团队",
+    items: [
+      { href: "/projects", icon: Briefcase, key: "projects", label: "项目" },
+      { href: "/load", icon: Calendar, key: "load", label: "负载与冲突" },
+      { href: "/team", icon: Users, key: "team", label: "团队" },
+    ],
+  },
+  {
+    section: "资源",
+    items: [
+      { href: "/files", icon: Folder, key: "files", label: "资料库" },
+      { href: "/tools", icon: Wrench, key: "tools", label: "工具台" },
+    ],
+  },
 ];
 
 function activeKey(pathname: string): string {
@@ -33,72 +50,9 @@ function activeKey(pathname: string): string {
   return "";
 }
 
-export function IconRail() {
+export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const key = activeKey(pathname);
-  const user = useAuth((s) => s.user);
-  return (
-    <nav className="flex w-16 shrink-0 flex-col items-center border-r border-border bg-panel py-3.5">
-      <Link href="/" aria-label="NexusFlow 首页" className="mb-6 flex h-9 w-9 items-center justify-center rounded-[10px]">
-        <BrandIcon />
-      </Link>
-      <div className="flex flex-col items-center gap-1.5">
-        {NAV.map((n) => {
-          const Icon = n.icon;
-          const active = key === n.key;
-          return (
-            <Link
-              key={n.key}
-              href={n.href}
-              className={cx(
-                "relative flex h-10 w-10 items-center justify-center rounded-[8px] transition-colors",
-                active ? "bg-accent-soft text-ink" : "text-ink-3 hover:bg-fill hover:text-ink",
-              )}
-            >
-              <Icon size={19} strokeWidth={1.7} />
-              {n.badge && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red px-1 text-[9.5px] font-semibold text-white">
-                  {n.badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </div>
-      <div className="mt-auto flex flex-col items-center gap-1.5">
-        <button className="flex h-10 w-10 items-center justify-center rounded-[8px] text-ink-3 hover:bg-fill hover:text-ink">
-          <Bell size={19} strokeWidth={1.7} />
-        </button>
-        <button className="flex h-10 w-10 items-center justify-center rounded-[8px] text-ink-3 hover:bg-fill hover:text-ink">
-          <Settings size={19} strokeWidth={1.7} />
-        </button>
-        <span className="mt-1 flex h-8 w-8 items-center justify-center rounded-[7px] bg-fill text-[12.5px] font-semibold text-ink-2">
-          {(user?.name || "陈").slice(0, 1)}
-        </span>
-      </div>
-    </nav>
-  );
-}
-
-export function SidebarFrame({ children }: { children: React.ReactNode }) {
-  return (
-    <aside className="flex w-[244px] shrink-0 flex-col border-r border-border bg-panel">
-      <div className="px-3 pt-3.5">
-        <div className="flex h-8 items-center gap-2 rounded-[6px] border border-border bg-panel px-2.5 text-ink-3">
-          <Search size={14} />
-          <input
-            className="w-full bg-transparent text-[12.5px] text-ink outline-none placeholder:text-ink-3"
-            placeholder="搜索或跳转"
-          />
-          <kbd className="rounded-[4px] border border-border px-1 py-0.5 text-[11px] text-ink-3">⌘K</kbd>
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto px-1 pb-4">{children}</div>
-    </aside>
-  );
-}
-
-export function Shell({ sidebar, children }: { sidebar: React.ReactNode; children: React.ReactNode }) {
   const router = useRouter();
   const { user, checked, fetchMe } = useAuth();
 
@@ -117,8 +71,51 @@ export function Shell({ sidebar, children }: { sidebar: React.ReactNode; childre
 
   return (
     <div className="flex h-screen overflow-hidden bg-canvas">
-      <IconRail />
-      <SidebarFrame>{sidebar}</SidebarFrame>
+      <aside className="flex w-[240px] shrink-0 flex-col border-r border-border bg-panel">
+        <Link href="/" className="flex items-center gap-2 px-4 pt-4 pb-2.5">
+          <BrandIcon size={26} />
+          <span className="text-[14px] font-semibold tracking-[-0.01em] text-ink">NexusFlow</span>
+        </Link>
+
+        <nav className="flex-1 overflow-y-auto px-3 pb-4">
+          {NAV.map((group) => (
+            <div key={group.section}>
+              <p className="px-2 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.02em] text-ink-3">{group.section}</p>
+              <div className="flex flex-col gap-0.5">
+                {group.items.map((n) => {
+                  const Icon = n.icon;
+                  const active = key === n.key;
+                  return (
+                    <Link
+                      key={n.key}
+                      href={n.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cx(
+                        "flex items-center gap-2 rounded-[6px] px-2 py-[7px] text-[13px] font-medium transition-colors",
+                        active ? "bg-accent-soft text-ink" : "text-ink-2 hover:bg-fill hover:text-ink",
+                      )}
+                    >
+                      <Icon size={16} strokeWidth={1.7} className="shrink-0" />
+                      <span className="min-w-0 flex-1 truncate">{n.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-2 border-t border-border px-4 py-2.5">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-fill text-[12px] font-semibold text-ink-2">
+            {initial(user.name || "?")}
+          </span>
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-[12.5px] font-semibold text-ink">{user.name || "—"}</span>
+            <span className="truncate text-[11px] text-ink-3">{roleLabel(user.role)}</span>
+          </div>
+        </div>
+      </aside>
+
       <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
     </div>
   );

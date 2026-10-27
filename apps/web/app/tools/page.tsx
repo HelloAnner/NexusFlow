@@ -2,11 +2,13 @@
 
 import React from "react";
 import {
-  LayoutGrid, Wrench, Sparkles, Star, FileOutput, Languages, PenLine, Stamp, BookOpen,
+  Wrench, FileOutput, Languages, PenLine, Stamp, BookOpen,
   MessageCircle, NotebookPen, CalendarCheck, BarChart3, ArrowUpRight,
 } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Card, Badge, PageHeader, SearchBox } from "@/components/ui";
+import {
+  Card, Badge, PageHeader, SearchBox,
+} from "@/components/ui";
 import type { Tool } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState } from "@/lib/query-state";
@@ -18,31 +20,6 @@ const ICONS: Record<string, React.ComponentType<{ size?: number | string; style?
   "book-open": BookOpen, "message-circle": MessageCircle, "notebook-pen": NotebookPen,
   "calendar-check": CalendarCheck, "bar-chart-3": BarChart3,
 };
-
-function ToolsSidebar() {
-  return (
-    <>
-      <SideSection title="工具分类">
-        <SideItem icon={<LayoutGrid size={14} />} label="全部工具" count={18} active />
-        <SideItem icon={<Wrench size={14} />} label="常用工具" count={9} />
-        <SideItem icon={<Sparkles size={14} />} label="智能体工具" count={9} />
-        <SideItem icon={<Star size={14} />} label="我的收藏" count={4} />
-      </SideSection>
-      <SideSection title="最近使用">
-        <SideItem icon={<FileOutput size={14} />} label="PDF 格式转换" count={<span className="text-[11px]">3 次</span>} />
-        <SideItem icon={<Languages size={14} />} label="智能翻译" count={<span className="text-[11px]">1 次</span>} />
-        <SideItem icon={<PenLine size={14} />} label="论文撰写助手" />
-        <SideItem icon={<NotebookPen size={14} />} label="会议纪要生成" />
-      </SideSection>
-      <SideSection title="智能体">
-        <SideItem icon={<PenLine size={14} />} label="论文撰写助手" />
-        <SideItem icon={<Stamp size={14} />} label="专利撰写助手" />
-        <SideItem icon={<BookOpen size={14} />} label="个人知识库" />
-        <SideItem icon={<MessageCircle size={14} />} label="平台问答助手" />
-      </SideSection>
-    </>
-  );
-}
 
 function ToolIcon({ tool, size = 34 }: { tool: Tool; size?: number }) {
   const Icon = ICONS[tool.icon] || Wrench;
@@ -58,12 +35,12 @@ function ToolIcon({ tool, size = 34 }: { tool: Tool; size?: number }) {
 
 export default function ToolsPage() {
   const query=useData<unknown[]>("tools", "/tools"),state=recordQueryState(query);
-  if(state.kind!=="ready")return <Shell sidebar={<></>}><PageHeader title="智能工具台" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无工具" /></Shell>;
+  if(state.kind!=="ready")return <Shell><PageHeader title="智能工具台" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无工具" /></Shell>;
   const tools=state.items.map((x):Tool=>({id:str(x.id),name:str(x.name),desc:str(x.description,str(x.desc,"—")),usage:str(x.usage,"—"),ai:x.category==="agent"||x.ai===true,icon:str(x.icon,"wrench"),color:"#86868f",recent:str(x.recent)}));
   const recent = tools.filter((t) => t.recent);
 
   return (
-    <Shell sidebar={<ToolsSidebar />}>
+    <Shell>
       <PageHeader
         title="智能工具台"
         sub="常用软件工具 + 智能体工具 · 服务日常工作，减轻工作时长"

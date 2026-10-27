@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, ChevronDown } from "lucide-react";
+import { Search } from "lucide-react";
 import { cx, initial } from "@/lib/utils";
 
 export function Avatar({ name, color, size = 24, className }: { name: string; color: string; size?: number; className?: string }) {
@@ -57,43 +57,6 @@ export function SearchBox({ placeholder, className }: { placeholder: string; cla
       <Search size={14} />
       <input className="w-full bg-transparent text-[12.5px] text-ink outline-none placeholder:text-ink-3" placeholder={placeholder} />
     </div>
-  );
-}
-
-export function SideSection({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
-  const [open, setOpen] = React.useState(defaultOpen);
-  return (
-    <div className="px-2 pt-3.5">
-      <button className="flex w-full items-center justify-between px-2 pb-1 text-[11.5px] font-medium tracking-[0.02em] text-ink-3" onClick={() => setOpen(!open)}>
-        <span>{title}</span>
-        <ChevronDown size={12} className={cx("transition-transform", !open && "-rotate-90")} />
-      </button>
-      {open && <div className="flex flex-col">{children}</div>}
-    </div>
-  );
-}
-
-export function SideItem({
-  icon, label, count, active, countColor, onClick, bold,
-}: {
-  icon?: React.ReactNode; label: React.ReactNode; count?: React.ReactNode; active?: boolean;
-  countColor?: string; onClick?: () => void; bold?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cx(
-        "flex w-full items-center gap-2 rounded-[6px] px-2 py-[7px] text-left text-[13px] font-medium transition-colors",
-        active ? "bg-accent-soft text-ink" : "text-ink-2 hover:bg-fill hover:text-ink",
-        bold && "font-semibold",
-      )}
-    >
-      {icon && <span className="flex w-4 shrink-0 items-center justify-center text-ink-3">{icon}</span>}
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {count !== undefined && (
-        <span className="text-[11.5px]" style={{ color: countColor || "#a8a8b0" }}>{count}</span>
-      )}
-    </button>
   );
 }
 

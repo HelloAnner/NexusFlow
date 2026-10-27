@@ -1,38 +1,14 @@
 "use client";
 
 import React from "react";
-import {
-  Users2, AlertTriangle, Flame, Loader, CheckCircle2, Lock, LayoutGrid, List, ChevronLeft, ChevronRight, Download,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Card, Badge, Avatar, PageHeader } from "@/components/ui";
+import {
+  Card, Badge, Avatar, PageHeader,
+} from "@/components/ui";
 import { LOAD_DAYS, LOAD_MATRIX, LOAD_CONFLICTS } from "@/lib/demo";
 import { useData } from "@/lib/data";
 import { cx } from "@/lib/utils";
-
-function LoadSidebar() {
-  return (
-    <>
-      <SideSection title="部门视图">
-        <SideItem icon={<Users2 size={14} />} label="软件研发部" count={24} active />
-        <SideItem icon={<Users2 size={14} />} label="数据科学部" count={18} />
-        <SideItem icon={<Users2 size={14} />} label="运维保障部" count={12} />
-        <SideItem icon={<Users2 size={14} />} label="全中心" count={86} />
-      </SideSection>
-      <SideSection title="状态筛选">
-        <SideItem icon={<AlertTriangle size={14} />} label="冲突" count={3} />
-        <SideItem icon={<Flame size={14} />} label="过载" count={5} />
-        <SideItem icon={<Loader size={14} />} label="饱和" count={9} />
-        <SideItem icon={<CheckCircle2 size={14} />} label="空闲" count={8} />
-        <SideItem icon={<Lock size={14} />} label="全天锁定" count={2} />
-      </SideSection>
-      <SideSection title="视图">
-        <SideItem icon={<LayoutGrid size={14} />} label="热力图" active />
-        <SideItem icon={<List size={14} />} label="列表" />
-      </SideSection>
-    </>
-  );
-}
 
 const CELL: Record<string, string> = {
   idle: "#f5f4f2", free: "#E7F6EE", full: "#FCF0DB", over: "#FBE9E7", lock: "#F1F1F0",
@@ -41,7 +17,7 @@ const CELL: Record<string, string> = {
 export default function LoadPage() {
   useData("load-conflicts", "/load/conflicts", LOAD_CONFLICTS);
   return (
-    <Shell sidebar={<LoadSidebar />}>
+    <Shell>
       <PageHeader
         title="负载与冲突"
         extra={

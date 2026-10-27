@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { CornerUpLeft, Share2, MoreHorizontal, SlidersHorizontal } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Badge, Avatar, Marker,Empty,PageHeader } from "@/components/ui";
+import { Badge, Avatar, Marker, Empty, PageHeader } from "@/components/ui";
 import type { GanttGroup,GanttTask } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState,queryState } from "@/lib/query-state";
@@ -16,22 +16,18 @@ const CHART_W = 1500;
 const ROW_H = 40;
 const GROUP_H = 40;
 const LABEL_W = 210;
-function GanttSidebar({project,groups}:{project:Record<string,unknown>;groups:GanttGroup[]}) {
- return <SideSection title="项目计划"><SideItem icon={<Marker color="#b87407" />} label={str(project.name)} active bold />{groups.map((group,i)=><SideItem key={i} icon={<Marker color={group.typeColor} />} label={`${group.type} · ${group.owner}`} />)}</SideSection>;
-}
-
 type Row = { kind: "group"; group: GanttGroup } | { kind: "task"; group: GanttGroup; task: GanttTask };
 
 export default function GanttClient() {
  const params=useParams<{id:string}>(),id=params?.id;
- if(!id)return <Shell sidebar={<></>}><Empty text="未指定项目" /></Shell>;
+ if(!id)return <Shell><Empty text="未指定项目" /></Shell>;
  return <PlanQueries id={id} />;
 }
 function PlanQueries({id}:{id:string}){
  const projects=useData<unknown[]>("projects","/projects");
  const groups=useData<unknown[]>(`plan-${id}`,`/projects/${encodeURIComponent(id)}/tasks`);
  const state=projectPlanState(id,recordQueryState(projects),queryState(groups));
- if(state.kind!=="ready")return <Shell sidebar={<></>}><PageHeader title="项目计划" /><QueryNotice state={state} retry={()=>Promise.all([projects.refetch(),groups.refetch()])} emptyText={state.kind==="empty"?state.message:"暂无项目任务"} /></Shell>;
+ if(state.kind!=="ready")return <Shell><PageHeader title="项目计划" /><QueryNotice state={state} retry={()=>Promise.all([projects.refetch(),groups.refetch()])} emptyText={state.kind==="empty"?state.message:"暂无项目任务"} /></Shell>;
  return <PlanChart project={state.project} groups={state.groups} start={state.start} days={state.days} />;
 }
 function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;groups:GanttGroup[];start:string;days:number}){
@@ -55,7 +51,7 @@ function PlanChart({project,groups,start,days}:{project:Record<string,unknown>;g
   const selectedRow=selectedTask?rows.indexOf(selectedTask):-1;
 
   return (
-    <Shell sidebar={<GanttSidebar project={project} groups={groups} />}>
+    <Shell>
       {/* 项目页头 */}
       <div className="flex items-start justify-between px-6 pt-5">
         <div>

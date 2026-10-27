@@ -2,11 +2,12 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  LayoutGrid, User, Users, Star, Asterisk, CircleDashed, CheckCircle2, AlertTriangle, Flag, Plus,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Card, Badge, Avatar, Bar, Marker, PageHeader, SearchBox, Empty, STATUS_COLOR, TYPE_COLOR } from "@/components/ui";
+import {
+  Card, Badge, Avatar, Bar, Marker, PageHeader,
+  SearchBox, Empty, TYPE_COLOR,
+} from "@/components/ui";
 import type { Project } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState,measured } from "@/lib/query-state";
@@ -16,30 +17,6 @@ import { projectStatusColor, projectStatusText } from "@/lib/home";
 
 const TYPES = ["科研", "市场", "出差", "文职", "党建", "学习", "休假"];
 const LEVELS = ["公司级", "处级", "中心级"];
-
-function ProjectsSidebar() {
-  return (
-    <>
-      <SideSection title="视图">
-        <SideItem icon={<LayoutGrid size={14} />} label="全部项目" count={24} active />
-        <SideItem icon={<User size={14} />} label="我负责的" count={6} />
-        <SideItem icon={<Users size={14} />} label="我参与的" count={11} />
-        <SideItem icon={<Star size={14} />} label="我收藏的" count={4} />
-      </SideSection>
-      <SideSection title="按状态">
-        <SideItem icon={<Asterisk size={14} />} label="进行中" count={6} />
-        <SideItem icon={<CircleDashed size={14} />} label="待启动" count={2} />
-        <SideItem icon={<CheckCircle2 size={14} />} label="已完成" count={3} />
-        <SideItem icon={<AlertTriangle size={14} />} label="已逾期" count={1} countColor="#d92d20" />
-      </SideSection>
-      <SideSection title="按级别">
-        <SideItem icon={<Flag size={14} />} label="公司级" count={4} />
-        <SideItem icon={<Flag size={14} />} label="处级" count={7} />
-        <SideItem icon={<Flag size={14} />} label="中心级" count={13} />
-      </SideSection>
-    </>
-  );
-}
 
 type ProjectRow = Omit<Project,"progress"> & {progress?:number;members?:string[]};
 function normalize(items: Record<string,unknown>[]): ProjectRow[] {
@@ -59,12 +36,12 @@ export default function ProjectsPage() {
   const query = useData<unknown[]>("projects", "/projects"),state=recordQueryState(query);
   const [type, setType] = useState("全部");
   const [level, setLevel] = useState("");
-  if(state.kind!=="ready")return <Shell sidebar={<></>}><PageHeader title="项目" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无项目" /></Shell>;
+  if(state.kind!=="ready")return <Shell><PageHeader title="项目" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无项目" /></Shell>;
   const projects=normalize(state.items);
   const shown = projects.filter((p) => (type === "全部" || p.type === type) && (!level || p.level === level));
 
   return (
-    <Shell sidebar={<ProjectsSidebar />}>
+    <Shell>
       <PageHeader
         title="项目"
         sub={`共 ${shown.length} 个项目`}

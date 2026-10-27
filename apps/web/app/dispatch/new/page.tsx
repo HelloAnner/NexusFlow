@@ -3,38 +3,14 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, FlaskConical, Briefcase, PenLine, Flag, BookOpen, Sun, Send, History, RotateCcw, FileText, X, Check, AlertTriangle, Calendar,
+  ArrowLeft, Send, X, Check, AlertTriangle, Calendar,
 } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Card, Badge, Avatar } from "@/components/ui";
+import { Card, Badge, Avatar } from "@/components/ui";
 import { api } from "@/lib/api";
 import { cx } from "@/lib/utils";
 
 const TYPES = ["科研·公司级", "科研·处级", "科研·中心级", "市场", "出差", "文职", "党建", "学习", "休假"];
-
-function DispatchSidebar() {
-  return (
-    <>
-      <SideSection title="任务类型">
-        <SideItem icon={<FlaskConical size={14} />} label="科研" active />
-        <SideItem icon={<Briefcase size={14} />} label="市场" />
-        <SideItem icon={<Send size={14} />} label="出差" />
-        <SideItem icon={<PenLine size={14} />} label="文职" />
-        <SideItem icon={<Flag size={14} />} label="党建" />
-        <SideItem icon={<BookOpen size={14} />} label="学习" />
-        <SideItem icon={<Sun size={14} />} label="休假" />
-      </SideSection>
-      <SideSection title="流程">
-        <SideItem icon={<Send size={14} />} label="标准流程" count={<span className="text-[11px] text-ink-3">默认</span>} />
-        <SideItem icon={<RotateCcw size={14} />} label="后补流程" count={<span className="text-[11px] text-orange">需确认</span>} />
-      </SideSection>
-      <SideSection title="草稿箱">
-        <SideItem icon={<FileText size={14} />} label="迁移演练方案" count={<span className="text-[11px] text-ink-3">12:04</span>} />
-        <SideItem icon={<FileText size={14} />} label="部门月度例会" count={<span className="text-[11px] text-ink-3">昨天</span>} />
-      </SideSection>
-    </>
-  );
-}
 
 const MEMBERS = [
   { name: "陈思远", color: "#2563eb", role: "后端 · 接口", daily: "每日 4h", range: "6/30 - 7/2", over: true },
@@ -89,7 +65,7 @@ export default function DispatchNewPage() {
   };
 
   return (
-    <Shell sidebar={<DispatchSidebar />}>
+    <Shell>
       <div className="flex items-center gap-2.5 border-b border-border px-6 py-3.5">
         <button onClick={() => router.back()} className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-fill">
           <ArrowLeft size={16} className="text-ink-2" />

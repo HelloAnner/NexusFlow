@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Inbox as InboxIcon, Stamp, Send, AtSign, AlertTriangle, Bell, Archive, CheckCheck,
-  Paperclip, Check, X,
-} from "lucide-react";
+import { Paperclip, Check, X } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { SideSection, SideItem, Card, Badge, Avatar, PageHeader, Marker, Empty } from "@/components/ui";
+import {
+  Card, Badge, Avatar, PageHeader, Empty,
+} from "@/components/ui";
 import type { InboxItem } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState } from "@/lib/query-state";
@@ -16,30 +15,6 @@ import { cx, str,avatarColor } from "@/lib/utils";
 const KIND_COLOR: Record<string, string> = {
   审批: "#d92d20", 指派: "#2563eb", 提及: "#6d5bd0", 冲突: "#b87407", 系统: "#86868f",
 };
-
-function InboxSidebar() {
-  return (
-    <>
-      <SideSection title="消息分类">
-        <SideItem icon={<InboxIcon size={14} />} label="全部" count={17} active />
-        <SideItem icon={<Stamp size={14} />} label="审批" count={4} />
-        <SideItem icon={<Send size={14} />} label="指派" count={5} />
-        <SideItem icon={<AtSign size={14} />} label="@ 提及" count={2} />
-        <SideItem icon={<AlertTriangle size={14} />} label="冲突预警" count={3} />
-        <SideItem icon={<Bell size={14} />} label="系统通知" count={3} />
-      </SideSection>
-      <SideSection title="按项目">
-        <SideItem icon={<Marker color="#b87407" />} label="智慧油田数据平台" count={8} />
-        <SideItem icon={<Marker color="#6d5bd0" shape="square" />} label="等保测评专项" count={4} />
-        <SideItem icon={<Marker color="#b87407" shape="square" />} label="北线调度优化" count={3} />
-      </SideSection>
-      <SideSection title="其他">
-        <SideItem icon={<Archive size={14} />} label="已归档" />
-        <SideItem icon={<CheckCheck size={14} />} label="全部标为已读" />
-      </SideSection>
-    </>
-  );
-}
 
 const FILTERS = ["全部", "审批", "指派", "@ 提及", "系统"];
 
@@ -52,13 +27,13 @@ export default function InboxPage() {
   const query=useData<unknown[]>("inbox", "/inbox"),state=recordQueryState(query,"title");
   const [filter, setFilter] = useState("全部");
   const [selectedId, setSelectedId] = useState<string|null>(null);
-  if(state.kind!=="ready")return <Shell sidebar={<></>}><PageHeader title="收件箱" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无消息" /></Shell>;
+  if(state.kind!=="ready")return <Shell><PageHeader title="收件箱" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无消息" /></Shell>;
   const items=normalize(state.items);
   const shown = items.filter((m) => filter === "全部" || m.kind === filter.replace("@ ", ""));
   const selected = shown.find((m) => m.id === selectedId) || shown[0];
 
   return (
-    <Shell sidebar={<InboxSidebar />}>
+    <Shell>
       <PageHeader
         title="收件箱"
         sub={`已加载 ${items.length} 条消息`}
