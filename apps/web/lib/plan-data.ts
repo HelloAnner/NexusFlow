@@ -76,6 +76,6 @@ export function projectPlanState(id: string, projects: QueryState<Record<string,
   }
 
   const list = [...groups.values()];
-  if (!list.length) return { kind: "empty", message: "该项目还没有任务，先去派发任务" };
+  if (!list.length) return { kind: "empty", message: "暂无项目任务" };
   return { kind: "ready", project, groups: list, start, days };
 }
