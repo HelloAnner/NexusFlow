@@ -10,7 +10,7 @@ import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState,queryState } from "@/lib/query-state";
 import { projectPlanState } from "@/lib/plan-data";
 import { useData } from "@/lib/data";
-import { cx, addDays, mdCn, str,dayDiff } from "@/lib/utils";
+import { avatarColor, cx, addDays, mdCn, str,dayDiff } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { Modal, Field, inputCls, toast, errorText } from "@/components/feedback";
 
@@ -18,6 +18,60 @@ const CHART_W = 1500;
 const ROW_H = 40;
 const GROUP_H = 40;
 const LABEL_W = 210;
+
+const TYPE_LABEL: Record<string,string> = {
+ "research-company":"科研·公司级","research-department":"科研·处级","research-center":"科研·中心级",
+ market:"市场","business-trip":"出差",clerical:"文职",party:"党建",learning:"学习",leave:"休假",
+};
+const TYPE_COLOR: Record<string,string> = {
+ "research-company":"#12855a","research-department":"#12855a","research-center":"#12855a",
+ market:"#6d5bd0","business-trip":"#b87407",clerical:"#2563eb",party:"#b04a7c",learning:"#12855a",leave:"#86868f",
+};
+const STATUS_TEXT: Record<string,string> = {
+ draft:"草稿",pending_coordination:"待协调",in_progress:"进行中",pending_acceptance:"待验收",done:"已完成",archived:"已归档",cancelled:"已取消",
+};
+
+/** /api/gantt 返回扁平任务，这里按「类型 · 负责人」组装成甘特分组。 */
+function groupsFromTasks(project: Record<string, unknown>, items: unknown[]): GanttGroup[] {
+ const start = str(project.start_date), end = str(project.end_date);
+ if (!start || !end) return [];
+ const days = Math.max(1, dayDiff(start, end));
+ const map = new Map<string, GanttGroup>();
+ for (const raw of items) {
+  if (!raw || typeof raw !== "object") continue;
+  const t = raw as Record<string, unknown>;
+  const taskId = str(t.id), name = str(t.name, str(t.title));
+  if (!taskId || !name) continue;
+  const s = dayDiff(start, str(t.start_date)), e = dayDiff(start, str(t.end_date));
+  if (!Number.isFinite(s) || !Number.isFinite(e) || e < s) continue;
+  const status = str(t.status, "draft");
+  const owner = str(t.owner, str(t.owner_id, "未指派"));
+  const typeCode = str(t.type, "other");
+  const typeLabel = TYPE_LABEL[typeCode] ?? "其他";
+  const closed = ["done", "archived"].includes(status);
+  const progress = Number(t.progress);
+  const key = `${typeLabel} · ${owner}`;
+  const item: GanttTask = {
+   id: taskId, name,
+   start: Math.max(0, Math.min(s, days)),
+   end: Math.max(0, Math.min(e, days)),
+   kind: closed ? "done" : status === "draft" || status === "pending_coordination" ? "plan" : "prog",
+   ...(Number.isFinite(progress) ? { progress: closed ? 100 : Math.max(0, Math.min(100, progress)) } : {}),
+   note: STATUS_TEXT[status] ?? status,
+   popover: {
+    owner, ownerColor: avatarColor(owner),
+    plan: `${str(t.start_date)} → ${str(t.end_date)}`,
+    forecast: STATUS_TEXT[status] ?? status,
+    blockedBy: "—",
+    code: taskId.slice(0, 8),
+   },
+  };
+  const group = map.get(key) ?? { type: typeLabel, typeColor: TYPE_COLOR[typeCode] ?? "#86868f", owner, ownerColor: avatarColor(owner), tasks: [] };
+  group.tasks.push(item);
+  map.set(key, group);
+ }
+ return [...map.values()];
+}
 type Row = { kind: "group"; group: GanttGroup } | { kind: "task"; group: GanttGroup; task: GanttTask };
 
 export default function GanttClient() {
@@ -27,10 +81,14 @@ export default function GanttClient() {
 }
 function PlanQueries({id}:{id:string}){
  const projects=useData<unknown[]>("projects","/projects");
- const groups=useData<unknown[]>(`plan-${id}`,`/gantt?project_id=${encodeURIComponent(id)}`);
- const state=projectPlanState(id,recordQueryState(projects),queryState(groups));
- if(state.kind!=="ready")return <Shell><PageHeader title="项目计划" /><QueryNotice state={state} retry={()=>Promise.all([projects.refetch(),groups.refetch()])} emptyText={state.kind==="empty"?state.message:"暂无项目任务"} /></Shell>;
- return <PlanChart project={state.project} groups={state.groups} start={state.start} days={state.days} onChanged={()=>groups.refetch()} />;
+ const tasks=useData<unknown[]>(`plan-${id}`,`/gantt?project_id=${encodeURIComponent(id)}`);
+ const projectRows=recordQueryState(projects);
+ const project=projectRows.kind==="ready"?projectRows.items.find(row=>row.id===id):undefined;
+ const grouped=project&&tasks.data?queryState({...tasks,data:[...groupsFromTasks(project,tasks.data)]}):queryState(tasks);
+ const state=projectPlanState(id,projectRows,grouped);
+ if(state.kind!=="ready")return <Shell><PageHeader title="项目计划" /><QueryNotice state={state} retry={()=>Promise.all([projects.refetch(),tasks.refetch()])} emptyText={state.kind==="empty"?state.message:"暂无项目任务"} /></Shell>;
+ if(!state.groups.length)return <Shell><PageHeader title="项目计划" /><Empty text="暂无项目任务" /></Shell>;
+ return <PlanChart project={state.project} groups={state.groups} start={state.start} days={state.days} onChanged={()=>tasks.refetch()} />;
 }
 function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,unknown>;groups:GanttGroup[];start:string;days:number;onChanged:()=>unknown}){
   const GANTT_START=start,GANTT_TOTAL_DAYS=days,GANTT_TODAY_DAY=dayDiff(start,new Date().toISOString().slice(0,10)),DAY_W=CHART_W/days;
