@@ -27,7 +27,7 @@ export default function GanttClient() {
 }
 function PlanQueries({id}:{id:string}){
  const projects=useData<unknown[]>("projects","/projects");
- const groups=useData<unknown[]>(`plan-${id}`,`/projects/${encodeURIComponent(id)}/tasks`);
+ const groups=useData<unknown[]>(`plan-${id}`,`/gantt?project_id=${encodeURIComponent(id)}`);
  const state=projectPlanState(id,recordQueryState(projects),queryState(groups));
  if(state.kind!=="ready")return <Shell><PageHeader title="项目计划" /><QueryNotice state={state} retry={()=>Promise.all([projects.refetch(),groups.refetch()])} emptyText={state.kind==="empty"?state.message:"暂无项目任务"} /></Shell>;
  return <PlanChart project={state.project} groups={state.groups} start={state.start} days={state.days} onChanged={()=>groups.refetch()} />;

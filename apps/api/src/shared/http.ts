@@ -6,5 +6,5 @@ export const systemVersion=()=>({service:"nexusflow",version:process.env.NEXUSFL
 export function errorStatus(error:Error):400|403|404|409|500{
  if(error.name==="ZodError"||error instanceof SyntaxError)return 400;
  const m=error.message;
- return m.includes("forbidden")?403:m.includes("not found")||m.includes("unavailable")?404:m.includes("already")||m.includes("no longer")||m.includes("locked")||m.includes("changed")||m.includes("still")||m.includes("workflow")?409:m.includes("required")||m.includes("invalid")||m.includes("cannot")||m.includes("must")||m.includes("not enabled")?400:500;
+ return m.includes("forbidden")?403:m.includes("not found")||m.includes("unavailable")?404:m.includes("already")||m.includes("no longer")||m.includes("locked")||m.includes("changed")||m.includes("still")||m.includes("workflow")||m.includes("configured")||m.includes("未配置")?409:m.includes("required")||m.includes("invalid")||m.includes("cannot")||m.includes("must")||m.includes("not enabled")?400:500;
 }

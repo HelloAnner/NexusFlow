@@ -7,6 +7,7 @@ import { Card, Badge, Avatar, PageHeader, Empty } from "@/components/ui";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState } from "@/lib/query-state";
 import { useData } from "@/lib/data";
+import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast, errorText } from "@/components/feedback";
 import { cx, str, avatarColor } from "@/lib/utils";
@@ -55,6 +56,7 @@ const FILTERS = ["全部", "审批", "指派", "提及", "系统"] as const;
 
 export default function InboxPage() {
   const query=useData<unknown[]>("inbox", "/inbox"),state=recordQueryState(query,"title");
+  const approvalsQ = useQuery({ queryKey: ["inbox-approvals"], queryFn: () => api<unknown>("/approvals"), staleTime: 15_000, retry: 1 });
   const [filter, setFilter] = useState<string>("全部");
   const [selectedId, setSelectedId] = useState<string|null>(null);
   const [reason, setReason] = useState("");
@@ -70,6 +72,9 @@ export default function InboxPage() {
   });
   const selected = shown.find((m) => m.id === selectedId) || shown[0];
   const unread = items.filter((m) => m.unread).length;
+  const approvals = (Array.isArray((approvalsQ.data as { items?: { id?: string; status?: string }[] })?.items)
+    ? (approvalsQ.data as { items: { id?: string; status?: string }[] }).items : []);
+  const approvalStatus = (id: string) => approvals.find((a) => str(a.id) === id)?.status;
 
   const act = async (fn: () => Promise<unknown>, message: string) => {
     setBusy(true);
@@ -77,7 +82,7 @@ export default function InboxPage() {
       await fn();
       toast(message);
       setReason("");
-      await query.refetch();
+      await Promise.all([query.refetch(), approvalsQ.refetch()]);
     } catch (e) { toast(errorText(e), "err"); } finally { setBusy(false); }
   };
 
@@ -171,7 +176,17 @@ export default function InboxPage() {
                 <span className="ml-auto text-[11.5px] text-ink-3">{selected.actor} · {selected.time}</span>
               </div>
 
-              {selected.type === "approval" ? (
+              {selected.type === "approval" && approvalStatus(selected.sourceId) && approvalStatus(selected.sourceId) !== "pending" ? (
+                <div className="mt-3 flex flex-col gap-2">
+                  <p className="text-[12.5px] leading-6 text-ink-2">
+                    该审批已处理（{approvalStatus(selected.sourceId) === "approved" ? "通过" : approvalStatus(selected.sourceId) === "rejected" ? "驳回" : approvalStatus(selected.sourceId)}）。
+                  </p>
+                  <button onClick={() => void complete()} disabled={busy}
+                    className="flex h-8 w-fit items-center gap-1.5 rounded-sm bg-ink px-3.5 text-[12.5px] font-medium text-white disabled:opacity-60">
+                    标记完成
+                  </button>
+                </div>
+              ) : selected.type === "approval" ? (
                 <>
                   <p className="mt-3 text-[12.5px] leading-6 text-ink-2">
                     这是派发审批消息：通过后任务进入执行状态；驳回需要填写原因，任务会退回发起人修改。
