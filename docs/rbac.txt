@@ -1,0 +1,64 @@
+NexusFlow 权限覆盖（RBAC）
+============================================================
+
+模型
+----
+  人员 × 权限实体 × 动作（view/edit/manage）
+  功能实体: org / people / project / dispatch / approval / report /
+            config / audit
+  资源实体: 项目(project)
+
+  有效值 = 个人 deny ? false
+         : 个人 allow ? true
+         : 角色/组织/项目可见性基线
+
+  Portal 票据是项目动作的上层闸门：
+    view  -> nexusflow:project:read
+    edit  -> nexusflow:project:write
+    manage-> nexusflow:dispatch:write / project:write
+
+数据
+----
+  nexusflow.permission_override (
+    tenant_id, subject_type='user', subject_id,
+    entity_type, entity_id, action, effect, updated_by, updated_at
+  )
+  visibility_grants 不迁移，继续作为项目基线；个人 deny 优先于旧 grant。
+  role_delegations、项目成员、组织范围仍由 permissions.ts 计算。
+
+执行点
+------
+  router.ts
+    - 每个请求 withRbacContext：加载 feature_denies + project_overrides
+  permissions.ts
+    - featureDenied / allowedAction 合并功能 deny
+    - canProjectAction 先看项目覆盖，再看成员/组织/可见性
+    - canReadRecord(kind='projects') 先看项目 view 覆盖
+  domains/admin/routes.ts
+    - 人员/审计接口增加功能 deny 检查
+
+接口
+----
+  GET    /api/v1/rbac/catalog
+  GET    /api/v1/rbac/subjects
+  GET    /api/v1/rbac/matrix?subject_id=...
+  PUT    /api/v1/rbac/matrix
+  DELETE /api/v1/rbac/matrix?subject_id=...
+  POST   /api/v1/rbac/prune?dry_run=...
+  Portal 内部: /api/portal/rbac/v1/{catalog|subjects|matrix}
+
+CLI
+---
+  nexusflow perm catalog
+  nexusflow perm subjects
+  nexusflow perm matrix --user Anner
+  nexusflow perm set --user Anner --type project --id <project_id> \
+      --action view --effect deny|allow|reset
+  nexusflow perm check --user Anner --type project --id <project_id> --action view
+  nexusflow perm prune --dry-run
+  环境变量: NEXUSFLOW_URL / NEXUSFLOW_TOKEN / NEXUSFLOW_BASE_PATH
+
+页面
+----
+  /settings/permissions  →  共享 <rbac-panel>
+  入口: 侧栏“管理 → 权限管理”，仅 canManage 角色可见。
