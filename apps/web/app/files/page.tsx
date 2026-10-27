@@ -78,8 +78,8 @@ export default function FilesPage() {
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
-  if(state.kind!=="ready")return <Shell><PageHeader title="资料库" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无资料" /></Shell>;
-  const files=normalize(state.items);
+  if(state.kind==="pending"||state.kind==="error")return <Shell><PageHeader title="资料库" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无资料" /></Shell>;
+  const files=normalize(state.kind==="ready"?state.items:[]);
   const counts = files.reduce<Record<string, number>>((acc, f) => { if (f.category) acc[f.category] = (acc[f.category] ?? 0) + 1; return acc; }, {});
   const kw = q.trim().toLowerCase();
   const shown = files.filter((f) =>

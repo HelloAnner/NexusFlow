@@ -62,7 +62,7 @@ export default function MyWorkPage() {
     { key: "closed", label: "已完成", rows: mine.filter((t) => t.status === "done") },
   ].filter((g) => g.rows.length > 0);
 
-  if (state.kind !== "ready") {
+  if (state.kind === "pending" || state.kind === "error") {
     return <Shell><PageHeader title="我的工作" /><QueryNotice state={state} retry={() => query.refetch()} emptyText="暂无任务" /></Shell>;
   }
 

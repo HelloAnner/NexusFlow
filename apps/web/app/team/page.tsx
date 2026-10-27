@@ -53,8 +53,8 @@ export default function TeamPage() {
   const [saving, setSaving] = useState(false);
   const [role, setRole] = useState("member");
   const [invite, setInvite] = useState<{ token: string } | null>(null);
-  if(state.kind!=="ready")return <Shell><PageHeader title="团队" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无人员" /></Shell>;
-  const people=normalize(state.items);
+  if(state.kind==="pending"||state.kind==="error")return <Shell><PageHeader title="团队" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无人员" /></Shell>;
+  const people=normalize(state.kind==="ready"?state.items:[]);
   const orgs=(orgQuery.data ?? []) as unknown as OrgNode[];
   const counts=people.reduce<Record<string, number>>((acc, p) => { if (p.orgId) acc[p.orgId] = (acc[p.orgId] ?? 0) + 1; return acc; }, {});
   const kw = q.trim().toLowerCase();

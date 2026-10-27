@@ -44,8 +44,8 @@ export default function ProjectsPage() {
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", type: "科研", level: "中心级", start_date: "", end_date: "" });
-  if(state.kind!=="ready")return <Shell><PageHeader title="项目" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无项目" /></Shell>;
-  const projects=normalize(state.items);
+  if(state.kind==="pending"||state.kind==="error")return <Shell><PageHeader title="项目" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无项目" /></Shell>;
+  const projects=normalize(state.kind==="ready"?state.items:[]);
   const kw = q.trim().toLowerCase();
   const shown = projects.filter((p) =>
     (type === "全部" || p.type === type) && (!level || p.level === level) &&
