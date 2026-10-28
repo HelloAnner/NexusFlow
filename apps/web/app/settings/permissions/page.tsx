@@ -112,7 +112,8 @@ export default function PermissionsPage() {
         return;
       }
     }
-    setMatrix(null);
+    // 重载（force）时保留旧表格直到新数据到达，避免页面闪动。
+    setMatrix((prev) => (prev && prev.subject.id === subjectId ? prev : null));
     try {
       const result = await api<RbacMatrix>(`/v1/rbac/matrix?subject_id=${encodeURIComponent(subjectId)}`);
       matricesRef.current.set(subjectId, result);
@@ -280,14 +281,14 @@ export default function PermissionsPage() {
           disabled={disabled}
           onClick={() => toggleCell(entity, action.key, cell)}
           className={cx(
-            "relative flex h-[22px] w-[22px] items-center justify-center rounded-[6px] border transition-colors",
+            "relative flex h-[24px] w-[24px] items-center justify-center rounded-[6px] transition-colors",
             allow
-              ? "border-transparent bg-accent text-canvas"
-              : "border-border bg-fill text-ink-3 hover:text-ink-2",
-            disabled && "cursor-not-allowed opacity-35",
+              ? "text-ink"
+              : "text-ink-3 hover:bg-fill hover:text-ink-2",
+            disabled && "cursor-not-allowed opacity-30",
           )}
         >
-          {allow ? <Unlock size={11} /> : <Lock size={11} />}
+          {allow ? <Unlock size={13} /> : <Lock size={13} />}
           {overridden && (
             <span className="absolute bottom-[2px] h-[3px] w-[3px] rounded-full bg-current opacity-90" />
           )}
@@ -402,25 +403,6 @@ export default function PermissionsPage() {
                   <RotateCcw size={12} />
                   全部恢复默认
                 </button>
-              </div>
-
-              <div className="mb-3 flex flex-wrap items-center gap-3.5 rounded-sm border border-border bg-panel px-2.5 py-[7px] text-[11px] text-ink-3">
-                <b className="flex items-center gap-1.5 font-medium text-ink-2">
-                  <span className="flex h-4 w-4 items-center justify-center rounded-[5px] bg-accent text-canvas">
-                    <Unlock size={9} />
-                  </span>
-                  允许
-                </b>
-                <b className="flex items-center gap-1.5 font-medium text-ink-2">
-                  <span className="flex h-4 w-4 items-center justify-center rounded-[5px] border border-border bg-fill text-ink-3">
-                    <Lock size={9} />
-                  </span>
-                  拒绝
-                </b>
-                <b className="flex items-center gap-1.5 font-medium">
-                  <span className="h-1 w-1 rounded-full bg-current" />
-                  个人设置（无点=角色默认）
-                </b>
               </div>
 
               {/* 权限类型横向 tab */}
