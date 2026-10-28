@@ -10,8 +10,18 @@ COMMIT="$("$ROOT/scripts/require-main.sh")"
 DIR="$REMOTE/validation/$COMMIT"
 ssh "$HOST" "umask 077; mkdir -p '$DIR/runtime'"
 OUT="$ROOT/dist/linux-x86_64"
-scp -C "$OUT/"{nexusflow,nexusflow-cli,source.tar.gz,dependencies.tar.gz,COMMIT,BUILD_TIME,SHA256SUMS} "$HOST:$DIR/"
-scp -C "$OUT/runtime/bun" "$OUT/runtime/VERSION" "$HOST:$DIR/runtime/"
+# 这条链路大文件 scp 会被重置；rsync --partial 断点续传，重试三次。
+for attempt in 1 2 3; do
+  rsync -a --partial --append-verify --timeout=60 \
+    "$OUT/nexusflow" "$OUT/nexusflow-cli" "$OUT/source.tar.gz" "$OUT/dependencies.tar.gz" \
+    "$OUT/COMMIT" "$OUT/BUILD_TIME" "$OUT/SHA256SUMS" "$HOST:$DIR/" \
+  && rsync -a --partial --append-verify --timeout=60 \
+    "$OUT/runtime/bun" "$OUT/runtime/VERSION" "$HOST:$DIR/runtime/" \
+  && break
+  [[ $attempt == 3 ]] && { echo 'upload failed after 3 attempts' >&2; exit 1; }
+  echo "upload attempt $attempt failed; retrying"
+  sleep 3
+done
 ssh "$HOST" bash -s -- "$REMOTE" "$DIR" "$COMMIT" "$PORT" "${DEPLOY_RECOVERY:-0}" <<'SH'
 set -euo pipefail
 umask 077
