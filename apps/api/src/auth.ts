@@ -24,10 +24,10 @@ export async function currentUser(c:Context):Promise<User|null> {
     if(typeof payload.sid!=="string"||!payload.sub)return null;
     const session=await redis.get(sessionKey(payload.sid));
     if(!session||JSON.parse(session).user_id!==payload.sub)return null;
-    const rows=await sql`SELECT id,username,role,tenant_id,org_id,status,portal_id,portal_permissions FROM nexusflow.users WHERE id=${payload.sub}`;
+    const rows=await sql`SELECT id,username,display_name,role,tenant_id,org_id,status,portal_id,portal_permissions FROM nexusflow.users WHERE id=${payload.sub}`;
     const row=rows[0];
     if(!row||row.status!=="active")return null;
-    return {id:row.id,username:row.username,role:row.role,tenant_id:row.tenant_id,org_id:row.org_id,portal_permissions:row.portal_id?row.portal_permissions||[]:null};
+    return {id:row.id,username:row.username,display_name:row.display_name,role:row.role,tenant_id:row.tenant_id,org_id:row.org_id,portal_permissions:row.portal_id?row.portal_permissions||[]:null};
   } catch { return null; }
 }
 export async function login(c:Context) {
