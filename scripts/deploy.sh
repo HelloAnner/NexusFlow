@@ -10,18 +10,28 @@ COMMIT="$("$ROOT/scripts/require-main.sh")"
 DIR="$REMOTE/validation/$COMMIT"
 ssh "$HOST" "umask 077; mkdir -p '$DIR/runtime'"
 OUT="$ROOT/dist/linux-x86_64"
-# 这条链路大文件 scp 会被重置；rsync --partial 断点续传，重试三次。
-for attempt in 1 2 3; do
-  rsync -a --partial --append-verify --timeout=60 \
-    "$OUT/nexusflow" "$OUT/nexusflow-cli" "$OUT/source.tar.gz" "$OUT/dependencies.tar.gz" \
-    "$OUT/COMMIT" "$OUT/BUILD_TIME" "$OUT/SHA256SUMS" "$HOST:$DIR/" \
-  && rsync -a --partial --append-verify --timeout=60 \
-    "$OUT/runtime/bun" "$OUT/runtime/VERSION" "$HOST:$DIR/runtime/" \
-  && break
-  [[ $attempt == 3 ]] && { echo 'upload failed after 3 attempts' >&2; exit 1; }
-  echo "upload attempt $attempt failed; retrying"
-  sleep 3
-done
+# 这条链路大文件 scp 会被重置；改成 gzip 流直传（与 Portal 同款），失败重试三次。
+put() { # put LOCAL REMOTE
+  local src="$1" dst="$2" attempt
+  for attempt in 1 2 3; do
+    if [[ "$src" == *.gz ]]; then
+      cat "$src" | ssh "$HOST" "cat > '$dst'" && return 0
+    else
+      gzip -c "$src" | ssh "$HOST" "gunzip -c > '$dst'" && return 0
+    fi
+    echo "upload $src attempt $attempt failed; retrying" >&2
+    sleep 3
+  done
+  echo "upload failed after 3 attempts: $src" >&2
+  return 1
+}
+put "$OUT/nexusflow" "$DIR/nexusflow"
+put "$OUT/nexusflow-cli" "$DIR/nexusflow-cli"
+put "$OUT/dependencies.tar.gz" "$DIR/dependencies.tar.gz"
+put "$OUT/source.tar.gz" "$DIR/source.tar.gz"
+put "$OUT/runtime/bun" "$DIR/runtime/bun"
+scp -C "$OUT/COMMIT" "$OUT/BUILD_TIME" "$OUT/SHA256SUMS" "$HOST:$DIR/"
+scp -C "$OUT/runtime/VERSION" "$HOST:$DIR/runtime/"
 ssh "$HOST" bash -s -- "$REMOTE" "$DIR" "$COMMIT" "$PORT" "${DEPLOY_RECOVERY:-0}" <<'SH'
 set -euo pipefail
 umask 077
