@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import {
   Building2, Users2, UserPlus, ChevronRight,
 } from "lucide-react";
-import { Shell } from "@/components/shell";
 import {
   Card, Badge, Avatar, Bar, PageHeader, SearchBox,
   Empty, STATUS_COLOR,
@@ -53,7 +52,7 @@ export default function TeamPage() {
   const [saving, setSaving] = useState(false);
   const [role, setRole] = useState("member");
   const [invite, setInvite] = useState<{ token: string } | null>(null);
-  if(state.kind==="pending"||state.kind==="error")return <Shell><PageHeader title="团队" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无人员" /></Shell>;
+  if(state.kind==="pending"||state.kind==="error")return <><PageHeader title="团队" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无人员" /></>;
   const people=normalize(state.kind==="ready"?state.items:[]);
   const orgs=(orgQuery.data ?? []) as unknown as OrgNode[];
   const counts=people.reduce<Record<string, number>>((acc, p) => { if (p.orgId) acc[p.orgId] = (acc[p.orgId] ?? 0) + 1; return acc; }, {});
@@ -72,7 +71,7 @@ export default function TeamPage() {
   };
 
   return (
-    <Shell>
+    <>
       <PageHeader
         title="团队"
         sub={`已加载 ${people.length} 人`}
@@ -187,6 +186,6 @@ export default function TeamPage() {
           )}
         </div>
       </Modal>
-    </Shell>
+    </>
   );
 }

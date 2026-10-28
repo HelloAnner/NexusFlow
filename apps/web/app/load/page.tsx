@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { AlertTriangle } from "lucide-react";
-import { Shell } from "@/components/shell";
 import { Card, Badge, Avatar, PageHeader, Empty } from "@/components/ui";
 import { QueryNotice } from "@/components/query-notice";
 import { useQuery } from "@tanstack/react-query";
@@ -78,7 +77,7 @@ export default function LoadPage() {
   };
 
   return (
-    <Shell>
+    <>
       <PageHeader
         title="负载与冲突"
         sub={`${people.length} 人 · 未来 7 天 · 冲突 ${conflicts.length} 项`}
@@ -204,6 +203,6 @@ export default function LoadPage() {
           </Field>
         </div>
       </Modal>
-    </Shell>
+    </>
   );
 }

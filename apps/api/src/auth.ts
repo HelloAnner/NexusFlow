@@ -51,6 +51,35 @@ export async function register(c:Context) {
   if(!/^[a-z0-9][a-z0-9._-]{2,63}$/.test(username)||displayName.length<1||displayName.length>128||password.length<12||password.length>256||!token)return c.json({error:"valid username, display_name, 12-256 character password, and invitation_token required"},400);
   try {const passwordHash=await bcrypt.hash(password,12),tokenHash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(token));const hash=[...new Uint8Array(tokenHash)].map(x=>x.toString(16).padStart(2,"0")).join("");const user=await sql.begin(async tx=>{const invites=await tx`SELECT id,tenant_id,data FROM nexusflow.records WHERE kind='invitations' AND data->>'token_hash'=${hash} AND data->>'status'='active' AND (data->>'expires_at')::timestamptz>now() FOR UPDATE`;const invite=invites[0];if(!invite)throw new Error("invitation expired or invalid");const data=invite.data as Record<string,any>;if(!["member","project_lead","department_deputy","department_director","center_deputy"].includes(data.role))throw new Error("invitation role invalid");const duplicate=await tx`SELECT id FROM nexusflow.users WHERE lower(username)=${username} AND tenant_id IS NOT DISTINCT FROM ${invite.tenant_id}`;if(duplicate.length)throw new Error("username already exists");const id=crypto.randomUUID();const rows=await tx`INSERT INTO nexusflow.users(id,username,password_hash,display_name,role,tenant_id,org_id,status) VALUES(${id},${username},${passwordHash},${displayName},${data.role},${invite.tenant_id},${data.org_id||null},'active') RETURNING id,username,role,tenant_id,org_id`;const personId=crypto.randomUUID();await tx`INSERT INTO nexusflow.records(id,kind,tenant_id,created_by,data) VALUES(${personId},'people',${invite.tenant_id},${id},${tx.json({name:displayName,user_id:id,org_id:data.org_id,status:"active",daily_standard_hours:8,skills:[]} as any)})`;await tx`UPDATE nexusflow.records SET data=data||${tx.json({status:"used",used_by:id,used_at:new Date().toISOString()} as any)},updated_at=now() WHERE id=${invite.id}`;await addAudit(tx,{id,tenant_id:invite.tenant_id} as User,"auth.register","user",id,{invitation_id:invite.id});return rows[0];});const sessionUser:User={id:user.id,username:user.username,role:user.role,tenant_id:user.tenant_id,org_id:user.org_id,portal_permissions:null};const session=await createSession(sessionUser);return c.json({access_token:session,token_type:"bearer",user:{id:user.id,username:user.username,name:displayName,role:user.role}},{status:201,headers:{"set-cookie":cookie(session)}});}catch(e){const message=e instanceof Error?e.message:"registration failed";return c.json({error:message},message.includes("invalid")||message.includes("expired")?401:409);}
 }
+export async function updateProfile(c:Context) {
+  const user=c.get("user") as User;
+  const body=await c.req.json().catch(()=>({}));
+  const displayName=String(body.display_name||"").trim();
+  if(displayName.length<1||displayName.length>128)return c.json({error:"display_name must be 1-128 characters"},400);
+  if(!sql)return c.json({error:"DATABASE_URL required"},503);
+  await sql.begin(async tx=>{
+    await tx`UPDATE nexusflow.users SET display_name=${displayName},updated_at=now() WHERE id=${user.id}`;
+    await tx`UPDATE nexusflow.records SET data=data||${tx.json({name:displayName} as any)},updated_at=now() WHERE kind='people' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'user_id'=${user.id}`;
+    await addAudit(tx,user,"auth.update_profile","user",user.id,{display_name:displayName});
+  });
+  return c.json({ok:true,display_name:displayName});
+}
+export async function changePassword(c:Context) {
+  const user=c.get("user") as User;
+  const body=await c.req.json().catch(()=>({}));
+  const oldPassword=String(body.old_password||""),newPassword=String(body.new_password||"");
+  if(newPassword.length<12||newPassword.length>256)return c.json({error:"new_password must be 12-256 characters"},400);
+  if(!sql)return c.json({error:"DATABASE_URL required"},503);
+  const rows=await sql`SELECT password_hash FROM nexusflow.users WHERE id=${user.id}`;
+  if(!rows[0]||!await bcrypt.compare(oldPassword,String(rows[0].password_hash)))return c.json({error:"current password incorrect"},401);
+  const hash=await bcrypt.hash(newPassword,12);
+  await sql.begin(async tx=>{
+    await tx`UPDATE nexusflow.users SET password_hash=${hash},updated_at=now() WHERE id=${user.id}`;
+    await addAudit(tx,user,"auth.change_password","user",user.id,{});
+  });
+  if(redis)await revokeUserSessions(user.id);
+  return c.json({ok:true});
+}
 export async function logout(c:Context) {
   const token=c.req.header("authorization")?.replace(/^Bearer\s+/i,"")||c.req.header("cookie")?.match(/(?:^|;\s*)nf_session=([^;]+)/)?.[1];
   if(token){let payload;try{payload=(await jwtVerify(token,key())).payload;}catch{payload=null;}if(payload&&typeof payload.sid==="string"&&typeof payload.sub==="string"){if(!redis)return c.json({error:"session store unavailable; session remains active"},503);try{await redis.eval("local raw=redis.call('GET',KEYS[1]); if not raw then return 0 end; local s=cjson.decode(raw); if s.user_id~=ARGV[1] then return 0 end; redis.call('DEL',KEYS[1]); redis.call('SREM',KEYS[2],ARGV[2]); return 1",2,sessionKey(payload.sid),`${config.redisPrefix}user-sessions:${payload.sub}`,payload.sub,payload.sid);}catch{return c.json({error:"session revocation failed; session remains active"},503);}}}

@@ -20,11 +20,11 @@ export const useAuth = create<AuthState>((set, get) => ({
   setUser: (user) => set({ user, checked: true }),
   fetchMe: async () => {
     try {
-      const me = await api<{ id: string; username: string; role: string; org_id?: string }>("/auth/me");
+      const me = await api<{ id: string; username: string; display_name?: string; role: string; org_id?: string }>("/auth/me");
       const user: SessionUser = {
         id: me.id,
         username: me.username,
-        name: me.username,
+        name: me.display_name || me.username,
         role: me.role,
         orgId: me.org_id,
       };

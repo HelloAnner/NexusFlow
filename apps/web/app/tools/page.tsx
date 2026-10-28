@@ -5,7 +5,6 @@ import {
   Wrench, FileOutput, Languages, PenLine, Stamp, BookOpen,
   MessageCircle, NotebookPen, CalendarCheck, BarChart3,
 } from "lucide-react";
-import { Shell } from "@/components/shell";
 import { Card, Badge, PageHeader, SearchBox, Empty } from "@/components/ui";
 import type { Tool } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
@@ -34,13 +33,13 @@ function ToolIcon({ tool, size = 34 }: { tool: Tool; size?: number }) {
 export default function ToolsPage() {
   const query=useData<unknown[]>("tools", "/tools"),state=recordQueryState(query);
   const [q, setQ] = useState("");
-  if(state.kind!=="ready")return <Shell><PageHeader title="智能工具台" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无工具" /></Shell>;
+  if(state.kind!=="ready")return <><PageHeader title="智能工具台" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无工具" /></>;
   const tools=state.items.map((x):Tool=>({id:str(x.id),name:str(x.name),desc:str(x.description,str(x.desc,"—")),usage:str(x.usage,"—"),ai:x.category==="agent"||x.ai===true,icon:str(x.icon,"wrench"),color:"var(--color-ink-3)",recent:str(x.recent)}));
   const kw = q.trim().toLowerCase();
   const shown = kw ? tools.filter((t) => `${t.name}${t.desc}${t.usage}`.toLowerCase().includes(kw)) : tools;
 
   return (
-    <Shell>
+    <>
       <PageHeader
         title="智能工具台"
         sub={`可用工具 ${tools.length} 个`}
@@ -68,6 +67,6 @@ export default function ToolsPage() {
           </div>
         </Card>
       </div>
-    </Shell>
+    </>
   );
 }

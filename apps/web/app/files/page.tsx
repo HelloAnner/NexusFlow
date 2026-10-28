@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import {
   FolderOpen, FileText, Presentation, Database, Upload, Download, File, FileSpreadsheet,
 } from "lucide-react";
-import { Shell } from "@/components/shell";
 import { Card, Badge, PageHeader, SearchBox, Empty } from "@/components/ui";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState } from "@/lib/query-state";
@@ -78,7 +77,7 @@ export default function FilesPage() {
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
-  if(state.kind==="pending"||state.kind==="error")return <Shell><PageHeader title="资料库" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无资料" /></Shell>;
+  if(state.kind==="pending"||state.kind==="error")return <><PageHeader title="资料库" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无资料" /></>;
   const files=normalize(state.kind==="ready"?state.items:[]);
   const counts = files.reduce<Record<string, number>>((acc, f) => { if (f.category) acc[f.category] = (acc[f.category] ?? 0) + 1; return acc; }, {});
   const kw = q.trim().toLowerCase();
@@ -117,7 +116,7 @@ export default function FilesPage() {
   };
 
   return (
-    <Shell>
+    <>
       <PageHeader
         title="资料库"
         sub={`当前可见资料 ${files.length} 份`}
@@ -248,6 +247,6 @@ export default function FilesPage() {
           <p className="text-[11.5px] leading-5 text-ink-3">同一文件重复上传会自动形成新版本；超过大小上限时会被拒绝。</p>
         </div>
       </Modal>
-    </Shell>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { probeDependencies } from "./db.ts";
-import { currentUser,login,logout,register,portalCallback,portalAllows } from "./auth.ts";
+import { currentUser,login,logout,register,portalCallback,portalAllows,updateProfile,changePassword } from "./auth.ts";
 import { actor } from "./permissions.ts";
 import { probeStorage } from "./storage.ts";
 import { auditContext,sourceIp } from "./shared/audit.ts";
@@ -51,7 +51,7 @@ app.onError((e,c)=>{const status=errorStatus(e);return c.json({error:status===50
 app.get("/api/system/version",c=>c.json(systemVersion()));
 app.get("/healthz",c=>c.json({ok:true,...systemVersion()}));
 app.get("/readyz",async c=>{try{await probeDependencies();await probeStorage();return c.json({ok:true,read_only:true,database:true,redis:true,object_storage:true});}catch{return c.json({ok:false,read_only:true,error:"dependencies unavailable"},503);}});
-app.post("/api/auth/login",login);app.post("/api/auth/register",register);app.post("/api/auth/logout",logout);app.get("/api/auth/me",c=>c.json(actor(c)));app.get("/auth/portal/callback",portalCallback);
+app.post("/api/auth/login",login);app.post("/api/auth/register",register);app.post("/api/auth/logout",logout);app.get("/api/auth/me",c=>c.json(actor(c)));app.patch("/api/auth/me",updateProfile);app.post("/api/auth/password",changePassword);app.get("/auth/portal/callback",portalCallback);
 
 registerOrg(app);
 registerPeople(app);

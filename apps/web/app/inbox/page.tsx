@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState } from "react";
 import { Check, X, CheckCheck } from "lucide-react";
-import { Shell } from "@/components/shell";
 import { Card, Badge, Avatar, PageHeader, Empty } from "@/components/ui";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState } from "@/lib/query-state";
@@ -63,7 +62,7 @@ export default function InboxPage() {
   const [busy, setBusy] = useState(false);
 
   const items = useMemo(() => (state.kind === "ready" ? normalize(state.items) : []), [state]);
-  if(state.kind!=="ready")return <Shell><PageHeader title="收件箱" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无消息" /></Shell>;
+  if(state.kind!=="ready")return <><PageHeader title="收件箱" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无消息" /></>;
 
   const shown = items.filter((m) => {
     if (filter === "全部") return true;
@@ -112,7 +111,7 @@ export default function InboxPage() {
   );
 
   return (
-    <Shell>
+    <>
       <PageHeader
         title="收件箱"
         sub={unread ? `${unread} 条未读 · 共 ${items.length} 条` : `共 ${items.length} 条，已全部读过`}
@@ -239,6 +238,6 @@ export default function InboxPage() {
           )}
         </div>
       </div>
-    </Shell>
+    </>
   );
 }

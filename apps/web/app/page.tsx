@@ -8,7 +8,6 @@ import {
   AlertTriangle, UserX, FileWarning, CalendarClock, Bell, ChevronRight, RefreshCw,
   FileOutput, Languages, BookOpen, MessageCircle, NotebookPen, CalendarCheck, BarChart3, LogOut,
 } from "lucide-react";
-import { Shell } from "@/components/shell";
 import { Card, Badge, Avatar, Bar, Empty } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -157,7 +156,7 @@ export default function HomePage() {
   const retryAll = () => { homeQ.refetch(); projectsQ.refetch(); toolsQ.refetch(); };
 
   return (
-    <Shell>
+    <>
       {/* 页头 */}
       <div className="flex items-start justify-between px-6 pt-5">
         <div>
@@ -456,6 +455,6 @@ export default function HomePage() {
           </Module>
         </Card>
       </div>
-    </Shell>
+    </>
   );
 }

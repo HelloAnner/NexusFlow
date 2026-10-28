@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Send, X, AlertTriangle, Calendar } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { Shell } from "@/components/shell";
 import { Card, Badge, Avatar } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -88,7 +87,7 @@ export default function DispatchNewPage() {
   };
 
   return (
-    <Shell>
+    <>
       <div className="flex items-center gap-2.5 border-b border-border px-6 py-3.5">
         <button onClick={() => router.back()} aria-label="返回" className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-fill">
           <ArrowLeft size={16} className="text-ink-2" />
@@ -265,6 +264,6 @@ export default function DispatchNewPage() {
           </button>
         </div>
       </div>
-    </Shell>
+    </>
   );
 }

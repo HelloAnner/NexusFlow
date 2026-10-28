@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState } from "react";
 import { CheckCircle2, Circle, RefreshCw } from "lucide-react";
-import { Shell } from "@/components/shell";
 import { Card, Badge, PageHeader, Empty } from "@/components/ui";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState, measured } from "@/lib/query-state";
@@ -63,7 +62,7 @@ export default function MyWorkPage() {
   ].filter((g) => g.rows.length > 0);
 
   if (state.kind === "pending" || state.kind === "error") {
-    return <Shell><PageHeader title="我的工作" /><QueryNotice state={state} retry={() => query.refetch()} emptyText="暂无任务" /></Shell>;
+    return <><PageHeader title="我的工作" /><QueryNotice state={state} retry={() => query.refetch()} emptyText="暂无任务" /></>;
   }
 
   const act = async (fn: () => Promise<unknown>, message: string) => {
@@ -87,7 +86,7 @@ export default function MyWorkPage() {
   };
 
   return (
-    <Shell>
+    <>
       <PageHeader
         title="我的工作"
         sub={`${user?.name ?? ""} · 进行中 ${open.length} 项`}
@@ -202,6 +201,6 @@ export default function MyWorkPage() {
           </Field>
         </div>
       </Modal>
-    </Shell>
+    </>
   );
 }

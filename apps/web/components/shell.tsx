@@ -6,10 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutGrid, Inbox, Briefcase, ClipboardList, Calendar, Users, Folder, Wrench, ShieldCheck,
 } from "lucide-react";
-import { cx, initial } from "@/lib/utils";
+import { cx } from "@/lib/utils";
 import { useAuth, absorbPortalToken } from "@/lib/auth";
 import { BrandIcon } from "@/components/brand-icon";
-import { roleLabel } from "@/lib/home";
+import { UserMenu } from "@/components/user-menu";
 import { Toaster } from "@/components/feedback";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -59,6 +59,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, checked, fetchMe } = useAuth();
   const manage = Boolean(user && ["super_admin", "center_director", "center_deputy", "department_director", "department_deputy"].includes(user.role));
+  // AppWindow 里以 iframe 打开的设置页不需要侧栏壳，挂载后剥掉。
+  const [inFrame, setInFrame] = React.useState(false);
+  useEffect(() => setInFrame(window.self !== window.top), []);
 
   useEffect(() => {
     absorbPortalToken();
@@ -66,12 +69,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
   }, [checked, fetchMe]);
 
   useEffect(() => {
-    if (checked && !user) router.replace("/login");
-  }, [checked, user, router]);
+    if (pathname !== "/login" && checked && !user) router.replace("/login");
+  }, [pathname, checked, user, router]);
+
+  if (pathname === "/login") return <>{children}</>;
 
   if (!checked || !user) {
     return <div className="flex h-screen items-center justify-center bg-canvas text-[12.5px] text-ink-3">加载中…</div>;
   }
+
+  if (inFrame) return <main className="h-screen overflow-y-auto bg-canvas">{children}</main>;
 
   return (
     <div className="flex h-screen overflow-hidden bg-canvas">
@@ -129,13 +136,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="flex items-center gap-2 border-t border-border px-4 py-2.5">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-fill text-[12px] font-semibold text-ink-2">
-            {initial(user.name || "?")}
-          </span>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-[12.5px] font-semibold text-ink">{user.name || "—"}</span>
-            <span className="truncate text-[11px] text-ink-3">{roleLabel(user.role)}</span>
-          </div>
+          <UserMenu user={user} manage={manage} />
           <ThemeToggle />
         </div>
       </aside>

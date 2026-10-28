@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { Shell } from "@/components/shell";
 import {
   Card, Badge, Avatar, Bar, Marker, PageHeader,
   SearchBox, Empty, TYPE_COLOR,
@@ -44,7 +43,7 @@ export default function ProjectsPage() {
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", type: "科研", level: "中心级", start_date: "", end_date: "" });
-  if(state.kind==="pending"||state.kind==="error")return <Shell><PageHeader title="项目" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无项目" /></Shell>;
+  if(state.kind==="pending"||state.kind==="error")return <><PageHeader title="项目" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无项目" /></>;
   const projects=normalize(state.kind==="ready"?state.items:[]);
   const kw = q.trim().toLowerCase();
   const shown = projects.filter((p) =>
@@ -67,7 +66,7 @@ export default function ProjectsPage() {
   };
 
   return (
-    <Shell>
+    <>
       <PageHeader
         title="项目"
         sub={`共 ${shown.length} 个项目`}
@@ -208,6 +207,6 @@ export default function ProjectsPage() {
           </div>
         </div>
       </Modal>
-    </Shell>
+    </>
   );
 }

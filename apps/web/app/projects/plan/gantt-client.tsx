@@ -3,7 +3,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CornerUpLeft } from "lucide-react";
-import { Shell } from "@/components/shell";
 import { Badge, Avatar, Marker, Empty, PageHeader } from "@/components/ui";
 import type { GanttGroup,GanttTask } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
@@ -76,7 +75,7 @@ type Row = { kind: "group"; group: GanttGroup } | { kind: "task"; group: GanttGr
 
 export default function GanttClient() {
  const id=useSearchParams().get("id");
- if(!id)return <Shell><Empty text="未指定项目" /></Shell>;
+ if(!id)return <><Empty text="未指定项目" /></>;
  return <PlanQueries id={id} />;
 }
 function PlanQueries({id}:{id:string}){
@@ -89,8 +88,8 @@ function PlanQueries({id}:{id:string}){
  for(const person of people.data??[]){if(!person||typeof person!=="object")continue;const row=person as Record<string,unknown>;if(typeof row.user_id==="string"&&typeof row.name==="string")nameOf.set(row.user_id,row.name);}
  const grouped=project&&tasks.data?queryState({...tasks,data:[...groupsFromTasks(project,tasks.data,nameOf)]}):queryState(tasks);
  const state=projectPlanState(id,projectRows,grouped);
- if(state.kind!=="ready")return <Shell><PageHeader title="项目计划" /><QueryNotice state={state} retry={()=>Promise.all([projects.refetch(),tasks.refetch()])} emptyText={state.kind==="empty"?state.message:"暂无项目任务"} /></Shell>;
- if(!state.groups.length)return <Shell><PageHeader title="项目计划" /><Empty text="暂无项目任务" /></Shell>;
+ if(state.kind!=="ready")return <><PageHeader title="项目计划" /><QueryNotice state={state} retry={()=>Promise.all([projects.refetch(),tasks.refetch()])} emptyText={state.kind==="empty"?state.message:"暂无项目任务"} /></>;
+ if(!state.groups.length)return <><PageHeader title="项目计划" /><Empty text="暂无项目任务" /></>;
  return <PlanChart project={state.project} groups={state.groups} start={state.start} days={state.days} onChanged={()=>tasks.refetch()} />;
 }
 function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,unknown>;groups:GanttGroup[];start:string;days:number;onChanged:()=>unknown}){
@@ -117,7 +116,7 @@ function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,
   const selectedRow=selectedTask?rows.indexOf(selectedTask):-1;
 
   return (
-    <Shell>
+    <>
       {/* 项目页头 */}
       <div className="flex items-start justify-between px-6 pt-5">
         <div>
@@ -376,6 +375,6 @@ function PlanChart({project,groups,start,days,onChanged}:{project:Record<string,
           <p className="text-[11.5px] leading-5 text-ink-3">存在阻塞冲突时接口会拒绝保存，需要先在负载与冲突页处理。</p>
         </div>
       </Modal>
-    </Shell>
+    </>
   );
 }
