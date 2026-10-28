@@ -95,37 +95,3 @@ html, body {
 
 [data-theme="dark"] ::selection { background: rgba(255, 255, 255, 0.16); }
 [data-theme="dark"] * { scrollbar-color: rgba(255, 255, 255, 0.18) transparent; }
-
-/* 共享 RBAC 面板（与 Portal 同步，样式硬编码浅色）：宿主侧按主题覆盖，不去改共享源。 */
-[data-theme="dark"] .rbac {
-  --rbac-ink: var(--color-ink);
-  --rbac-ink2: var(--color-ink-2);
-  --rbac-muted: var(--color-ink-3);
-  --rbac-fill: var(--color-fill);
-  --rbac-line: var(--color-border);
-  --rbac-line2: var(--color-border-strong);
-  --rbac-red: var(--color-red);
-  --rbac-green: var(--color-green);
-  background: var(--color-canvas);
-}
-[data-theme="dark"] .rbac-search input,
-[data-theme="dark"] .rbac-reset-all,
-[data-theme="dark"] .rbac-group,
-[data-theme="dark"] .rbac-cell-reset,
-[data-theme="dark"] .rbac-mobile-select,
-[data-theme="dark"] .rbac-error button { background: var(--color-panel); }
-[data-theme="dark"] .rbac-legend,
-[data-theme="dark"] .rbac-group-head,
-[data-theme="dark"] .rbac-row:hover { background: var(--color-fill); }
-[data-theme="dark"] .rbac-person[aria-current="true"] { background: var(--color-accent-soft); }
-[data-theme="dark"] .rbac-row { border-top-color: rgba(255, 255, 255, 0.05); }
-[data-theme="dark"] .rbac-tab[aria-selected="true"],
-[data-theme="dark"] .rbac-lock.is-on,
-[data-theme="dark"] .rbac-legend .rbac-mini-lock.on,
-[data-theme="dark"] .rbac-person[aria-current="true"] .rbac-avatar { color: var(--color-canvas); }
-[data-theme="dark"] .rbac-lock.is-on:hover:not(:disabled) { background: var(--color-ink-2); }
-[data-theme="dark"] .rbac-error { background: var(--color-red-soft); color: #ffb4ab; border-color: rgba(244, 119, 107, 0.3); }
-[data-theme="dark"] .rbac-error button { color: #ffb4ab; }
-[data-theme="dark"] .rbac-skel { background: linear-gradient(90deg, var(--color-fill) 25%, var(--color-fill-2) 37%, var(--color-fill) 63%); background-size: 400% 100%; }
-[data-theme="dark"] .rbac-toast { background: var(--color-ink); color: var(--color-canvas); }
-[data-theme="dark"] .rbac-toast.is-error { background: #8f2318; color: #fff; }

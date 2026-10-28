@@ -1,16 +1,12 @@
 .DEFAULT_GOAL := help
-.PHONY: help deploy preflight api-check test sync-rbac-panel check-rbac-panel status health logs
+.PHONY: help deploy preflight api-check test status health logs
 DEPLOY_HOST ?= nexusflow
 DEPLOY_PORT ?= 8089
 REMOTE_ROOT ?= /opt/nexusflow
 export DEPLOY_HOST DEPLOY_PORT REMOTE_ROOT
 
 help:
-	@printf 'targets: deploy (clean pushed main only), preflight (read-only), api-check/test (server attachment), status health logs, sync-rbac-panel/check-rbac-panel\n'
-sync-rbac-panel:
-	cp ../Portal/web/src/rbac-panel.ts apps/web/lib/rbac/panel.ts
-check-rbac-panel:
-	@cmp -s ../Portal/web/src/rbac-panel.ts apps/web/lib/rbac/panel.ts || { echo "RBAC panel drift: run make sync-rbac-panel"; exit 1; }
+	@printf 'targets: deploy (clean pushed main only), preflight (read-only), api-check/test (server attachment), status health logs\n'
 # All local build operations exist only inside this release entrypoint.
 deploy:
 	./scripts/deploy.sh
