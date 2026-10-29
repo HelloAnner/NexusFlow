@@ -8,39 +8,40 @@ import { hashText } from "../../shared/hash.ts";
 import { revokeUserSessions } from "../../auth.ts";
 import { roles as allRoles } from "../../../../../packages/shared/src/index.ts";
 import { preflight } from "./preflight.ts";
+import { userProfilePatch } from "./validation.ts";
 export function registerRoutes(app:ApiApp){
 app.get("/api/admin/preflight",async c=>c.json(await preflight(actor(c))));
-app.get("/api/admin/users",async c=>{if(!canManage(actor(c))||featureDenied(actor(c),"people","manage"))return c.json({error:"forbidden"},403);if(!sql)return c.json({items:[]});const user=actor(c);const rows=await sql`SELECT id,username,display_name,role,tenant_id,org_id,(CASE WHEN cardinality(org_ids)=0 AND org_id IS NOT NULL THEN ARRAY[org_id]::text[] ELSE org_ids END) AS org_ids,status,created_at FROM nexusflow.users WHERE (${user.role==='super_admin'} OR tenant_id IS NOT DISTINCT FROM ${user.tenant_id}) AND (${['super_admin','center_director'].includes(user.role)} OR org_id IS NOT DISTINCT FROM ${user.org_id} OR ${user.org_id} = ANY(org_ids)) ORDER BY created_at`;return c.json({items:rows});});
+app.get("/api/admin/users",async c=>{if(!canManage(actor(c))||featureDenied(actor(c),"people","manage"))return c.json({error:"forbidden"},403);if(!sql)return c.json({items:[]});const user=actor(c);const rows=await sql`SELECT id,username,display_name,role,tenant_id,org_id,(CASE WHEN cardinality(org_ids)=0 AND org_id IS NOT NULL THEN ARRAY[org_id]::text[] ELSE org_ids END) AS org_ids,status,created_at,updated_at FROM nexusflow.users WHERE (${user.role==='super_admin'} OR tenant_id IS NOT DISTINCT FROM ${user.tenant_id}) AND (${['super_admin','center_director'].includes(user.role)} OR org_id IS NOT DISTINCT FROM ${user.org_id} OR ${user.org_id} = ANY(org_ids)) ORDER BY created_at`;return c.json({items:rows});});
 app.put("/api/admin/users/:id/delegations",async c=>{const user=actor(c);if(!["super_admin","center_director"].includes(user.role)||featureDenied(user,"people","manage")||!sql)return c.json({error:"forbidden"},403);const body:any=await c.req.json().catch(()=>({})),orgIds=[...new Set<string>(Array.isArray(body.org_ids)?body.org_ids.map(String):[])];if(!orgIds.length||orgIds.length>50||!String(body.reason||"").trim())return c.json({error:"org_ids and audit reason required"},400);for(const orgId of orgIds)if(!await getRecord(user,"orgs",orgId))return c.json({error:"organization not found"},404);const result=await sql.begin(async tx=>{const targets=await tx`SELECT id,role FROM nexusflow.users WHERE id=${c.req.param("id")} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} FOR UPDATE`;if(!targets[0])return false;if(!["center_deputy","department_deputy"].includes(targets[0].role))throw new Error("delegations only apply to deputy roles");await tx`UPDATE nexusflow.records SET data=data||${tx.json({status:"revoked",revoked_at:new Date().toISOString(),revoked_by:user.id} as any)},updated_at=now() WHERE kind='role_delegations' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'user_id'=${String(targets[0].id)} AND data->>'status'='active'`;await insertRecord(tx,user,"role_delegations",{user_id:String(targets[0].id),org_ids:orgIds,status:"active",reason:body.reason});await addAudit(tx,user,"admin.user_delegations","user",String(targets[0].id),{org_ids:orgIds,reason:body.reason});return true;});return result?c.json({ok:true,org_ids:orgIds}):c.json({error:"not found"},404);});
 app.patch("/api/admin/users/:id/binding",async c=>{const user=actor(c);if(!["super_admin","center_director"].includes(user.role)||featureDenied(user,"people","manage")||!sql)return c.json({error:"forbidden"},403);const body=await c.req.json().catch(()=>({})),roles:readonly string[]=allRoles.filter(role=>role!=="super_admin");if(!String(body.reason||"").trim()||!roles.includes(String(body.role)))return c.json({error:"role and audit reason required"},400);const orgId=body.org_id?String(body.org_id):null;if(orgId&&!await getRecord(user,"orgs",orgId))return c.json({error:"organization not found"},404);const result=await sql.begin(async tx=>{const rows=await tx`SELECT id,role,org_id,org_ids FROM nexusflow.users WHERE id=${c.req.param("id")} AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} FOR UPDATE`;if(!rows[0])return null;if(rows[0].role==="super_admin"&&user.role!=="super_admin")throw new Error("only a super administrator may change a super administrator");if(["super_admin","center_director"].includes(String(body.role))&&user.role!=="super_admin")throw new Error("only a super administrator may grant that role");const orgIds=orgId?[orgId,...((rows[0].org_ids as string[]|null)??[]).filter(id=>id!==orgId)]:(rows[0].org_ids as string[]|null)??[];await tx`UPDATE nexusflow.users SET role=${body.role},org_id=${orgId},org_ids=${orgIds},updated_at=now() WHERE id=${rows[0].id}`;await tx`UPDATE nexusflow.records SET data=data||${tx.json({org_id:orgId,org_ids:orgIds} as any)},updated_at=now() WHERE kind='people' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND data->>'user_id'=${String(rows[0].id)}`;await addAudit(tx,user,"admin.user_binding","user",String(rows[0].id),{role:body.role,org_id:orgId,reason:body.reason});return {id:String(rows[0].id),changed:rows[0].role!==body.role||rows[0].org_id!==orgId};});if(!result)return c.json({error:"not found"},404);if(result.changed)await revokeUserSessions(result.id);return c.json({ok:true});});
 app.patch("/api/admin/users/:id/profile",async c=>{
  const user=actor(c);
  if(!canManage(user)||featureDenied(user,"people","manage")||!sql)return c.json({error:"forbidden"},403);
- const body:any=await c.req.json().catch(()=>({}));
- const hasName=typeof body.display_name==="string",displayName=hasName?body.display_name.trim():"";
- const orgIds=[...new Set<string>((Array.isArray(body.org_ids)?body.org_ids:[]).map(String).filter(Boolean))];
- if(hasName&&(displayName.length<1||displayName.length>128))return c.json({error:"display_name must be 1-128 characters"},400);
- if(orgIds.length>50)return c.json({error:"too many departments"},400);
+ const body=userProfilePatch.parse(await c.req.json().catch(()=>null));
  const elevated=["super_admin","center_director"].includes(user.role);
- const visible=await sql`SELECT id,display_name,role,org_id,org_ids,tenant_id FROM nexusflow.users WHERE id=${c.req.param("id")} AND (${user.role==='super_admin'} OR tenant_id IS NOT DISTINCT FROM ${user.tenant_id}) AND (${elevated} OR org_id IS NOT DISTINCT FROM ${user.org_id} OR ${user.org_id} = ANY(org_ids)) LIMIT 1`;
+ const visible=await sql`SELECT id,display_name,role,org_id,org_ids,tenant_id,updated_at FROM nexusflow.users WHERE id=${c.req.param("id")} AND (${user.role==='super_admin'} OR tenant_id IS NOT DISTINCT FROM ${user.tenant_id}) AND (${elevated} OR org_id IS NOT DISTINCT FROM ${user.org_id} OR ${user.org_id} = ANY(org_ids)) LIMIT 1`;
  const target=visible[0];
  if(!target)return c.json({error:"not found"},404);
- if(orgIds.length){
-  const found=await sql`SELECT id FROM nexusflow.records WHERE kind='orgs' AND tenant_id IS NOT DISTINCT FROM ${target.tenant_id} AND id = ANY(${orgIds}::text[])`;
-  if(found.length!==orgIds.length)return c.json({error:"organization not found"},404);
-  for(const orgId of orgIds)if(!((target.org_ids as string[]|null)??[]).includes(orgId)&&!await getRecord(user,"orgs",orgId))return c.json({error:"organization not found"},404);
- }
+ const previousIds=(target.org_ids as string[]|null)?.length?target.org_ids as string[]:target.org_id?[String(target.org_id)]:[];
+ const orgIds=body.org_ids===undefined?previousIds:[...new Set(body.org_ids)];
+ for(const orgId of orgIds)if(!previousIds.includes(orgId)&&(!await getRecord(user,"orgs",orgId)||!elevated&&!await canManageOrganization(user,orgId)))return c.json({error:"organization unavailable"},404);
+ if(!elevated)for(const id of previousIds.filter(id=>!orgIds.includes(id)))if(!await canManageOrganization(user,id))return c.json({error:"forbidden"},403);
  const result=await sql.begin(async tx=>{
-  const rows=await tx`SELECT id,display_name,role,org_id,org_ids,tenant_id FROM nexusflow.users WHERE id=${target.id} FOR UPDATE`;
+  if(body.org_ids!==undefined&&orgIds.length){
+   const found=await tx`SELECT id FROM nexusflow.records WHERE kind='orgs' AND tenant_id IS NOT DISTINCT FROM ${target.tenant_id} AND id = ANY(${orgIds}::text[]) FOR KEY SHARE`;
+   if(found.length!==orgIds.length)throw new Error("organization unavailable");
+  }
+  const rows=await tx`SELECT id,display_name,role,org_id,org_ids,tenant_id,updated_at FROM nexusflow.users WHERE id=${target.id} FOR UPDATE`;
   const row=rows[0];
   if(!row)return null;
-  if(JSON.stringify(row.org_ids??[])!==JSON.stringify(target.org_ids??[]))throw new Error("memberships changed; retry");
-  if(row.role==="super_admin"&&user.role!=="super_admin")throw new Error("only a super administrator may edit a super administrator");
-  const primary=row.org_id&&orgIds.includes(String(row.org_id))?String(row.org_id):orgIds[0]??null;
-  const nextName=hasName?displayName:String(row.display_name||"")||"User";
+  const expected=body.updated_at??target.updated_at;
+  if((expected&&new Date(row.updated_at).valueOf()!==new Date(expected).valueOf())||JSON.stringify(row.org_ids??[])!==JSON.stringify(target.org_ids??[]))throw new Error("profile changed; reload before saving");
+  if(row.role==="super_admin"&&user.role!=="super_admin")return null;
+  const primary=body.org_ids===undefined?row.org_id:row.org_id&&orgIds.includes(String(row.org_id))?String(row.org_id):orgIds[0]??null;
+  const nextName=body.display_name??String(row.display_name||"User");
   await tx`UPDATE nexusflow.users SET display_name=${nextName},org_id=${primary},org_ids=${orgIds},updated_at=now() WHERE id=${row.id}`;
   await tx`UPDATE nexusflow.records SET data=data||${tx.json({name:nextName,org_id:primary,org_ids:orgIds} as any)},updated_at=now() WHERE kind='people' AND tenant_id IS NOT DISTINCT FROM ${row.tenant_id} AND data->>'user_id'=${String(row.id)}`;
-  await addAudit(tx,user,"admin.user_profile","user",String(row.id),{before:{display_name:row.display_name,org_ids:row.org_ids},after:{display_name:nextName,org_ids:orgIds}});
+  await addAudit(tx,{...user,tenant_id:row.tenant_id},"admin.user_profile","user",String(row.id),{before:{display_name:row.display_name,org_ids:previousIds},after:{display_name:nextName,org_ids:orgIds}});
   return {id:String(row.id),display_name:nextName,org_id:primary,org_ids:orgIds};
  });
  return result?c.json({ok:true,user:result}):c.json({error:"not found"},404);

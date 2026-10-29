@@ -24,7 +24,7 @@ const NAV = [
     ],
   },
   {
-    section: "项目与团队",
+    section: "项目",
     items: [
       { href: "/projects", icon: Briefcase, key: "projects", label: "项目" },
       { href: "/load", icon: Calendar, key: "load", label: "负载与冲突" },
@@ -85,7 +85,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
     return <div className="flex h-screen items-center justify-center bg-canvas text-[12.5px] text-ink-3">加载中…</div>;
   }
 
-  if (inFrame) return <main className="h-screen overflow-y-auto bg-canvas">{children}</main>;
+  if (pathname.startsWith("/settings/") && !manage) {
+    return <main className="flex h-screen items-center justify-center bg-canvas text-[13px] text-ink-3">仅管理员可访问此页面</main>;
+  }
+  if (inFrame) return <><main className="h-screen overflow-y-auto bg-canvas">{children}</main><Toaster /></>;
 
   return (
     <div className="flex h-screen overflow-hidden bg-canvas">
@@ -95,7 +98,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span className="text-[14px] font-semibold tracking-[-0.01em] text-ink">NexusFlow</span>
         </Link>
 
-        <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-4">
           {NAV.map((group) => (
             <div key={group.section}>
               <p className="px-2 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.02em] text-ink-3">{group.section}</p>

@@ -19,6 +19,7 @@ type UserRow = {
   status: string;
   org_id: string | null;
   org_ids: string[];
+  updated_at?: string;
 };
 
 type Editor = { mode: "create" | "edit"; id?: string; name: string; type: string; parent_id: string | null };
@@ -36,6 +37,7 @@ function normalizeUsers(items: unknown[]): UserRow[] {
       status: str(x.status, "active"),
       org_id: primary,
       org_ids: orgIds.length ? orgIds : primary ? [primary] : [],
+      updated_at: str(x.updated_at) || undefined,
     };
   });
 }
@@ -63,6 +65,12 @@ export default function DepartmentsPage() {
     : [];
 
   const countOf = (id: string) => users.filter((u) => u.org_ids.includes(id)).length;
+  const blockedParents = new Set<string>();
+  const ownIndex = orgs.findIndex((org) => org.id === editor?.id);
+  if (ownIndex >= 0) for (let i = ownIndex; i < orgs.length; i++) {
+    if (i > ownIndex && orgs[i].depth <= orgs[ownIndex].depth) break;
+    blockedParents.add(orgs[i].id);
+  }
 
   const toggleExpand = (id: string) => setCollapsed((prev) => {
     const next = new Set(prev);
@@ -74,7 +82,7 @@ export default function DepartmentsPage() {
   const openCreate = (parentId: string | null) => setEditor({ mode: "create", name: "", type: "department", parent_id: parentId });
   const openEdit = () => {
     if (!selected) return;
-    setEditor({ mode: "edit", id: selected.id, name: selected.name, type: selected.type, parent_id: null });
+    setEditor({ mode: "edit", id: selected.id, name: selected.name, type: selected.type, parent_id: selected.parent_id });
   };
 
   const saveDept = async () => {
@@ -87,7 +95,7 @@ export default function DepartmentsPage() {
         if (created?.id) setSelectedId(created.id);
         toast("部门已创建");
       } else {
-        await api(`/orgs/${encodeURIComponent(editor.id!)}`, { method: "PATCH", body: JSON.stringify({ name: editor.name.trim(), type: editor.type }) });
+        await api(`/orgs/${encodeURIComponent(editor.id!)}`, { method: "PATCH", body: JSON.stringify({ name: editor.name.trim(), type: editor.type, ...(canStructure ? { parent_id: editor.parent_id } : {}) }) });
         toast("部门已更新");
       }
       await orgQuery.refetch();
@@ -118,25 +126,27 @@ export default function DepartmentsPage() {
   const setMemberships = async (user: UserRow, next: string[]) => {
     await api(`/admin/users/${encodeURIComponent(user.id)}/profile`, {
       method: "PATCH",
-      body: JSON.stringify({ display_name: user.display_name, org_ids: next }),
+      body: JSON.stringify({ org_ids: next, updated_at: user.updated_at }),
     });
   };
 
   const addMembers = async () => {
     if (!selected || !picked.length) return;
     setSaving(true);
+    let added = 0;
     try {
       for (const id of picked) {
         const user = users.find((u) => u.id === id);
-        if (user) await setMemberships(user, [...user.org_ids, selected.id]);
+        if (user) { await setMemberships(user, [...user.org_ids, selected.id]); added++; }
       }
       await usersQuery.refetch();
-      toast(`已加入 ${picked.length} 人`);
+      toast(`已加入 ${added} 人`);
       setAdding(false);
       setPicked([]);
       setAddQ("");
     } catch (e) {
-      toast(errorText(e), "err");
+      await usersQuery.refetch();
+      toast(`${added ? `已加入 ${added} 人；其余未完成：` : ""}${errorText(e)}`, "err");
     } finally {
       setSaving(false);
     }
@@ -156,6 +166,14 @@ export default function DepartmentsPage() {
       setSaving(false);
     }
   };
+
+  if (usersQuery.isError || orgQuery.isError) return <>
+    <PageHeader title="部门管理" />
+    <div role="alert" className="p-6 text-[12.5px] text-red">
+      数据加载失败：{errorText(usersQuery.error || orgQuery.error)}
+      <button onClick={() => { void usersQuery.refetch(); void orgQuery.refetch(); }} className="ml-2 underline">重试</button>
+    </div>
+  </>;
 
   return (
     <>
@@ -185,7 +203,7 @@ export default function DepartmentsPage() {
               onAdd={(id) => openCreate(id)}
               onEdit={(id) => {
                 const org = orgs.find((item) => item.id === id);
-                if (org) setEditor({ mode: "edit", id: org.id, name: org.name, type: org.type, parent_id: null });
+                if (org) setEditor({ mode: "edit", id: org.id, name: org.name, type: org.type, parent_id: org.parent_id });
               }}
               onDelete={(id) => void removeDept(id)}
             />
@@ -233,7 +251,7 @@ export default function DepartmentsPage() {
                           </span>
                         </td>
                         <td className="px-3 py-2.5 text-ink-2">{roleLabel(user.role)}</td>
-                        <td className="px-3 py-2.5"><Badge color={user.status === "active" ? "var(--color-green)" : "var(--color-ink-3)"}>{user.status === "active" ? "启用" : "已停用"}</Badge></td>
+                        <td className="px-3 py-2.5"><Badge color={user.status === "active" ? "var(--color-green)" : "var(--color-ink-3)"}>{user.status === "active" ? "启用" : user.status === "locked" ? "已锁定" : "已停用"}</Badge></td>
                         <td className="px-4 py-2.5">
                           <button onClick={() => setRemoving(user)} className="flex items-center gap-1 text-[12px] text-ink-3 hover:text-red"><X size={12} /> 移出</button>
                         </td>
@@ -241,7 +259,7 @@ export default function DepartmentsPage() {
                     ))}
                   </tbody>
                 </table>
-                {members.length === 0 && <Empty text="该部门下暂无人员" />}
+                {members.length === 0 && <Empty text={usersQuery.isPending ? "加载中…" : "该部门下暂无人员"} />}
               </div>
             </>
           )}
@@ -267,14 +285,12 @@ export default function DepartmentsPage() {
                 {ORG_TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </Field>
-            {editor.mode === "create" && (
-              <Field label="上级部门">
-                <select className={inputCls} value={editor.parent_id ?? ""} onChange={(e) => setEditor({ ...editor, parent_id: e.target.value || null })}>
-                  <option value="">无（顶级部门）</option>
-                  {orgs.map((org) => <option key={org.id} value={org.id}>{"　".repeat(org.depth)}{org.name}</option>)}
-                </select>
-              </Field>
-            )}
+            <Field label="上级部门">
+              <select className={inputCls} disabled={!canStructure} value={editor.parent_id ?? ""} onChange={(e) => setEditor({ ...editor, parent_id: e.target.value || null })}>
+                <option value="">无（顶级部门）</option>
+                {orgs.filter((org) => !blockedParents.has(org.id)).map((org) => <option key={org.id} value={org.id}>{"　".repeat(org.depth)}{org.name}</option>)}
+              </select>
+            </Field>
           </div>
         )}
       </Modal>

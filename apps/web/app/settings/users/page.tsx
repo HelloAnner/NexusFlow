@@ -6,6 +6,7 @@ import { Avatar, Badge, Card, Empty, PageHeader, SearchBox } from "@/components/
 import { Modal, Field, inputCls, toast, errorText } from "@/components/feedback";
 import { useData } from "@/lib/data";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import { avatarColor, cx, str } from "@/lib/utils";
 import { roleLabel } from "@/lib/home";
 import { flattenOrgs, orgName, ORG_TYPE_LABEL } from "@/lib/org";
@@ -19,6 +20,7 @@ type UserRow = {
   org_id: string | null;
   org_ids: string[];
   created_at?: string;
+  updated_at?: string;
 };
 
 const STATUS: Record<string, { label: string; color: string }> = {
@@ -41,6 +43,7 @@ function normalize(items: unknown[]): UserRow[] {
       org_id: primary,
       org_ids: orgIds.length ? orgIds : primary ? [primary] : [],
       created_at: str(x.created_at) || undefined,
+      updated_at: str(x.updated_at) || undefined,
     };
   });
 }
@@ -49,24 +52,23 @@ export default function UsersPage() {
   const usersQuery = useData<unknown[]>("admin-users", "/admin/users");
   const orgQuery = useData<unknown[]>("org-tree", "/orgs/tree");
   const [q, setQ] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<UserRow | null>(null);
   const [name, setName] = useState("");
   const [orgIds, setOrgIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   const users = normalize(usersQuery.data ?? []);
   const orgs = flattenOrgs(orgQuery.data ?? []);
-  const selected = users.find((u) => u.id === selectedId) ?? null;
   const kw = q.trim().toLowerCase();
   const shown = users.filter((u) =>
     !kw || `${u.display_name}${u.username}${u.org_ids.map((id) => orgName(orgs, id)).join("")}`.toLowerCase().includes(kw));
 
   const open = (user: UserRow) => {
-    setSelectedId(user.id);
+    setSelected(user);
     setName(user.display_name);
     setOrgIds(user.org_ids);
   };
-  const close = () => setSelectedId(null);
+  const close = () => { if (!saving) setSelected(null); };
 
   const toggleOrg = (id: string) => {
     setOrgIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -79,11 +81,16 @@ export default function UsersPage() {
     try {
       await api(`/admin/users/${encodeURIComponent(selected.id)}/profile`, {
         method: "PATCH",
-        body: JSON.stringify({ display_name: name.trim(), org_ids: orgIds }),
+        body: JSON.stringify({
+          ...(name.trim() !== selected.display_name ? { display_name: name.trim() } : {}),
+          ...(departmentsChanged ? { org_ids: orgIds } : {}),
+          updated_at: selected.updated_at,
+        }),
       });
       await usersQuery.refetch();
+      if (selected.id === useAuth.getState().user?.id) await useAuth.getState().fetchMe();
       toast("已保存");
-      close();
+      setSelected(null);
     } catch (e) {
       toast(errorText(e), "err");
     } finally {
@@ -91,7 +98,8 @@ export default function UsersPage() {
     }
   };
 
-  const dirty = selected ? name.trim() !== selected.display_name || [...orgIds].sort().join("|") !== [...selected.org_ids].sort().join("|") : false;
+  const departmentsChanged = selected ? [...orgIds].sort().join("|") !== [...selected.org_ids].sort().join("|") : false;
+  const dirty = selected ? name.trim() !== selected.display_name || departmentsChanged : false;
 
   return (
     <>
@@ -126,7 +134,7 @@ export default function UsersPage() {
                       <span className="flex items-center gap-2.5">
                         <Avatar name={user.display_name} color={avatarColor(user.username)} size={30} />
                         <span className="min-w-0">
-                          <span className="block truncate text-[13px] font-medium">{user.display_name}</span>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); open(user); }} aria-label={`查看 ${user.display_name} 的详情`} className="block truncate rounded-sm text-left text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-ink">{user.display_name}</button>
                           <span className="block truncate text-[11.5px] text-ink-3">@{user.username}</span>
                         </span>
                       </span>
@@ -188,9 +196,10 @@ export default function UsersPage() {
 
             <div className="flex flex-col gap-1.5">
               <span className="text-[12.5px] font-medium text-ink">所属部门</span>
-              <p className="text-[11.5px] text-ink-3">可多选；列表中的第一个部门作为主部门。</p>
+              <p className="text-[11.5px] text-ink-3">可多选；保留原主部门，移除后由剩余部门递补。</p>
               <div className="max-h-56 overflow-y-auto rounded-sm border border-border">
-                {orgs.length === 0 && <p className="px-3 py-4 text-[12px] text-ink-3">暂无可选部门</p>}
+                {orgQuery.isError && <p role="alert" className="px-3 py-4 text-[12px] text-red">部门加载失败，<button onClick={() => void orgQuery.refetch()} className="underline">重试</button></p>}
+                {!orgQuery.isError && orgs.length === 0 && <p className="px-3 py-4 text-[12px] text-ink-3">{orgQuery.isPending ? "加载中…" : "暂无可选部门"}</p>}
                 {orgs.map((org) => (
                   <label
                     key={org.id}

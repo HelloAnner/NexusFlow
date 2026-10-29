@@ -59,12 +59,17 @@ const sql:any=async(strings:TemplateStringsArray,...v:any[])=>{
   const exclude=/id<>\$(\d+)/.exec(q);if(exclude)candidates=candidates.filter(r=>r.id!==v[+exclude[1]!]);
   if(q.includes("max((data->>'version')::int)"))return [{version:Math.max(0,...candidates.map(r=>Number(r.data.version)||0))}];
   if(q.startsWith("DELETE FROM nexusflow.records")){const deleted=candidates.map(r=>({id:r.id}));records=records.filter(r=>!candidates.includes(r));return deleted;}
+  const anyIds=/id = ANY\(\$(\d+)::text\[\]\)/.exec(q);if(anyIds)candidates=candidates.filter(r=>v[+anyIds[1]!].includes(r.id));
   if(q.startsWith("SELECT"))return q.includes("xmin::text AS seed_xid")?candidates.map(r=>({...r,seed_xid:r.xmin})):candidates;
   if(q.startsWith("INSERT INTO nexusflow.users")){users.push({id:v[0],username:v[1],password_hash:v[2],display_name:v[3],role:v[4],tenant_id:v[5],org_id:v[6],status:"active",portal_id:null,portal_permissions:null});return [];}
   if(q.startsWith("INSERT INTO nexusflow.records")){records.push(row(v[0],v[1],structuredClone(v[4]),v[3],v[2]));return [];}
   if(q.startsWith("INSERT INTO nexusflow.audit")){audits.push({q,v});return [];}
   if(q.startsWith("UPDATE nexusflow.users SET role=")){const account=users.find(u=>u.id===v[3]);if(account){account.role=v[0];account.org_id=v[1];account.org_ids=v[2];}return [];}
-  if(q.startsWith("UPDATE nexusflow.users SET display_name=")){const account=users.find(u=>u.id===v[3]);if(account){account.display_name=v[0];account.role=v[1];account.org_id=v[2];account.status="active";}return [];}
+  if(q.startsWith("UPDATE nexusflow.users SET display_name=")){
+    const id=/WHERE id=\$(\d+)/.exec(q),account=id?users.find(u=>u.id===v[+id[1]!]):undefined;
+    if(account){account.display_name=v[0];for(const field of ["role","org_id","org_ids","status"]){const m=new RegExp(`${field}=\\$(\\d+)`).exec(q);if(m)account[field]=v[+m[1]!];}account.updated_at=new Date();}
+    return [];
+  }
   if(q.startsWith("UPDATE nexusflow.users SET password_hash=")){const nameIndex=/lower\(username\)=lower\(\$(\d+)\)/.exec(q)?.[1];const account=nameIndex!=null?users.find(u=>u.tenant_id===v[+tenant![1]!]&&u.status==="active"&&!u.portal_id&&u.username.toLowerCase()===String(v[+nameIndex]).toLowerCase()):users.find(u=>u.id===v[1]&&u.tenant_id===v[2]&&u.status==="active"&&!u.portal_id&&!u.password_hash);if(!account)return [];account.password_hash=v[0];return [{id:account.id}];}
   if(q.startsWith("UPDATE nexusflow.records")){
     const payload=/SET data(?:=data\|\||=)\$(\d+)/.exec(q);for(const r of candidates){const patch=payload?v[+payload[1]!]:{};r.data=q.includes("data=data||")?{...r.data,...patch}:{...patch};r.updated_at=new Date(r.updated_at.valueOf()+1);if(activeXmin)r.xmin=activeXmin;}return [];
@@ -94,6 +99,36 @@ function addAccount(user:any){const account={...user,status:"active",portal_id:u
 async function request(path:string,method="GET",body?:any,user=center){addAccount(user);const token=await createSession(user);return app.request(path,{method,headers:{authorization:`Bearer ${token}`,"content-type":"application/json"},...(body===undefined?{}:{body:JSON.stringify(body)})});}
 beforeEach(()=>{Object.assign(config,initialConfig);records=[row("c1","orgs",{name:"Center",type:"center"}),row("o1","orgs",{name:"One",type:"department",parent_id:"c1"}),row("o2","orgs",{name:"Two",type:"department",parent_id:"c1"})];users=[{...member,status:"active",portal_id:null},{...member,id:"u2",username:"two",org_id:"o2",status:"active",portal_id:null}];audits=[];sqlWrites=[];cache.clear();sets.clear();failRevoke=false;beforeNextBegin=null;nextXmin=0;activeXmin=null;globalThis.fetch=blockFetch;});
 afterAll(()=>{globalThis.fetch=previousFetch;for(const [key,value] of [["DEMO_SEED_ENABLED",seedEnvironment.enabled],["DEMO_SEED_TENANT_ID",seedEnvironment.tenant]]){if(value===undefined)delete process.env[key!];else process.env[key!]=value;}});
+
+test("admin profile PATCH preserves omitted fields, syncs profiles, and audits names",async()=>{
+ const target=()=>users.find(u=>u.id==="u2")!;target().display_name="Two";target().org_ids=["o2"];
+ records.push(row("profile-two","people",{user_id:"u2",name:"Two",org_id:"o2"},"u2"));
+ let response=await request("/api/admin/users/u2/profile","PATCH",{display_name:"New name"});
+ expect(response.status).toBe(200);expect(target().org_ids).toEqual(["o2"]);expect(target().org_id).toBe("o2");expect(target().username).toBe("two");
+ response=await request("/api/admin/users/u2/profile","PATCH",{org_ids:["o1","o2","o1"]});
+ expect(response.status).toBe(200);expect(target().display_name).toBe("New name");expect(target().role).toBe("member");expect(target().org_id).toBe("o2");expect(target().org_ids).toEqual(["o1","o2"]);
+ expect(records.find(r=>r.id==="profile-two")!.data.name).toBe("New name");
+ expect(audits.find(a=>a.v.includes("admin.user_profile"))!.v[6].after.display_name).toBe("New name");
+ expect((await request("/api/admin/users/u2/profile","PATCH",{org_ids:[]})).status).toBe(200);expect(target().org_id).toBeNull();expect(target().org_ids).toEqual([]);
+});
+test("admin profile PATCH rejects invalid fields, ordinary users, foreign departments and stale snapshots",async()=>{
+ const target=()=>users.find(u=>u.id==="u2")!;target().display_name="Two";target().org_ids=["o2"];target().updated_at=new Date(1000);
+ for(const body of [{},{username:"renamed"},{display_name:"  "},{display_name:null},{org_ids:"o1"},{org_ids:[4]}])expect((await request("/api/admin/users/u2/profile","PATCH",body)).status).toBe(400);
+ expect((await request("/api/admin/users/u2/profile","PATCH",{display_name:"No"},member)).status).toBe(403);
+ records.push(row("foreign-org","orgs",{name:"Foreign",type:"department"},"foreign","other-tenant"));
+ expect((await request("/api/admin/users/u2/profile","PATCH",{org_ids:["foreign-org"]})).status).toBe(404);
+ expect((await request("/api/admin/users/u2/profile","PATCH",{display_name:"No",updated_at:new Date(0).toISOString()})).status).toBe(409);
+ expect(target().display_name).toBe("Two");expect(target().org_ids).toEqual(["o2"]);expect(sqlWrites).toEqual([]);
+});
+test("department structure edits allow reparenting but reject cycles, foreign parents and scoped managers",async()=>{
+ expect((await request("/api/orgs/o1","PATCH",{parent_id:"o2"})).status).toBe(200);
+ expect(records.find(r=>r.id==="o1")!.data.parent_id).toBe("o2");
+ expect((await request("/api/orgs/c1","PATCH",{parent_id:"o1"})).status).toBe(400);
+ expect((await request("/api/orgs/o1","PATCH",{parent_id:"missing"})).status).toBe(404);
+ expect((await request("/api/orgs/o1","PATCH",{parent_id:null},department)).status).toBe(403);
+ expect((await request("/api/orgs/o1","PATCH",{parent_id:null})).status).toBe(200);
+ expect(records.find(r=>r.id==="o1")!.data.parent_id).toBeNull();
+});
 
 test("R1: deny unknown-owner orgless departmental read and allow NULL-tenant assigned task",async()=>{
  expect(await canReadRecord(department,"tasks",row("x","tasks",{owner_id:"missing"},"missing"))).toBe(false);

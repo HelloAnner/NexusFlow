@@ -16,6 +16,8 @@ test("important workflows map to dedicated API operations",()=>{
  expect(commandRequest(parseArgs(["admin","delegations","u-1","--org-ids","o-1,o-2","--reason","coverage"])).body).toEqual({org_ids:["o-1","o-2"],reason:"coverage"});
  expect(commandRequest(parseArgs(["admin","user-profile","u-1","--name","Anner","--org-ids","o-1,o-2"])).body).toEqual({display_name:"Anner",org_ids:["o-1","o-2"]});
  expect(commandRequest(parseArgs(["admin","user-profile","u-1","--org-ids","none"])).body).toEqual({org_ids:[]});
+ expect(commandRequest(parseArgs(["admin","user-profile","u-1","--name","New name"])).body).toEqual({display_name:"New name"});
+ expect(commandRequest(parseArgs(["admin","user-profile","u-1","--name","New name","--updated-at","2026-10-29T00:00:00.000Z"])).body).toEqual({display_name:"New name",updated_at:"2026-10-29T00:00:00.000Z"});
  expect(()=>commandRequest(parseArgs(["admin","user-profile","u-1"]))).toThrow("requires --name and/or --org-ids");
  expect(commandRequest(parseArgs(["tasks","assign","t-1","--user-id","u-2","--start-date","2026-06-01","--end-date","2026-06-03","--daily-hours","4","--deliverables","overall-report,dataset"])).body).toEqual({user_id:"u-2",start_date:"2026-06-01",end_date:"2026-06-03",daily_hours:4,all_day:false,deliverables:["overall-report","dataset"]});
  expect(commandRequest(parseArgs(["task-assignments","requirements","a-1","--deliverables","overall-report,dataset"])).body).toEqual({action:"set_deliverables",deliverables:["overall-report","dataset"]});

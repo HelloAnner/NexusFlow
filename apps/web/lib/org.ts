@@ -9,7 +9,7 @@ export type OrgNode = {
   children?: OrgNode[];
 };
 
-export type OrgFlat = { id: string; name: string; type: string; depth: number };
+export type OrgFlat = { id: string; name: string; type: string; depth: number; parent_id: string | null };
 
 export const ORG_TYPE_LABEL: Record<string, string> = {
   company: "公司",
@@ -27,7 +27,7 @@ export function flattenOrgs(nodes: unknown[]): OrgFlat[] {
     for (const raw of items) {
       const node = raw as OrgNode;
       if (!node || typeof node.id !== "string") continue;
-      out.push({ id: node.id, name: str(node.name, "未命名"), type: str(node.type, "department"), depth });
+      out.push({ id: node.id, name: str(node.name, "未命名"), type: str(node.type, "department"), depth, parent_id: node.parent_id || null });
       if (Array.isArray(node.children) && node.children.length) walk(node.children, depth + 1);
     }
   };
