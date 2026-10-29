@@ -35528,8 +35528,3605 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "nRF82",
+      "x": 12568,
+      "y": 0,
+      "name": "P11 权限管理 · 快速配置 · Light",
+      "theme": {
+        "mode": "light"
+      },
+      "clip": true,
+      "width": 1180,
+      "height": 720,
+      "fill": "$perm-surface",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "BiZQn",
+          "name": "模式栏及当前人员",
+          "width": "fill_container",
+          "height": 47,
+          "stroke": "$perm-line",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 28,
+          "padding": [
+            0,
+            16
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "Us71f",
+              "name": "快速配置模式",
+              "fill": "$perm-blue",
+              "content": "权限快速配置",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "NXmbN",
+              "name": "最终权限模式",
+              "fill": "$perm-muted",
+              "content": "用户最终权限",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "qSlRD",
+              "name": "顶部弹性空间",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "text",
+              "id": "j3N8Jj",
+              "name": "当前查看维度",
+              "fill": "$perm-muted",
+              "content": "当前查看维度：人员维度",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "j4ZnO",
+              "name": "当前人员",
+              "fill": "$perm-text",
+              "content": "Anner",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "600"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "quMZE",
+          "name": "双栏主体",
+          "width": "fill_container",
+          "height": "fill_container",
+          "children": [
+            {
+              "type": "frame",
+              "id": "XyPx1",
+              "name": "人员名单",
+              "width": 296,
+              "height": "fill_container",
+              "stroke": "$perm-line",
+              "strokeWidth": {
+                "right": 1
+              },
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "f3vojx",
+                  "name": "人员数量",
+                  "width": "fill_container",
+                  "height": 42,
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Lue3L",
+                      "name": "人员标题",
+                      "fill": "$perm-text",
+                      "content": "人员",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "YrnC7",
+                      "name": "人数",
+                      "fill": "$perm-muted",
+                      "content": "6",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "WBL2f",
+                  "name": "搜索人员",
+                  "width": "fill_container",
+                  "height": 30,
+                  "fill": "$perm-head",
+                  "stroke": "$perm-line",
+                  "strokeWidth": 1,
+                  "gap": 6,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "M9tAWO",
+                      "name": "搜索人员图标",
+                      "width": 13,
+                      "height": 13,
+                      "icon": "search",
+                      "library": "lucide",
+                      "fill": "$perm-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "TjAY3",
+                      "name": "搜索人员占位",
+                      "fill": "$perm-muted",
+                      "content": "搜索人员",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "CooAe",
+                  "name": "人员 · Anner",
+                  "width": "fill_container",
+                  "height": 33,
+                  "fill": "$perm-active",
+                  "stroke": "$perm-blue",
+                  "strokeWidth": {
+                    "left": 3
+                  },
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "PkNTt",
+                      "name": "Anner头像",
+                      "fill": "$perm-blue",
+                      "content": "A",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "enb31",
+                      "name": "Anner姓名",
+                      "fill": "$perm-blue",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Anner",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ruV65",
+                      "name": "Anner角色",
+                      "fill": "$perm-muted",
+                      "content": "拥有者",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "CVwSH",
+                      "name": "Anner状态",
+                      "fill": "$perm-muted",
+                      "content": "正常",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "OZgoI",
+                  "name": "人员 · 张明",
+                  "width": "fill_container",
+                  "height": 33,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-surface",
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SRjRA",
+                      "name": "张明头像",
+                      "fill": "$perm-blue",
+                      "content": "张",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "uvBR8",
+                      "name": "张明姓名",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "张明",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "R7ZQNz",
+                      "name": "张明角色",
+                      "fill": "$perm-muted",
+                      "content": "管理员",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "C9SXca",
+                      "name": "张明状态",
+                      "fill": "$perm-muted",
+                      "content": "正常",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "wamZn",
+                  "name": "人员 · 李敏",
+                  "width": "fill_container",
+                  "height": 33,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-surface",
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "B1wWvg",
+                      "name": "李敏头像",
+                      "fill": "$perm-blue",
+                      "content": "李",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "H5KzJV",
+                      "name": "李敏姓名",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "李敏",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "S8f5o",
+                      "name": "李敏角色",
+                      "fill": "$perm-muted",
+                      "content": "项目负责人",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "NLGtC",
+                      "name": "李敏状态",
+                      "fill": "$perm-muted",
+                      "content": "正常",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "b3or1",
+                  "name": "人员 · 王涛",
+                  "width": "fill_container",
+                  "height": 33,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-surface",
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "FK5Q5",
+                      "name": "王涛头像",
+                      "fill": "$perm-blue",
+                      "content": "王",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "usA18",
+                      "name": "王涛姓名",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "王涛",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "x9p0U",
+                      "name": "王涛角色",
+                      "fill": "$perm-muted",
+                      "content": "成员",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "GDW2u",
+                      "name": "王涛状态",
+                      "fill": "$perm-muted",
+                      "content": "正常",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "EGTBm",
+                  "name": "人员 · 陈晨",
+                  "width": "fill_container",
+                  "height": 33,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-surface",
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Zy4qH",
+                      "name": "陈晨头像",
+                      "fill": "$perm-blue",
+                      "content": "陈",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "p8ZNK",
+                      "name": "陈晨姓名",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "陈晨",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "L2pKKU",
+                      "name": "陈晨角色",
+                      "fill": "$perm-muted",
+                      "content": "成员",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "I9V8O",
+                      "name": "陈晨状态",
+                      "fill": "$perm-muted",
+                      "content": "正常",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "EM4tE",
+                  "name": "人员 · 赵蕾",
+                  "width": "fill_container",
+                  "height": 33,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-surface",
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "UL8E3",
+                      "name": "赵蕾头像",
+                      "fill": "$perm-blue",
+                      "content": "赵",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "rXx9P",
+                      "name": "赵蕾姓名",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "赵蕾",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "JwtxR",
+                      "name": "赵蕾角色",
+                      "fill": "$perm-muted",
+                      "content": "只读",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xG3Gh",
+                      "name": "赵蕾状态",
+                      "fill": "$perm-muted",
+                      "content": "正常",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "S5r70L",
+                  "name": "名单剩余空间",
+                  "width": "fill_container",
+                  "height": "fill_container"
+                },
+                {
+                  "type": "frame",
+                  "id": "pSCYp",
+                  "name": "名单统计",
+                  "width": "fill_container",
+                  "height": 31,
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "dkVvT",
+                      "name": "总人数",
+                      "fill": "$perm-muted",
+                      "content": "共 6 人",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "JdyVy",
+              "name": "权限详情",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "yiW5u",
+                  "name": "类型及权限搜索",
+                  "width": "fill_container",
+                  "height": 45,
+                  "gap": 22,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "f3lT6I",
+                      "name": "功能权限标签",
+                      "fill": "$perm-blue",
+                      "content": "功能权限  11",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "n3msJ",
+                      "name": "项目标签",
+                      "fill": "$perm-muted",
+                      "content": "项目  8",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NtcvZ",
+                      "name": "工具栏弹性空间",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "zB2iu",
+                      "name": "权限项搜索",
+                      "fill": "$perm-muted",
+                      "content": "⌕  搜索权限项",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "S6LdvO",
+                  "name": "所有权限项",
+                  "width": "fill_container",
+                  "height": 34,
+                  "fill": "$perm-head",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "dNW7p",
+                      "name": "所有权限项名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "所有权限项",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "RTdix",
+                      "name": "所有权限项 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "u7zpI",
+                          "name": "所有权限项表头0",
+                          "fill": "$perm-muted",
+                          "content": "查看",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "xddHg",
+                      "name": "所有权限项 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "P3FyyP",
+                          "name": "所有权限项表头1",
+                          "fill": "$perm-muted",
+                          "content": "编辑",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vCy7b",
+                      "name": "所有权限项 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "vrHmm",
+                          "name": "所有权限项表头2",
+                          "fill": "$perm-muted",
+                          "content": "管理",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "xKsdd",
+                  "name": "组织管理",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Nehh4",
+                      "name": "组织管理名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "组织管理",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "umKrr",
+                      "name": "组织管理 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "N06c3U",
+                          "name": "组织管理不支持0",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ULIXH",
+                      "name": "组织管理 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "DFg0D",
+                          "name": "组织管理不支持1",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "O9xurx",
+                      "name": "组织管理 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "ww3iM",
+                          "name": "组织管理授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "T6PJ2",
+                  "name": "人员管理",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "DHBRJ",
+                      "name": "人员管理名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "人员管理",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "P7AQT",
+                      "name": "人员管理 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "J9m1Nh",
+                          "name": "人员管理不支持0",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "F3xTug",
+                      "name": "人员管理 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Da23L",
+                          "name": "人员管理不支持1",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "or5PN",
+                      "name": "人员管理 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "Ixt7A",
+                          "name": "人员管理授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "WWQO7",
+                  "name": "项目能力",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "lcqYm",
+                      "name": "项目能力名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "项目能力",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "H2DIF",
+                      "name": "项目能力 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "L5mSm",
+                          "name": "项目能力授权状态0",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "L6MMGf",
+                      "name": "项目能力 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "u7guD",
+                          "name": "项目能力授权状态1",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "jHWqc",
+                      "name": "项目能力 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "C3M4t",
+                          "name": "项目能力授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gP88O",
+                  "name": "资源管理",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "KEkEv",
+                      "name": "资源管理名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "资源管理",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "TOp2J",
+                      "name": "资源管理 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "NpADF",
+                          "name": "资源管理授权状态0",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rpq17",
+                      "name": "资源管理 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "eX3kk",
+                          "name": "资源管理授权状态1",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "LibVr",
+                      "name": "资源管理 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "V87jHs",
+                          "name": "资源管理授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ozxsA",
+                  "name": "汇报与总结",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "s89Ywn",
+                      "name": "汇报与总结名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "汇报与总结",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XvJkU",
+                      "name": "汇报与总结 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "i3C5I",
+                          "name": "汇报与总结授权状态0",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "G5Vovb",
+                      "name": "汇报与总结 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "h80X0",
+                          "name": "汇报与总结授权状态1",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "QoV5J",
+                      "name": "汇报与总结 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "rkL0a",
+                          "name": "汇报与总结不支持2",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "tYweP",
+                  "name": "模型配置",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "O4kYnF",
+                      "name": "模型配置名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "模型配置",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "xuPqc",
+                      "name": "模型配置 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nF9LX",
+                          "name": "模型配置不支持0",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "d5UZzX",
+                      "name": "模型配置 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "SEFvZ",
+                          "name": "模型配置不支持1",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "b1OaJ",
+                      "name": "模型配置 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "Y6mVFl",
+                          "name": "模型配置授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ok0QE",
+                  "name": "系统设置",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "zs4VT",
+                      "name": "系统设置名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "系统设置",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "BGem3",
+                      "name": "系统设置 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "XHQ4g",
+                          "name": "系统设置不支持0",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "QS9hQ",
+                      "name": "系统设置 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "anFT8",
+                          "name": "系统设置不支持1",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "n33ar",
+                      "name": "系统设置 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "a1F61",
+                          "name": "系统设置授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "M2LRq",
+                  "name": "操作审计",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "W9Etdc",
+                      "name": "操作审计名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "操作审计",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hOjke",
+                      "name": "操作审计 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "WoZXF",
+                          "name": "操作审计授权状态0",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "TYKf3",
+                      "name": "操作审计 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "sl6CO",
+                          "name": "操作审计不支持1",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NIzvU",
+                      "name": "操作审计 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ToXJm",
+                          "name": "操作审计不支持2",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "e8P85p",
+                  "name": "API 客户端",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "iJiVf",
+                      "name": "API 客户端名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "API 客户端",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "TtIVh",
+                      "name": "API 客户端 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ffw6l",
+                          "name": "API 客户端不支持0",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "zJF0l",
+                      "name": "API 客户端 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "u9Qn5l",
+                          "name": "API 客户端不支持1",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "iTxow",
+                      "name": "API 客户端 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "tmYjv",
+                          "name": "API 客户端授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "pu6X9",
+                  "name": "通知管理",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "EMXjQ",
+                      "name": "通知管理名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "通知管理",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FEBFR",
+                      "name": "通知管理 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "mEYwR",
+                          "name": "通知管理授权状态0",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "pYm5L",
+                      "name": "通知管理 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "EXYU7",
+                          "name": "通知管理授权状态1",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ZbSXD",
+                      "name": "通知管理 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nI8OU",
+                          "name": "通知管理不支持2",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mSSFJ",
+                  "name": "文件管理",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Ys1Ul",
+                      "name": "文件管理名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "文件管理",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "gBVPF",
+                      "name": "文件管理 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "wdflc",
+                          "name": "文件管理授权状态0",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "sWQdK",
+                      "name": "文件管理 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "iAqjv",
+                          "name": "文件管理授权状态1",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole-open",
+                          "library": "lucide",
+                          "fill": "$perm-red"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MZKM1",
+                      "name": "文件管理 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "kMTeT",
+                          "name": "文件管理授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "XDm4p",
+                  "name": "矩阵剩余空间",
+                  "width": "fill_container",
+                  "height": "fill_container"
+                },
+                {
+                  "type": "frame",
+                  "id": "L28pt",
+                  "name": "权限图例",
+                  "width": "fill_container",
+                  "height": 36,
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "gap": 18,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "S4gYB",
+                      "name": "锁图例",
+                      "fill": "$perm-muted",
+                      "content": "闭锁 已授权 · 开锁 未授权",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "fIYQz",
+                      "name": "个人设置图例",
+                      "fill": "$perm-muted",
+                      "content": "● 个人设置：蓝=额外授权，红=单独拒绝",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "unNk5",
+      "x": 13828,
+      "y": 0,
+      "name": "P11 权限管理 · 最终权限 · Dark",
+      "theme": {
+        "mode": "dark"
+      },
+      "clip": true,
+      "width": 1180,
+      "height": 720,
+      "fill": "$perm-surface",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "ZDq8w",
+          "name": "模式栏及当前人员",
+          "width": "fill_container",
+          "height": 47,
+          "stroke": "$perm-line",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 28,
+          "padding": [
+            0,
+            16
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "gC70z",
+              "name": "快速配置模式",
+              "fill": "$perm-muted",
+              "content": "权限快速配置",
+              "fontFamily": "Inter",
+              "fontSize": 14
+            },
+            {
+              "type": "text",
+              "id": "kiY75",
+              "name": "最终权限模式",
+              "fill": "$perm-blue",
+              "content": "用户最终权限",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "eUn9A",
+              "name": "顶部弹性空间",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "text",
+              "id": "yMvdV",
+              "name": "当前查看维度",
+              "fill": "$perm-muted",
+              "content": "当前查看维度：人员维度",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "ickmX",
+              "name": "当前人员",
+              "fill": "$perm-text",
+              "content": "Anner",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "600"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "LdXsw",
+          "name": "双栏主体",
+          "width": "fill_container",
+          "height": "fill_container",
+          "children": [
+            {
+              "type": "frame",
+              "id": "kF8cK",
+              "name": "人员名单",
+              "width": 296,
+              "height": "fill_container",
+              "stroke": "$perm-line",
+              "strokeWidth": {
+                "right": 1
+              },
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "uzV3L",
+                  "name": "人员数量",
+                  "width": "fill_container",
+                  "height": 42,
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "m89b2a",
+                      "name": "人员标题",
+                      "fill": "$perm-text",
+                      "content": "人员",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "d1jyL",
+                      "name": "人数",
+                      "fill": "$perm-muted",
+                      "content": "6",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yxMfK",
+                  "name": "搜索人员",
+                  "width": "fill_container",
+                  "height": 30,
+                  "fill": "$perm-head",
+                  "stroke": "$perm-line",
+                  "strokeWidth": 1,
+                  "gap": 6,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "n40aOS",
+                      "name": "搜索人员图标",
+                      "width": 13,
+                      "height": 13,
+                      "icon": "search",
+                      "library": "lucide",
+                      "fill": "$perm-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "WJRUf",
+                      "name": "搜索人员占位",
+                      "fill": "$perm-muted",
+                      "content": "搜索人员",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Z39BUl",
+                  "name": "人员 · Anner",
+                  "width": "fill_container",
+                  "height": 33,
+                  "fill": "$perm-active",
+                  "stroke": "$perm-blue",
+                  "strokeWidth": {
+                    "left": 3
+                  },
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "UtwIq",
+                      "name": "Anner头像",
+                      "fill": "$perm-blue",
+                      "content": "A",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "S15oqm",
+                      "name": "Anner姓名",
+                      "fill": "$perm-blue",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Anner",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "v7tdeN",
+                      "name": "Anner角色",
+                      "fill": "$perm-muted",
+                      "content": "拥有者",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "w8xZI",
+                      "name": "Anner状态",
+                      "fill": "$perm-muted",
+                      "content": "正常",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "g9gh8",
+                  "name": "人员 · 张明",
+                  "width": "fill_container",
+                  "height": 33,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-surface",
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "cyXX4",
+                      "name": "张明头像",
+                      "fill": "$perm-blue",
+                      "content": "张",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "IMc58",
+                      "name": "张明姓名",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "张明",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "r1nwI",
+                      "name": "张明角色",
+                      "fill": "$perm-muted",
+                      "content": "管理员",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "EGBDv",
+                      "name": "张明状态",
+                      "fill": "$perm-muted",
+                      "content": "正常",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Ro3xt",
+                  "name": "人员 · 李敏",
+                  "width": "fill_container",
+                  "height": 33,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-surface",
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "prRnP",
+                      "name": "李敏头像",
+                      "fill": "$perm-blue",
+                      "content": "李",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "w3YcC",
+                      "name": "李敏姓名",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "李敏",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ukVrk",
+                      "name": "李敏角色",
+                      "fill": "$perm-muted",
+                      "content": "项目负责人",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "auSLR",
+                      "name": "李敏状态",
+                      "fill": "$perm-muted",
+                      "content": "正常",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "J8tuP9",
+                  "name": "人员 · 王涛",
+                  "width": "fill_container",
+                  "height": 33,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-surface",
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "T9A8z",
+                      "name": "王涛头像",
+                      "fill": "$perm-blue",
+                      "content": "王",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "G7tSL",
+                      "name": "王涛姓名",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "王涛",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Dgphh",
+                      "name": "王涛角色",
+                      "fill": "$perm-muted",
+                      "content": "成员",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "sDIOx",
+                      "name": "王涛状态",
+                      "fill": "$perm-muted",
+                      "content": "正常",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "AhuXC",
+                  "name": "人员 · 陈晨",
+                  "width": "fill_container",
+                  "height": 33,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-surface",
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "UYpyH",
+                      "name": "陈晨头像",
+                      "fill": "$perm-blue",
+                      "content": "陈",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "C1E7TI",
+                      "name": "陈晨姓名",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "陈晨",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Wusqb",
+                      "name": "陈晨角色",
+                      "fill": "$perm-muted",
+                      "content": "成员",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "WfmP2",
+                      "name": "陈晨状态",
+                      "fill": "$perm-muted",
+                      "content": "正常",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "f1QmbD",
+                  "name": "人员 · 赵蕾",
+                  "width": "fill_container",
+                  "height": 33,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-surface",
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "U02T8",
+                      "name": "赵蕾头像",
+                      "fill": "$perm-blue",
+                      "content": "赵",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "C2scXt",
+                      "name": "赵蕾姓名",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "赵蕾",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "RdM1E",
+                      "name": "赵蕾角色",
+                      "fill": "$perm-muted",
+                      "content": "只读",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "djVB5",
+                      "name": "赵蕾状态",
+                      "fill": "$perm-muted",
+                      "content": "正常",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "miz7E",
+                  "name": "名单剩余空间",
+                  "width": "fill_container",
+                  "height": "fill_container"
+                },
+                {
+                  "type": "frame",
+                  "id": "sqxJW",
+                  "name": "名单统计",
+                  "width": "fill_container",
+                  "height": 31,
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "padding": [
+                    0,
+                    14
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "A6KWt",
+                      "name": "总人数",
+                      "fill": "$perm-muted",
+                      "content": "共 6 人",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ajqCs",
+              "name": "权限详情",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "cLMgN",
+                  "name": "类型及权限搜索",
+                  "width": "fill_container",
+                  "height": 45,
+                  "gap": 22,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Lxiw4",
+                      "name": "功能权限标签",
+                      "fill": "$perm-blue",
+                      "content": "功能权限  11",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "MNCa3",
+                      "name": "项目标签",
+                      "fill": "$perm-muted",
+                      "content": "项目  8",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "zWnos",
+                      "name": "工具栏弹性空间",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "KjZmb",
+                      "name": "权限项搜索",
+                      "fill": "$perm-muted",
+                      "content": "⌕  搜索权限项",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hW9iT",
+                  "name": "所有权限项",
+                  "width": "fill_container",
+                  "height": 34,
+                  "fill": "$perm-head",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "HxGbm",
+                      "name": "所有权限项名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "所有权限项",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "JoNI5",
+                      "name": "所有权限项 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "d0GCi5",
+                          "name": "所有权限项表头0",
+                          "fill": "$perm-muted",
+                          "content": "查看",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "v0toQQ",
+                      "name": "所有权限项 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Bm8pP",
+                          "name": "所有权限项表头1",
+                          "fill": "$perm-muted",
+                          "content": "编辑",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "o4lpF",
+                      "name": "所有权限项 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "H8ESnh",
+                          "name": "所有权限项表头2",
+                          "fill": "$perm-muted",
+                          "content": "管理",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "a95f3O",
+                  "name": "组织管理",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "HKDvh",
+                      "name": "组织管理名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "组织管理",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "p3QwJT",
+                      "name": "组织管理 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gVnXe",
+                          "name": "组织管理不支持0",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "VfSux",
+                      "name": "组织管理 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "KGhtp",
+                          "name": "组织管理不支持1",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "OSWlk",
+                      "name": "组织管理 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "kyWmE",
+                          "name": "组织管理授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "kqscg",
+                  "name": "人员管理",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "a7kWB",
+                      "name": "人员管理名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "人员管理",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Tumn4",
+                      "name": "人员管理 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "u5A8pU",
+                          "name": "人员管理不支持0",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "zS6Hw",
+                      "name": "人员管理 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "U09kaa",
+                          "name": "人员管理不支持1",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "YEnS1",
+                      "name": "人员管理 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "KTYT1",
+                          "name": "人员管理授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "BEAHQ",
+                  "name": "项目能力",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "P3cRZm",
+                      "name": "项目能力名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "项目能力",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "q8XMHX",
+                      "name": "项目能力 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "xRL6l",
+                          "name": "项目能力授权状态0",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "h0wjV5",
+                      "name": "项目能力 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "rKXUA",
+                          "name": "项目能力授权状态1",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fSYdW",
+                      "name": "项目能力 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "Z6nAIx",
+                          "name": "项目能力授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "LyILG",
+                  "name": "资源管理",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "oU4wn",
+                      "name": "资源管理名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "资源管理",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ZKT7k",
+                      "name": "资源管理 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "dcz3p",
+                          "name": "资源管理授权状态0",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "HQ5OM",
+                      "name": "资源管理 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "iusWd",
+                          "name": "资源管理授权状态1",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ZW7lK",
+                      "name": "资源管理 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "i1L01",
+                          "name": "资源管理授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "E0N5CW",
+                  "name": "汇报与总结",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "VXad4",
+                      "name": "汇报与总结名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "汇报与总结",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "o3vz9",
+                      "name": "汇报与总结 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "E59UQn",
+                          "name": "汇报与总结授权状态0",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "N1ONO",
+                      "name": "汇报与总结 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "XJeNL",
+                          "name": "汇报与总结授权状态1",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "z0hgBX",
+                      "name": "汇报与总结 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "NYUa0",
+                          "name": "汇报与总结不支持2",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "z2z33e",
+                  "name": "模型配置",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "qgQmK",
+                      "name": "模型配置名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "模型配置",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "n2JB2",
+                      "name": "模型配置 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "yXk31",
+                          "name": "模型配置不支持0",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ZSSdO",
+                      "name": "模型配置 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "vhTCq",
+                          "name": "模型配置不支持1",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "HkdEw",
+                      "name": "模型配置 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "ICZD9",
+                          "name": "模型配置授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "g7UPz",
+                  "name": "系统设置",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "nHc6U",
+                      "name": "系统设置名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "系统设置",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "P5InBX",
+                      "name": "系统设置 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "p0twTJ",
+                          "name": "系统设置不支持0",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "eFDwt",
+                      "name": "系统设置 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "qbSi4",
+                          "name": "系统设置不支持1",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "E180CP",
+                      "name": "系统设置 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "RdXnE",
+                          "name": "系统设置授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "EvVcr",
+                  "name": "操作审计",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "cOl6M",
+                      "name": "操作审计名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "操作审计",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "SBTes",
+                      "name": "操作审计 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "ildl4",
+                          "name": "操作审计授权状态0",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "tNYjR",
+                      "name": "操作审计 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "YNNps",
+                          "name": "操作审计不支持1",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "xm29b",
+                      "name": "操作审计 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "T51dF",
+                          "name": "操作审计不支持2",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "PHop6",
+                  "name": "API 客户端",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "p8blc",
+                      "name": "API 客户端名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "API 客户端",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "f0QC8",
+                      "name": "API 客户端 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "qPKt7",
+                          "name": "API 客户端不支持0",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "TUKOr",
+                      "name": "API 客户端 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "alhTJ",
+                          "name": "API 客户端不支持1",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "TYccR",
+                      "name": "API 客户端 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "GYKnz",
+                          "name": "API 客户端授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "poyiW",
+                  "name": "通知管理",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "YsVTW",
+                      "name": "通知管理名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "通知管理",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FJd7l",
+                      "name": "通知管理 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "GWME4",
+                          "name": "通知管理授权状态0",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "IgfV2",
+                      "name": "通知管理 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "AbAJ1",
+                          "name": "通知管理授权状态1",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "HPJgQ",
+                      "name": "通知管理 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ArcGm",
+                          "name": "通知管理不支持2",
+                          "fill": "$perm-muted",
+                          "content": "—",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "iwFz2",
+                  "name": "文件管理",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$perm-surface",
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "EoX9o",
+                      "name": "文件管理名称",
+                      "fill": "$perm-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "文件管理",
+                      "fontFamily": "Inter",
+                      "fontSize": 12
+                    },
+                    {
+                      "type": "frame",
+                      "id": "oOLiP",
+                      "name": "文件管理 · 查看",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "RtE8k",
+                          "name": "文件管理授权状态0",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "y3K1kh",
+                      "name": "文件管理 · 编辑",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "CNRNA",
+                          "name": "文件管理授权状态1",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole-open",
+                          "library": "lucide",
+                          "fill": "$perm-red"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rQc1E",
+                      "name": "文件管理 · 管理",
+                      "width": 94,
+                      "height": "fill_container",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "YPMkI",
+                          "name": "文件管理授权状态2",
+                          "width": 15,
+                          "height": 15,
+                          "icon": "lock-keyhole",
+                          "library": "lucide",
+                          "fill": "$perm-blue"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "C0cO9",
+                  "name": "矩阵剩余空间",
+                  "width": "fill_container",
+                  "height": "fill_container"
+                },
+                {
+                  "type": "frame",
+                  "id": "glP9a",
+                  "name": "权限图例",
+                  "width": "fill_container",
+                  "height": 36,
+                  "stroke": "$perm-line",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "gap": 18,
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "j2LI3t",
+                      "name": "锁图例",
+                      "fill": "$perm-muted",
+                      "content": "闭锁 已授权 · 开锁 未授权",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "JnXTY",
+                      "name": "个人设置图例",
+                      "fill": "$perm-muted",
+                      "content": "只读：角色默认 + 个人设置后的最终权限",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
+  "themes": {
+    "mode": [
+      "light",
+      "dark"
+    ]
+  },
   "variables": {
     "ink": {
       "type": "color",
@@ -35590,6 +39187,142 @@
     "red": {
       "type": "color",
       "value": "#EE4B43"
+    },
+    "perm-surface": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FFFFFF",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#141922",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "perm-text": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#1F2329",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#E6EAF0",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "perm-muted": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#878C94",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#8B95A7",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "perm-line": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#E9E9E7",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#2A3341",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "perm-head": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FAFAF9",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#1C2330",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "perm-active": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#EAF1FE",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#182C4B",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "perm-blue": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#2F6FED",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#6EA8FF",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
+    },
+    "perm-red": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#EE4B43",
+          "theme": {
+            "mode": "light"
+          }
+        },
+        {
+          "value": "#FF7979",
+          "theme": {
+            "mode": "dark"
+          }
+        }
+      ]
     }
   },
   "fileToken": "c265b472-469a-43c1-aa62-44e515d122dc"

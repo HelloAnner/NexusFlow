@@ -60,5 +60,8 @@ CLI
 
 页面
 ----
-  /settings/permissions  →  共享 <rbac-panel>
+  /settings/permissions，原生 React 页面，不嵌入门户或其他系统。
   入口: 侧栏“管理 → 权限管理”，仅 canManage 角色可见。
+  视觉与交互: docs/pages/17-permissions.md（按用户提供的权限矩阵截图）。
+  查看/编辑/管理以目录声明为准；不支持的动作显示 —，不伪造导出动作。
+  切换人员忽略迟到请求；保存只刷新操作对应人员，不串改当前矩阵。

@@ -136,6 +136,8 @@ export default function PermissionsPage() {
   const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const matricesRef = useRef(new Map<string, RbacMatrix>());
+  const selectedIdRef = useRef<string | null>(null);
+  const matrixRequest = useRef(0);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const readOnly = mode === "final";
@@ -147,6 +149,8 @@ export default function PermissionsPage() {
   };
 
   const loadMatrix = async (subjectId: string, force = false) => {
+    if (selectedIdRef.current !== subjectId) return;
+    const request = ++matrixRequest.current;
     if (!force) {
       const cached = matricesRef.current.get(subjectId);
       if (cached) {
@@ -158,10 +162,13 @@ export default function PermissionsPage() {
     setMatrix((prev) => (prev && prev.subject.id === subjectId ? prev : null));
     try {
       const result = await api<RbacMatrix>(`/v1/rbac/matrix?subject_id=${encodeURIComponent(subjectId)}`);
+      if (request !== matrixRequest.current || selectedIdRef.current !== subjectId) return;
       matricesRef.current.set(subjectId, result);
       setMatrix(result);
     } catch (error) {
-      notify("error", error instanceof Error ? error.message : "权限矩阵加载失败");
+      if (request === matrixRequest.current && selectedIdRef.current === subjectId) {
+        notify("error", error instanceof Error ? error.message : "权限矩阵加载失败");
+      }
     }
   };
 
@@ -177,6 +184,7 @@ export default function PermissionsPage() {
         setCatalog(catalogResult);
         setSubjects(subjectResult.items);
         const first = subjectResult.items[0]?.id ?? null;
+        selectedIdRef.current = first;
         setSelectedId(first);
         if (first) await loadMatrix(first);
       } catch (error) {
@@ -185,12 +193,16 @@ export default function PermissionsPage() {
     })();
     return () => {
       cancelled = true;
+      selectedIdRef.current = null;
+      matrixRequest.current += 1;
+      if (noticeTimer.current) clearTimeout(noticeTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const selectSubject = (subjectId: string) => {
     if (subjectId === selectedId) return;
+    selectedIdRef.current = subjectId;
     setSelectedId(subjectId);
     setMatrix(null);
     setEntitySearch("");
@@ -199,32 +211,18 @@ export default function PermissionsPage() {
 
   const setEffect = async (entity: RbacEntity, action: RbacActionKey, effect: RbacEffect | null) => {
     if (!matrix || readOnly) return;
-    const key = `${entity.type}|${entity.id}|${action}`;
+    const subjectId = matrix.subject.id;
+    const key = `${subjectId}|${entity.type}|${entity.id}|${action}`;
     if (pending.has(key)) return;
     setPending((prev) => new Set(prev).add(key));
     try {
-      const result = await api<{ cell: RbacCell }>("/v1/rbac/matrix", {
+      await api<{ cell: RbacCell }>("/v1/rbac/matrix", {
         method: "PUT",
-        body: JSON.stringify({ subject_id: matrix.subject.id, type: entity.type, id: entity.id, action, effect }),
+        body: JSON.stringify({ subject_id: subjectId, type: entity.type, id: entity.id, action, effect }),
       });
-      // 功能/数据源变更会影响后代或闸门，整表重载；其余只更新一格。
-      if (entity.type === "feature" || entity.type === "datasource") {
-        matricesRef.current.delete(matrix.subject.id);
-        await loadMatrix(matrix.subject.id, true);
-      } else {
-        setMatrix((prev) => {
-          if (!prev) return prev;
-          const cells = [...prev.cells];
-          const index = cells.findIndex(
-            (cell) => cell.type === entity.type && cell.id === entity.id && cell.action === action,
-          );
-          if (index >= 0) cells[index] = result.cell;
-          else cells.push(result.cell);
-          const next = { ...prev, cells };
-          matricesRef.current.set(prev.subject.id, next);
-          return next;
-        });
-      }
+      // 始终刷新这次操作的人员；切换人员后不把旧响应写入新矩阵。
+      matricesRef.current.delete(subjectId);
+      await loadMatrix(subjectId, true);
     } catch (error) {
       notify("error", error instanceof Error ? error.message : "保存失败，已恢复");
     } finally {
@@ -296,12 +294,12 @@ export default function PermissionsPage() {
     const source = cell?.source ?? "role";
     const overridden = source === "allow" || source === "deny";
     const gate = gateFor(entity, action.key);
-    const disabled = readOnly || !gate || pending.has(`${entity.type}|${entity.id}|${action.key}`) || !matrix;
+    const disabled = readOnly || !gate || pending.has(`${matrix?.subject.id}|${entity.type}|${entity.id}|${action.key}`) || !matrix;
     const title = !gate
       ? "该成员的角色不具备此功能，资源授权不会生效"
       : `${action.label}：${allow ? "允许" : "拒绝"}${overridden ? "（个人设置）" : "（角色默认）"}${readOnly ? "" : "，点击切换"}`;
     const icon = allow ? <Lock size={15} /> : <Unlock size={15} />;
-    const color = !allow ? "text-ink-3" : overridden ? (source === "deny" ? "text-red" : "text-ink") : "text-blue";
+    const color = source === "deny" ? "text-red" : allow ? "text-blue" : "text-ink-3";
     return (
       <span key={action.key} className="group/cell relative flex w-[94px] items-center justify-center">
         {readOnly ? (
@@ -337,7 +335,7 @@ export default function PermissionsPage() {
                   event.stopPropagation();
                   void setEffect(entity, action.key, null);
                 }}
-                className="absolute -top-1 right-[5px] hidden h-[14px] w-[14px] items-center justify-center rounded-full border border-border bg-panel p-0 text-ink-3 hover:text-ink group-hover/cell:flex"
+                className="absolute -top-1 right-[5px] hidden h-[14px] w-[14px] items-center justify-center rounded-full border border-border bg-panel p-0 text-ink-3 hover:text-ink group-hover/cell:flex group-focus-within/cell:flex"
               >
                 <RotateCcw size={8} />
               </button>
@@ -640,7 +638,7 @@ export default function PermissionsPage() {
               <span className="flex items-center gap-1"><Lock size={12} />已授权</span>
               <span className="flex items-center gap-1"><Unlock size={12} />未授权</span>
               <span className="flex items-center gap-1"><i className="h-[3px] w-[3px] rounded-full bg-blue" />个人设置（蓝=额外授权，红=单独拒绝）</span>
-              <span>— 该角色不支持此动作</span>
+              <span>— 此权限项不支持该动作</span>
             </div>
           </section>
         </div>
