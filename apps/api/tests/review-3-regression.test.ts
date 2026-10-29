@@ -63,7 +63,7 @@ const sql:any=async(strings:TemplateStringsArray,...v:any[])=>{
   if(q.startsWith("INSERT INTO nexusflow.users")){users.push({id:v[0],username:v[1],password_hash:v[2],display_name:v[3],role:v[4],tenant_id:v[5],org_id:v[6],status:"active",portal_id:null,portal_permissions:null});return [];}
   if(q.startsWith("INSERT INTO nexusflow.records")){records.push(row(v[0],v[1],structuredClone(v[4]),v[3],v[2]));return [];}
   if(q.startsWith("INSERT INTO nexusflow.audit")){audits.push({q,v});return [];}
-  if(q.startsWith("UPDATE nexusflow.users SET role=")){const account=users.find(u=>u.id===v[2]);if(account){account.role=v[0];account.org_id=v[1];}return [];}
+  if(q.startsWith("UPDATE nexusflow.users SET role=")){const account=users.find(u=>u.id===v[3]);if(account){account.role=v[0];account.org_id=v[1];account.org_ids=v[2];}return [];}
   if(q.startsWith("UPDATE nexusflow.users SET display_name=")){const account=users.find(u=>u.id===v[3]);if(account){account.display_name=v[0];account.role=v[1];account.org_id=v[2];account.status="active";}return [];}
   if(q.startsWith("UPDATE nexusflow.users SET password_hash=")){const nameIndex=/lower\(username\)=lower\(\$(\d+)\)/.exec(q)?.[1];const account=nameIndex!=null?users.find(u=>u.tenant_id===v[+tenant![1]!]&&u.status==="active"&&!u.portal_id&&u.username.toLowerCase()===String(v[+nameIndex]).toLowerCase()):users.find(u=>u.id===v[1]&&u.tenant_id===v[2]&&u.status==="active"&&!u.portal_id&&!u.password_hash);if(!account)return [];account.password_hash=v[0];return [{id:account.id}];}
   if(q.startsWith("UPDATE nexusflow.records")){

@@ -35,7 +35,7 @@
 | [pages/05-projects.md](pages/05-projects.md) | Linear Projects + Wrike Spaces | 项目中心 |
 | [pages/06-project-detail.md](pages/06-project-detail.md) | Linear Project View + Figma Panel | 项目详情右侧面板 |
 | [pages/07-task-detail.md](pages/07-task-detail.md) | Linear Issue Detail + Figma Panel | 任务详情右侧面板 |
-| [pages/08-team.md](pages/08-team.md) | Float + Resource Guru + Wrike Workload | 团队与资源 |
+| [pages/08-team.md](pages/08-team.md) | Linear Admin + Wrike Organization | 用户管理与部门管理 |
 | [pages/09-schedule.md](pages/09-schedule.md) | Instagantt + Wrike Gantt + Linear Timeline | 排程中心 |
 | [pages/10-conflicts.md](pages/10-conflicts.md) | Linear Triage + Wrike Risk | 冲突与风险中心 |
 | [pages/11-files.md](pages/11-files.md) | Notion Files + Wrike Files | 资料库 |

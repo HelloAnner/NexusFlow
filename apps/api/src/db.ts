@@ -19,6 +19,8 @@ export async function migrate() {
   await sql`ALTER TABLE nexusflow.users ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'member'`;
   await sql`ALTER TABLE nexusflow.users ADD COLUMN IF NOT EXISTS tenant_id text`;
   await sql`ALTER TABLE nexusflow.users ADD COLUMN IF NOT EXISTS org_id text`;
+  await sql`ALTER TABLE nexusflow.users ADD COLUMN IF NOT EXISTS org_ids text[] NOT NULL DEFAULT '{}'`;
+  await sql`UPDATE nexusflow.users SET org_ids=ARRAY[org_id] WHERE org_id IS NOT NULL AND cardinality(org_ids)=0`;
   await sql`ALTER TABLE nexusflow.users ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active'`;
   await sql`ALTER TABLE nexusflow.users ADD COLUMN IF NOT EXISTS portal_id text`;
   await sql`ALTER TABLE nexusflow.users ADD COLUMN IF NOT EXISTS portal_tenant_id text`;
