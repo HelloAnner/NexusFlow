@@ -31,7 +31,7 @@ def main():
         result = subprocess.run([cli] + list(tokens) + ['--json'], env=context,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         if status is not None:
-            assert result.returncode != 0 and '(%s)' % status in result.stderr, 'expected HTTP %s' % status
+            assert result.returncode != 0 and '(%s)' % status in result.stderr, 'expected HTTP %s; exit=%s %s' % (status, result.returncode, result.stderr.strip())
             return None
         assert result.returncode == 0, 'CLI failed: ' + result.stderr.strip()
         return json.loads(result.stdout)
@@ -64,7 +64,9 @@ def main():
         assert command(['version'])['version'] == commit, 'running service does not match attachment'
         try:
             for name, parent in [('验收部门-' + tag, None), ('验收子部门-' + tag, 'first')]:
-                data = {'name': name, 'type': 'department', 'parent_id': departments[0] if parent else None}
+                data = {'name': name, 'type': 'department'}
+                if parent:
+                    data['parent_id'] = departments[0]
                 departments.append(command(['orgs', 'create', json.dumps(data)])['id'])
             a, b = departments
             command(['orgs', 'update', a, json.dumps({'parent_id': b})], status=400)

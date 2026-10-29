@@ -120,6 +120,12 @@ test("admin profile PATCH rejects invalid fields, ordinary users, foreign depart
  expect((await request("/api/admin/users/u2/profile","PATCH",{display_name:"No",updated_at:new Date(0).toISOString()})).status).toBe(409);
  expect(target().display_name).toBe("Two");expect(target().org_ids).toEqual(["o2"]);expect(sqlWrites).toEqual([]);
 });
+test("department creation permits an omitted root parent and ordinary users cannot mutate departments",async()=>{
+ expect((await request("/api/orgs","POST",{name:"Root department",type:"department"})).status).toBe(201);
+ expect((await request("/api/orgs","POST",{name:"Not allowed",type:"department"},member)).status).toBe(403);
+ expect((await request("/api/orgs/o1","PATCH",{name:"Not allowed"},member)).status).toBe(403);
+ expect((await request("/api/orgs/o1","DELETE",undefined,member)).status).toBe(403);
+});
 test("department structure edits allow reparenting but reject cycles, foreign parents and scoped managers",async()=>{
  expect((await request("/api/orgs/o1","PATCH",{parent_id:"o2"})).status).toBe(200);
  expect(records.find(r=>r.id==="o1")!.data.parent_id).toBe("o2");
