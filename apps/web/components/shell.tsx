@@ -39,7 +39,7 @@ const NAV = [
   },
 ];
 
-/** 管理序列固定在侧栏底部，仅管理员可见。 */
+/** 管理序列紧接工具台，仅管理员可见。 */
 const MANAGE_NAV = [
   { href: "/settings/users", icon: UserRound, key: "users", label: "用户管理" },
   { href: "/settings/departments", icon: Building2, key: "departments", label: "部门管理" },
@@ -125,7 +125,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </div>
           ))}
           {manage ? (
-            <div className="mt-auto border-t border-border/60">
+            <div>
               <p className="px-2 pt-3.5 pb-1 text-[11px] font-medium tracking-[0.02em] text-ink-3">管理</p>
               <div className="flex flex-col gap-0.5">
                 {MANAGE_NAV.map((n) => {

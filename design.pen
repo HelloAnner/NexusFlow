@@ -18870,20 +18870,10 @@
             },
             {
               "type": "frame",
-              "id": "eyQcs",
-              "name": "业务与管理间隔",
-              "width": "fill_container",
-              "height": "fill_container"
-            },
-            {
-              "type": "frame",
               "id": "qEvWV",
               "name": "仅管理员可见",
               "width": "fill_container",
               "stroke": "$admin-line",
-              "strokeWidth": {
-                "top": 1
-              },
               "layout": "vertical",
               "gap": 2,
               "padding": [
@@ -18982,6 +18972,13 @@
                   ]
                 }
               ]
+            },
+            {
+              "type": "frame",
+              "id": "eyQcs",
+              "name": "管理与底部账号间隔",
+              "width": "fill_container",
+              "height": "fill_container"
             },
             {
               "type": "text",
@@ -36200,20 +36197,10 @@
             },
             {
               "type": "frame",
-              "id": "Mp8DR",
-              "name": "业务与管理间隔",
-              "width": "fill_container",
-              "height": "fill_container"
-            },
-            {
-              "type": "frame",
               "id": "JNUms",
               "name": "仅管理员可见",
               "width": "fill_container",
               "stroke": "$admin-line",
-              "strokeWidth": {
-                "top": 1
-              },
               "layout": "vertical",
               "gap": 2,
               "padding": [
@@ -36312,6 +36299,13 @@
                   ]
                 }
               ]
+            },
+            {
+              "type": "frame",
+              "id": "Mp8DR",
+              "name": "管理与底部账号间隔",
+              "width": "fill_container",
+              "height": "fill_container"
             },
             {
               "type": "text",
