@@ -264,19 +264,6 @@ async function writeAudit(input: {
   `;
 }
 
-async function ensureCanModifyFeature(tenantId: string, subject: Row, effect: RbacEffect | null): Promise<void> {
-  if (effect !== 'deny') return;
-  const role = asString(subject.role);
-  if (!['center_director', 'super_admin'].includes(role)) return;
-  const rows = await db()`
-    SELECT 1 FROM nexusflow.users
-     WHERE tenant_id = ${tenantId} AND id <> ${String(subject.id)}
-       AND status = 'active' AND role IN ('center_director', 'super_admin')
-     LIMIT 1
-  `;
-  if (rows.length === 0) throw new Error('cannot revoke the last administrator feature');
-}
-
 async function setCell(input: {
   tenantId: string;
   subjectId: string;
@@ -293,7 +280,6 @@ async function setCell(input: {
   if (input.type === 'feature' && input.effect === 'allow') {
     throw new Error('feature grant is not supported; change the member role instead');
   }
-  await ensureCanModifyFeature(input.tenantId, subject, input.effect);
   const ctx = await projectContext(subject);
   const beforeOverrides = await loadOverrides(input.tenantId, input.subjectId);
   if (input.effect === null) {
