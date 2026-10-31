@@ -6,12 +6,12 @@ export { orgParentAllowed };
 
 export async function validateOrgsCreate(user:User,data:Record<string,any>){
  const type=String(data.type||""),parentId=data.parent_id?String(data.parent_id):null;
- if(!(type in orgTypeOrder))throw new Error("unknown organization type");
+ if(!(type in orgTypeOrder))throw new Error("invalid organization type");
  if(parentId){
   const parent=await orgKind(user,parentId);
   if(!parent)throw new Error("parent organization unavailable");
   if(!orgParentAllowed(type,parent))throw new Error("organization hierarchy must be company > second level > center > department; studios belong to a center or department");
- }else if(!orgParentAllowed(type,null))throw new Error("only a company organization can be created as a root");
+ }else if(!orgParentAllowed(type,null))throw new Error("invalid organization hierarchy: only a company can be a root");
 }
 
 export function guardPatch(user:User,kind:string,patch:Record<string,unknown>){
@@ -28,7 +28,7 @@ export async function validateOrgParent(tx:any,tenantId:string|null,id:string,pa
   const parentType=nodes.get(parent)?.type;
   if(!parentType)throw new Error("parent organization unavailable");
   if(!orgParentAllowed(effectiveType,parentType))throw new Error("organization hierarchy must be company > second level > center > department; studios belong to a center or department");
- }else if(!orgParentAllowed(effectiveType,null))throw new Error("only a company organization can be a root");
+ }else if(!orgParentAllowed(effectiveType,null))throw new Error("invalid organization hierarchy: only a company can be a root");
  const seen=new Set([id]);
  let current=parent;
  while(current){

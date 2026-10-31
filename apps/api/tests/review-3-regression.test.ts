@@ -120,20 +120,22 @@ test("admin profile PATCH rejects invalid fields, ordinary users, foreign depart
  expect((await request("/api/admin/users/u2/profile","PATCH",{display_name:"No",updated_at:new Date(0).toISOString()})).status).toBe(409);
  expect(target().display_name).toBe("Two");expect(target().org_ids).toEqual(["o2"]);expect(sqlWrites).toEqual([]);
 });
-test("department creation permits an omitted root parent and ordinary users cannot mutate departments",async()=>{
- expect((await request("/api/orgs","POST",{name:"Root department",type:"department"})).status).toBe(201);
+test("organization creation enforces company-first hierarchy and ordinary users cannot mutate departments",async()=>{
+ expect((await request("/api/orgs","POST",{name:"Root company",type:"company"})).status).toBe(201);
+ expect((await request("/api/orgs","POST",{name:"Root department",type:"department"})).status).toBe(400);
+ expect((await request("/api/orgs","POST",{name:"Skipped level",type:"second_level",parent_id:"o1"})).status).toBe(400);
  expect((await request("/api/orgs","POST",{name:"Not allowed",type:"department"},member)).status).toBe(403);
  expect((await request("/api/orgs/o1","PATCH",{name:"Not allowed"},member)).status).toBe(403);
  expect((await request("/api/orgs/o1","DELETE",undefined,member)).status).toBe(403);
 });
-test("department structure edits allow reparenting but reject cycles, foreign parents and scoped managers",async()=>{
- expect((await request("/api/orgs/o1","PATCH",{parent_id:"o2"})).status).toBe(200);
- expect(records.find(r=>r.id==="o1")!.data.parent_id).toBe("o2");
- expect((await request("/api/orgs/c1","PATCH",{parent_id:"o1"})).status).toBe(400);
+test("organization structure edits allow valid moves but reject hierarchy breaks, cycles, foreign parents and scoped managers",async()=>{
+ records.push(row("c0","orgs",{name:"Company",type:"company"}),row("s1","orgs",{name:"Second",type:"second_level",parent_id:"c0"}),row("c2","orgs",{name:"Center 2",type:"center",parent_id:"s1"}));
+ expect((await request("/api/orgs/o1","PATCH",{parent_id:"c2"})).status).toBe(200);
+ expect(records.find(r=>r.id==="o1")!.data.parent_id).toBe("c2");
+ expect((await request("/api/orgs/c2","PATCH",{parent_id:"o1"})).status).toBe(400);
  expect((await request("/api/orgs/o1","PATCH",{parent_id:"missing"})).status).toBe(404);
  expect((await request("/api/orgs/o1","PATCH",{parent_id:null},department)).status).toBe(403);
- expect((await request("/api/orgs/o1","PATCH",{parent_id:null})).status).toBe(200);
- expect(records.find(r=>r.id==="o1")!.data.parent_id).toBeNull();
+ expect((await request("/api/orgs/o1","PATCH",{parent_id:null})).status).toBe(400);
 });
 
 test("R1: deny unknown-owner orgless departmental read and allow NULL-tenant assigned task",async()=>{

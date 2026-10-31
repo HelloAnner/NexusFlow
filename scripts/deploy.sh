@@ -12,7 +12,12 @@ ssh "$HOST" "umask 077; mkdir -p '$DIR/runtime'"
 OUT="$ROOT/dist/linux-x86_64"
 # 这条链路大文件 scp 会被重置；改成 gzip 流直传（与 Portal 同款），失败重试三次。
 put() { # put LOCAL REMOTE
-  local src="$1" dst="$2" attempt
+  local src="$1" dst="$2" attempt want size got reuse
+  want=$(sha256sum "$src" | cut -d' ' -f1); size=$(wc -c < "$src" | tr -d ' ')
+  got=$(ssh "$HOST" "sha256sum '$dst' 2>/dev/null | cut -d' ' -f1" || true)
+  [[ $got == "$want" ]] && return 0
+  reuse=$(ssh "$HOST" "f=\$(find '$REMOTE/validation' -type f -name '$(basename "$dst")' -size ${size}c 2>/dev/null | head -1); if [ -n \"\$f\" ] && [ \"\$(sha256sum \"\$f\" | cut -d' ' -f1)\" = '$want' ]; then cp \"\$f\" '$dst'; echo reused; fi" || true)
+  [[ $reuse == reused ]] && { echo "reused $dst from prior attachment"; return 0; }
   for attempt in 1 2 3; do
     if [[ "$src" == *.gz ]]; then
       cat "$src" | ssh "$HOST" "cat > '$dst'" && return 0

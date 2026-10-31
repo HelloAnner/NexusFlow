@@ -40,6 +40,7 @@ export async function createRecord(user:User,kind:Collection,input:Record<string
  if("id" in input||"created_at" in input||"updated_at" in input)throw new Error("server-managed fields cannot be supplied");
  const parsed=schemas[kind]?.safeParse(input);if(parsed&&!parsed.success)throw new Error("invalid record: "+parsed.error.issues.map(x=>`${x.path.join(".")}: ${x.message}`).join("; "));
  const data={...(parsed?.data||input)} as Record<string,unknown>;
+ if(kind==="orgs"&&!await canWriteRecord(user,kind,{tenant_id:user.tenant_id,created_by:user.id,data},"create"))throw new Error("forbidden");
  if(kind==="orgs")await validateOrgsCreate(user,data);
  if(kind==="people")await validatePeopleCreate(user,data);
  if(kind==="projects")await validateProjectsCreate(user,data);
