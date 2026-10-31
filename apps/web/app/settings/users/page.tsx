@@ -281,7 +281,8 @@ export default function UsersPage() {
                 <th className="px-5 py-2.5 font-medium">用户</th>
                 <th className="px-3 py-2.5 font-medium">所属部门</th>
                 <th className="w-[130px] px-3 py-2.5 font-medium">角色</th>
-                <th className="w-[90px] px-3 py-2.5 font-medium">状态</th>
+                <th className="w-[130px] px-3 py-2.5 font-medium">等级</th>
+                <th className="w-[130px] px-3 py-2.5 font-medium">状态</th>
                 <th className="w-[130px] px-5 py-2.5 font-medium">加入时间</th>
               </tr>
             </thead>
@@ -314,7 +315,14 @@ export default function UsersPage() {
                       </span>
                     </td>
                     <td className="px-3 py-3 text-ink-2">{roleLabel(user.role)}</td>
-                    <td className="px-3 py-3"><Badge color={status.color}>{status.label}</Badge></td>
+                    <td className="px-3 py-3 text-ink-2">{user.professional_level ? labelOf(professionalLevels, user.professional_level) : user.management_level ? labelOf(managementLevels, user.management_level) : "—"}</td>
+                    <td className="px-3 py-3">
+                      <span className="flex flex-wrap items-center gap-1">
+                        <Badge color={status.color}>{status.label}</Badge>
+                        {user.work_status !== "active" && <Badge color="var(--color-orange)">{labelOf(workStatuses, user.work_status)}</Badge>}
+                        {!user.dispatchable && <Badge color="var(--color-red)">不可派发</Badge>}
+                      </span>
+                    </td>
                     <td className="px-5 py-3 text-[11.5px] text-ink-3">{user.created_at ? user.created_at.slice(0, 10) : "—"}</td>
                   </tr>
                 );
