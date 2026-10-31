@@ -9,7 +9,8 @@ import { api, ApiError } from "@/lib/api";
 import { avatarColor, cx, str } from "@/lib/utils";
 import { roleLabel } from "@/lib/home";
 import { useAuth } from "@/lib/auth";
-import { flattenOrgs, ORG_TYPE_LABEL, ORG_TYPE_OPTIONS, type OrgNode } from "@/lib/org";
+import { flattenOrgs, ORG_TYPE_LABEL, type OrgNode } from "@/lib/org";
+import { orgParentAllowed, orgTypes } from "../../../../../packages/shared/src/index";
 
 type UserRow = {
   id: string;
@@ -72,6 +73,10 @@ export default function DepartmentsPage() {
     blockedParents.add(orgs[i].id);
   }
 
+  const editorParentType = editor?.parent_id ? orgs.find((org) => org.id === editor.parent_id)?.type ?? null : null;
+  const editorTypes: string[] = orgTypes.filter((type) => orgParentAllowed(type, editorParentType));
+  if (editor && !editorTypes.includes(editor.type)) editorTypes.push(editor.type);
+
   const toggleExpand = (id: string) => setCollapsed((prev) => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id);
@@ -79,7 +84,11 @@ export default function DepartmentsPage() {
     return next;
   });
 
-  const openCreate = (parentId: string | null) => setEditor({ mode: "create", name: "", type: "department", parent_id: parentId });
+  const openCreate = (parentId: string | null) => {
+    const parentType = parentId ? orgs.find((org) => org.id === parentId)?.type ?? null : null;
+    const nextType = orgTypes.find((type) => orgParentAllowed(type, parentType)) ?? "department";
+    setEditor({ mode: "create", name: "", type: nextType, parent_id: parentId });
+  };
   const openEdit = () => {
     if (!selected) return;
     setEditor({ mode: "edit", id: selected.id, name: selected.name, type: selected.type, parent_id: selected.parent_id });
@@ -280,17 +289,28 @@ export default function DepartmentsPage() {
             <Field label="部门名称">
               <input className={inputCls} value={editor.name} maxLength={128} onChange={(e) => setEditor({ ...editor, name: e.target.value })} />
             </Field>
-            <Field label="部门类型">
+            <Field label="组织类型">
               <select className={inputCls} value={editor.type} onChange={(e) => setEditor({ ...editor, type: e.target.value })}>
-                {ORG_TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                {editorTypes.map((type) => <option key={type} value={type}>{ORG_TYPE_LABEL[type] ?? type}</option>)}
               </select>
             </Field>
-            <Field label="上级部门">
-              <select className={inputCls} disabled={!canStructure} value={editor.parent_id ?? ""} onChange={(e) => setEditor({ ...editor, parent_id: e.target.value || null })}>
-                <option value="">无（顶级部门）</option>
-                {orgs.filter((org) => !blockedParents.has(org.id)).map((org) => <option key={org.id} value={org.id}>{"　".repeat(org.depth)}{org.name}</option>)}
+            <Field label="上级组织">
+              <select
+                className={inputCls}
+                disabled={!canStructure || editor.type === "company"}
+                value={editor.parent_id ?? ""}
+                onChange={(e) => {
+                  const parentId = e.target.value || null;
+                  const parentType = parentId ? orgs.find((org) => org.id === parentId)?.type ?? null : null;
+                  const types: string[] = orgTypes.filter((type) => orgParentAllowed(type, parentType));
+                  setEditor({ ...editor, parent_id: parentId, type: types.includes(editor.type) ? editor.type : types[0] ?? editor.type });
+                }}
+              >
+                {orgParentAllowed(editor.type, null) && <option value="">无（顶级组织）</option>}
+                {orgs.filter((org) => !blockedParents.has(org.id) && (orgParentAllowed(editor.type, org.type) || org.id === editor.parent_id)).map((org) => <option key={org.id} value={org.id}>{"　".repeat(org.depth)}{org.name}</option>)}
               </select>
             </Field>
+            <p className="text-[11.5px] text-ink-3">组织层级固定为公司 &gt; 二级单位 &gt; 中心 &gt; 部门；创新工作室只能挂在中心或部门下。</p>
           </div>
         )}
       </Modal>
