@@ -4,7 +4,7 @@ import { commandRequest } from "./commands";
 
 export const build = { service:"nexusflow", version:process.env.NEXUSFLOW_BUILD_COMMIT || "unbuilt", build_time:process.env.NEXUSFLOW_BUILD_TIME || null };
 export class ApiError extends Error {
- constructor(public status:number, public json:unknown) { super(`API request failed (${status})`); }
+ constructor(public status:number, public json:unknown) { const detail=json&&typeof json==="object"&&typeof (json as {error?:unknown}).error==="string"?`: ${(json as {error:string}).error}`:""; super(`API request failed (${status})${detail}`); }
 }
 export class Client {
  constructor(public base:string, public token="") {}

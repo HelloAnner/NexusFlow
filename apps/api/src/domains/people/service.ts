@@ -7,5 +7,5 @@ export async function activeUsers(user:User,ids:string[]){const found:Record<str
 export async function assertAssignable(user:User,ids:string[]){
  const unique=[...new Set(ids.filter(Boolean))];if(!unique.length)return;
  const rows=await db()`SELECT data FROM nexusflow.records WHERE kind='people' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id} AND (id = ANY(${unique}::text[]) OR data->>'user_id' = ANY(${unique}::text[]))`;
- for(const row of rows){const person=row.data as Record<string,any>,name=String(person.name||person.user_id||person.id||"");if(person.dispatchable===false)throw new Error(`person is not dispatchable: ${name}`);if(["leave","unavailable","disabled"].includes(String(person.status)))throw new Error(`person is unavailable: ${name}`);}
+ for(const row of rows){const person=row.data as Record<string,any>,name=String(person.name||person.user_id||person.id||"");if(person.dispatchable===false)throw new Error(`invalid assignee: person is not dispatchable: ${name}`);if(["leave","unavailable","disabled"].includes(String(person.status)))throw new Error(`invalid assignee: person is currently unavailable: ${name}`);}
 }
