@@ -17,8 +17,11 @@ case "$(uname -s)-$(uname -m)" in
  Linux-x86_64) ARCHIVE=bun-linux-x64-baseline.zip;;
  *) echo 'unsupported build platform' >&2; exit 1;;
 esac
-if [[ -x "$OUT/runtime/bun" && -f "$OUT/runtime/VERSION" ]];then mkdir -p "$STAGE/build-runtime"; cp "$OUT/runtime/bun" "$OUT/runtime/VERSION" "$STAGE/build-runtime/";fi
+HOST_RUNTIME="$ROOT/dist/host-runtime"
+mkdir -p "$HOST_RUNTIME" "$STAGE/build-runtime"
+if [[ -x "$HOST_RUNTIME/bun" && -f "$HOST_RUNTIME/VERSION" ]];then cp "$HOST_RUNTIME/bun" "$HOST_RUNTIME/VERSION" "$STAGE/build-runtime/";fi
 "$ROOT/scripts/runtime.sh" "$STAGE/build-runtime" "$ARCHIVE"
+cp "$STAGE/build-runtime/bun" "$STAGE/build-runtime/VERSION" "$HOST_RUNTIME/"
 export PATH="$STAGE/build-runtime:$PATH"
 git -C "$ROOT" archive --format=tar "$COMMIT" | tar "${TAR_FLAGS[@]}" -x -C "$STAGE/source"
 python3 "$STAGE/source/scripts/check-read-safety.py" "$STAGE/source"
