@@ -11,6 +11,8 @@ case "$ARCHIVE" in
  *) echo 'unsupported runtime archive' >&2; exit 1;;
 esac
 PACKAGE="${ARCHIVE%.zip}"
+# ponytail: reuse the previously verified runtime; delete the destination to force a re-download.
+if [[ -x "$DEST/bun" && -f "$DEST/VERSION" && $(cat "$DEST/VERSION") == "$VERSION" ]];then exit 0;fi
 mkdir -p "$DEST"
 curl -fsSL --connect-timeout 20 --max-time 900 --retry 2 "https://registry.npmjs.org/@oven/$PACKAGE/-/$PACKAGE-$VERSION.tgz" -o "$DEST/runtime.tgz"
 python3 - "$DEST" "$INTEGRITY" <<'PY'

@@ -17,6 +17,7 @@ case "$(uname -s)-$(uname -m)" in
  Linux-x86_64) ARCHIVE=bun-linux-x64-baseline.zip;;
  *) echo 'unsupported build platform' >&2; exit 1;;
 esac
+if [[ -x "$OUT/runtime/bun" && -f "$OUT/runtime/VERSION" ]];then mkdir -p "$STAGE/build-runtime"; cp "$OUT/runtime/bun" "$OUT/runtime/VERSION" "$STAGE/build-runtime/";fi
 "$ROOT/scripts/runtime.sh" "$STAGE/build-runtime" "$ARCHIVE"
 export PATH="$STAGE/build-runtime:$PATH"
 git -C "$ROOT" archive --format=tar "$COMMIT" | tar "${TAR_FLAGS[@]}" -x -C "$STAGE/source"
