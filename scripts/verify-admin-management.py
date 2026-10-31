@@ -24,7 +24,7 @@ def main():
     cli = str(directory / 'nexusflow-cli')
     tag = uuid.uuid4().hex[:12]
     username = 'nfcheck.' + tag
-    departments, invitation_id, member_id = [], None, None
+    nodes, invitation_id, member_id = [], None, None
     checks = []
 
     def command(tokens, context=env, status=None):
@@ -63,18 +63,28 @@ def main():
         initial_ids = {u['id'] for u in command(['admin', 'users'])['items']}
         assert command(['version'])['version'] == commit, 'running service does not match attachment'
         try:
-            for name, parent in [('验收部门-' + tag, None), ('验收子部门-' + tag, 'first')]:
-                data = {'name': name, 'type': 'department'}
+            def node(label, kind, parent=None):
+                data = {'name': label + '-' + tag, 'type': kind}
                 if parent:
-                    data['parent_id'] = departments[0]
-                departments.append(command(['orgs', 'create', json.dumps(data)])['id'])
-            a, b = departments
-            command(['orgs', 'update', a, json.dumps({'parent_id': b})], status=400)
-            command(['orgs', 'update', b, json.dumps({'name': '验收部门已改名-' + tag, 'parent_id': None})])
-            assert command(['orgs', 'show', b])['parent_id'] is None
-            command(['orgs', 'update', b, json.dumps({'parent_id': a})])
+                    data['parent_id'] = parent
+                nodes.append(command(['orgs', 'create', json.dumps(data)])['id'])
+                return nodes[-1]
+            company = node('验收公司', 'company')
+            second = node('验收二级', 'second_level', company)
+            center_a = node('验收中心A', 'center', second)
+            center_b = node('验收中心B', 'center', second)
+            a = node('验收部门A', 'department', center_a)
+            b = node('验收部门B', 'department', center_a)
+            node('验收工作室', 'studio', a)
+            command(['orgs', 'create', json.dumps({'name': '非法根部门-' + tag, 'type': 'department'})], status=400)
+            command(['orgs', 'create', json.dumps({'name': '非法跨级-' + tag, 'type': 'department', 'parent_id': company})], status=400)
+            command(['orgs', 'create', json.dumps({'name': '非法工作室-' + tag, 'type': 'studio', 'parent_id': company})], status=400)
+            command(['orgs', 'update', b, json.dumps({'name': '验收部门已改名-' + tag, 'parent_id': center_b})])
+            assert command(['orgs', 'show', b])['parent_id'] == center_b
+            command(['orgs', 'update', b, json.dumps({'parent_id': a})], status=400)
+            command(['orgs', 'update', center_b, json.dumps({'parent_id': a})], status=400)
             command(['orgs', 'delete', a], status=409)
-            check('department create / rename / reparent / cycle rejection / child-delete guard')
+            check('organization hierarchy create / rename / valid reparent / invalid level rejection / child-delete guard')
 
             invite = command(['invitations', 'create', json.dumps({'role': 'member', 'org_id': a})])
             invitation_id = invite['invitation']['id']
@@ -94,7 +104,16 @@ def main():
             rejected({'org_ids': [123]}, 400)
             rejected({'display_name': ' '}, 400)
             rejected({'display_name': 'stale', 'updated_at': before['updated_at']}, 409)
-            check('name-only edit preserves memberships / read-only username / strict input / stale edit guard')
+            command(['admin', 'user-profile', member_id, json.dumps({'employee_no': 'NF-' + tag, 'management_level': 'staff', 'professional_level': 'engineer_3', 'duties': ['execution'], 'skills': ['Go'], 'work_status': 'training', 'daily_standard_hours': 6, 'dispatchable': False})])
+            current = user()
+            assert current['employee_no'] == 'NF-' + tag and current['management_level'] == 'staff'
+            assert current['professional_level'] == 'engineer_3' and current['duties'] == ['execution']
+            assert current['skills'] == ['Go'] and current['work_status'] == 'training'
+            assert current['daily_standard_hours'] == 6 and current['dispatchable'] is False
+            rejected({'duties': ['not-a-duty']}, 400)
+            rejected({'management_level': 'not-a-level'}, 400)
+            rejected({'studio_ids': [a]}, 400)
+            check('name-only edit preserves memberships / person profile fields / enum and studio rejection / stale edit guard')
 
             name = current['display_name']
             command(['admin', 'user-profile', member_id, '--org-ids', a + ',' + b])
@@ -128,8 +147,8 @@ def main():
                 if invitation_id:
                     uuid.UUID(invitation_id)
                     module.pg(module.pg_environment(values), ['psql', '-X', '-v', 'ON_ERROR_STOP=1', '-c', "DELETE FROM nexusflow.records WHERE kind='invitations' AND id='%s'" % invitation_id])
-                for department in reversed(departments):
-                    command(['orgs', 'delete', department])
+                for organization in reversed(nodes):
+                    command(['orgs', 'delete', organization])
                 assert {u['id'] for u in command(['admin', 'users'])['items']} == initial_ids
                 assert command(['version'])['version'] == commit, 'service changed during acceptance'
                 check('fixtures removed / existing users unchanged / audit retained')
