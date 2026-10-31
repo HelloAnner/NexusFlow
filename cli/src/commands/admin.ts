@@ -19,7 +19,7 @@ export function adminRequest(args:CliArgs):CommandRequest|undefined {
   if(!p[0])throw Error("admin user-profile requires user ID and either a JSON object or field flags");
   const body:Record<string,unknown>=p[1]?parseJson(p.slice(1).join(" ")):{};
   if(option(args,"name"))body.display_name=option(args,"name");
-  if(typeof args.options["org-ids"]==="string")body.org_ids=csvOption(args,"org-ids");
+  if(typeof args.options["org-ids"]==="string"){const orgIds=csvOption(args,"org-ids");body.org_ids=orgIds?.length===1&&orgIds[0]==="none"?[]:orgIds;}
   if(typeof args.options["employee-no"]==="string")body.employee_no=option(args,"employee-no")||null;
   if(typeof args.options["management-level"]==="string")body.management_level=option(args,"management-level")||null;
   if(typeof args.options["professional-level"]==="string")body.professional_level=option(args,"professional-level")||null;
