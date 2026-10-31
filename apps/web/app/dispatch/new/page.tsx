@@ -15,7 +15,7 @@ const TYPES: [string, string][] = [
   ["market", "市场"], ["business-trip", "出差"], ["clerical", "文职"], ["party", "党建"], ["learning", "学习"], ["leave", "休假"],
 ];
 
-type PersonRec = { id?: string; name?: string; title?: string; department?: string; user_id?: string; status?: string };
+type PersonRec = { id?: string; name?: string; title?: string; department?: string; user_id?: string; status?: string; dispatchable?: boolean };
 type LoadRow = { person_id?: string; ratio?: number; hours?: number; capacity?: number };
 type ProjectRec = { id?: string; name?: string };
 
@@ -49,7 +49,7 @@ export default function DispatchNewPage() {
   const [pick, setPick] = useState("");
   const [submitting, setSubmitting] = useState<"" | "draft" | "submit">("");
 
-  const assignable = people.filter((p) => p.status !== "disabled");
+  const assignable = people.filter((p) => p.status !== "disabled" && p.status !== "leave" && p.status !== "unavailable" && p.dispatchable !== false);
   const owner = assignable.find((p) => (p.user_id || p.id) === form.ownerId);
   const memberRows = members.map((id) => assignable.find((p) => (p.user_id || p.id) === id)).filter(Boolean) as PersonRec[];
   const over = [...(owner ? [owner] : []), ...memberRows].filter((p) => (loadOf(p)?.ratio ?? 0) >= 100);
