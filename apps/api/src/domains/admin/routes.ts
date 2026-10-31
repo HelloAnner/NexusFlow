@@ -70,9 +70,16 @@ app.patch("/api/admin/users/:id/profile",async c=>{
  for(const orgId of orgIds)if(!previousIds.includes(orgId)&&(!await getRecord(user,"orgs",orgId)||!elevated&&!await canManageOrganization(user,orgId)))return c.json({error:"organization unavailable"},404);
  if(!elevated)for(const id of previousIds.filter(id=>!orgIds.includes(id)))if(!await canManageOrganization(user,id))return c.json({error:"forbidden"},403);
  const result=await sql.begin(async tx=>{
+  let nextOrgIds=orgIds;
   if(body.org_ids!==undefined&&orgIds.length){
-   const found=await tx`SELECT id FROM nexusflow.records WHERE kind='orgs' AND tenant_id IS NOT DISTINCT FROM ${target.tenant_id} AND id = ANY(${orgIds}::text[]) FOR KEY SHARE`;
-   if(found.length!==orgIds.length)throw new Error("organization unavailable");
+   const added=orgIds.filter(id=>!previousIds.includes(id));
+   if(added.length){
+    const found=await tx`SELECT id FROM nexusflow.records WHERE kind='orgs' AND tenant_id IS NOT DISTINCT FROM ${target.tenant_id} AND id = ANY(${added}::text[]) FOR KEY SHARE`;
+    if(found.length!==added.length)throw new Error("organization unavailable");
+   }
+   const existing=await tx`SELECT id FROM nexusflow.records WHERE kind='orgs' AND tenant_id IS NOT DISTINCT FROM ${target.tenant_id} AND id = ANY(${orgIds}::text[]) FOR KEY SHARE`;
+   const valid=new Set(existing.map((row:any)=>String(row.id)));
+   nextOrgIds=orgIds.filter(id=>valid.has(id));
   }
   if(studioIds!==undefined&&studioIds.length){
    const studios=await tx`SELECT id,data FROM nexusflow.records WHERE kind='orgs' AND tenant_id IS NOT DISTINCT FROM ${target.tenant_id} AND id = ANY(${studioIds}::text[]) FOR KEY SHARE`;
@@ -84,11 +91,11 @@ app.patch("/api/admin/users/:id/profile",async c=>{
   const expected=body.updated_at??target.updated_at;
   if((expected&&new Date(row.updated_at).valueOf()!==new Date(expected).valueOf())||JSON.stringify(row.org_ids??[])!==JSON.stringify(target.org_ids??[]))throw new Error("profile changed; reload before saving");
   if(row.role==="super_admin"&&user.role!=="super_admin")return null;
-  const primary=body.org_ids===undefined?row.org_id:row.org_id&&orgIds.includes(String(row.org_id))?String(row.org_id):orgIds[0]??null;
+  const primary=body.org_ids===undefined?row.org_id:row.org_id&&nextOrgIds.includes(String(row.org_id))?String(row.org_id):nextOrgIds[0]??null;
   const nextName=body.display_name??String(row.display_name||"User");
   const profiles=await tx`SELECT id,data FROM nexusflow.records WHERE kind='people' AND tenant_id IS NOT DISTINCT FROM ${row.tenant_id} AND data->>'user_id'=${String(row.id)} FOR UPDATE`;
   const before=profiles[0]?.data as Record<string,any>|undefined;
-  const personPatch:Record<string,unknown>={name:nextName,org_id:primary,org_ids:orgIds};
+  const personPatch:Record<string,unknown>={name:nextName,org_id:primary,org_ids:nextOrgIds};
   if(body.employee_no!==undefined)personPatch.employee_no=body.employee_no;
   if(body.management_level!==undefined)personPatch.management_level=body.management_level;
   if(body.professional_level!==undefined)personPatch.professional_level=body.professional_level;
@@ -98,14 +105,14 @@ app.patch("/api/admin/users/:id/profile",async c=>{
   if(body.work_status!==undefined)personPatch.status=body.work_status;
   if(body.daily_standard_hours!==undefined)personPatch.daily_standard_hours=body.daily_standard_hours;
   if(body.dispatchable!==undefined)personPatch.dispatchable=body.dispatchable;
-  await tx`UPDATE nexusflow.users SET display_name=${nextName},org_id=${primary},org_ids=${orgIds},updated_at=now() WHERE id=${row.id}`;
+  await tx`UPDATE nexusflow.users SET display_name=${nextName},org_id=${primary},org_ids=${nextOrgIds},updated_at=now() WHERE id=${row.id}`;
   if(profiles[0]){
    await tx`UPDATE nexusflow.records SET data=data||${tx.json(personPatch as any)},updated_at=now() WHERE id=${profiles[0].id} AND kind='people'`;
   }else{
-   await insertRecord(tx,{...user,tenant_id:row.tenant_id},"people",{name:nextName,user_id:String(row.id),org_id:primary,org_ids:orgIds,status:"active",daily_standard_hours:8,skills:[],...personPatch});
+   await insertRecord(tx,{...user,tenant_id:row.tenant_id},"people",{name:nextName,user_id:String(row.id),org_id:primary,org_ids:nextOrgIds,status:"active",daily_standard_hours:8,skills:[],...personPatch});
   }
-  await addAudit(tx,{...user,tenant_id:row.tenant_id},"admin.user_profile","user",String(row.id),{before:{display_name:row.display_name,org_ids:previousIds,person:before??null},after:{display_name:nextName,org_ids:orgIds,person:personPatch}});
-  return {id:String(row.id),display_name:nextName,org_id:primary,org_ids:orgIds,person_id:profiles[0]?.id??null,person:personPatch};
+  await addAudit(tx,{...user,tenant_id:row.tenant_id},"admin.user_profile","user",String(row.id),{before:{display_name:row.display_name,org_ids:previousIds,person:before??null},after:{display_name:nextName,org_ids:nextOrgIds,person:personPatch}});
+  return {id:String(row.id),display_name:nextName,org_id:primary,org_ids:nextOrgIds,person_id:profiles[0]?.id??null,person:personPatch};
  });
  return result?c.json({ok:true,user:result}):c.json({error:"not found"},404);
 });

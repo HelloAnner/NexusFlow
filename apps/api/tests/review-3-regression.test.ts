@@ -110,6 +110,9 @@ test("admin profile PATCH preserves omitted fields, syncs profiles, and audits n
  expect(records.find(r=>r.id==="profile-two")!.data.name).toBe("New name");
  expect(audits.find(a=>a.v.includes("admin.user_profile"))!.v[6].after.display_name).toBe("New name");
  expect((await request("/api/admin/users/u2/profile","PATCH",{org_ids:[]})).status).toBe(200);expect(target().org_id).toBeNull();expect(target().org_ids).toEqual([]);
+ target().org_ids=["o2","missing-org"];target().org_id="missing-org";
+ response=await request("/api/admin/users/u2/profile","PATCH",{org_ids:["missing-org","o1"]});
+ expect(response.status).toBe(200);expect(target().org_ids).toEqual(["o1"]);expect(target().org_id).toBe("o1");
 });
 test("admin profile PATCH rejects invalid fields, ordinary users, foreign departments and stale snapshots",async()=>{
  const target=()=>users.find(u=>u.id==="u2")!;target().display_name="Two";target().org_ids=["o2"];target().updated_at=new Date(1000);
