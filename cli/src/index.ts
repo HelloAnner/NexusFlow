@@ -6,12 +6,17 @@ import { portalSync } from "./portal-sync";
 import { checkBrand } from "./brand";
 import { checkTheme } from "./theme";
 import { permCommand, permText } from "./perm";
+import { chatCommand,aiCommand,conversationsCommand,verifyAssistant } from './assistant';
 
 export async function main(argv=process.argv.slice(2)) {
  const args=parseArgs(argv);
  if(!args.command||args.command==="help"||args.options.help===true){help();return 0;}
  const client=environmentClient();let result:unknown;
- if(args.command==="version"&&args.options.local===true)result=build;
+ if(args.command==='chat')result=await chatCommand(client,args);
+ else if(args.command==='ai')result=await aiCommand(client,args);
+ else if(args.command==='conversations')result=await conversationsCommand(client,args);
+ else if(args.command==='verify'&&args.action==='assistant')result=await verifyAssistant(client);
+ else if(args.command==="version"&&args.options.local===true)result=build;
  else if(args.command==="verify") {
   if(!["b0","list"].includes(args.action))throw Error("verify only supports b0");
   result=await verifyB0(client,option(args,"commit",build.version),{username:process.env.NEXUSFLOW_USER||process.env.SUPER_ADMIN_USERNAME||"",password:process.env.NEXUSFLOW_PASSWORD||process.env.SUPER_ADMIN_PASSWORD||""});
@@ -39,6 +44,10 @@ export async function main(argv=process.argv.slice(2)) {
  console.log(args.options.json===true?JSON.stringify(result):JSON.stringify(result,null,2));return 0;
 }
 function help(){console.log(`nexusflow <auth|version|verify|home|gantt|orgs|people|projects|tasks|dispatch|approvals|load|conflicts|files|inbox|reports|tools|config|admin|perm|portal-sync|brand|theme> <action>
+chat QUESTION [--conversation ID|--continue] [--model ID] [--thinking auto|on|off] [--file-ids CSV] [--request-id ID] [--json]
+ai models|capabilities|tool NAME JSON|action ID|confirm ID|confirm-batch CONVERSATION MESSAGE|cancel ID|trace CONVERSATION MESSAGE|share CONVERSATION|shared SHARE|reveal ACTION_ID
+conversations list|create TITLE|show ID|files ID|rename ID TITLE|favorite ID --enabled true|delete ID|stop ID MESSAGE|feedback ID MESSAGE --rating up|down
+planning mine|calendar --from DATE --to DATE [--person-id ID]; planning forecast TASK_ID; planning preview TASK_ID JSON; worklogs confirm ID; verify assistant
 Actions: list/show/create/update/delete; auth login|register|logout|me|rename|passwd; tasks assign|assignments|publish|action; task-assignments list|show|update|requirements|action; visibility_grants create|list|show, visibility-grants revoke; dispatch submit|confirm; approvals decision; conflicts resolve|force; files upload|download|rollback|archive|versions|portal-list|portal-content|portal-preview; reports export; inbox read|complete; config publish|versions; admin preflight|audit|users|delegations|user-status|user-binding|user-profile|user-projects|user-project|user-project-remove; perm catalog|subjects|matrix|set|reset|check|prune; health [ready]; seed [status]
 brand check: verify SVG favicon, system identity and application base path.
 theme check: verify the served build ships light/dark tokens and the no-flash theme script.

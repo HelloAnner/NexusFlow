@@ -1,0 +1,15 @@
+import { sql } from "../../db.ts";
+export async function migrateAssistant(){
+ if(!sql)return;
+ await sql`CREATE TABLE IF NOT EXISTS nexusflow.ai_conversations(id text PRIMARY KEY,tenant_id text NOT NULL,user_id text NOT NULL,title text NOT NULL,favorite boolean NOT NULL DEFAULT false,status text NOT NULL DEFAULT 'active',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now())`;
+ await sql`CREATE INDEX IF NOT EXISTS ai_conversations_owner ON nexusflow.ai_conversations(tenant_id,user_id,updated_at DESC)`;
+ await sql`CREATE TABLE IF NOT EXISTS nexusflow.ai_messages(id text PRIMARY KEY,conversation_id text NOT NULL REFERENCES nexusflow.ai_conversations(id),tenant_id text NOT NULL,user_id text NOT NULL,role text NOT NULL,content text NOT NULL DEFAULT '',status text NOT NULL,request_id text,parent_id text,data jsonb NOT NULL DEFAULT '{}',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now())`;
+ await sql`CREATE UNIQUE INDEX IF NOT EXISTS ai_message_request ON nexusflow.ai_messages(tenant_id,user_id,request_id) WHERE request_id IS NOT NULL`;
+ await sql`CREATE INDEX IF NOT EXISTS ai_messages_conversation ON nexusflow.ai_messages(conversation_id,created_at)`;
+ await sql`CREATE TABLE IF NOT EXISTS nexusflow.ai_actions(id text PRIMARY KEY,conversation_id text NOT NULL REFERENCES nexusflow.ai_conversations(id),message_id text NOT NULL REFERENCES nexusflow.ai_messages(id),tenant_id text NOT NULL,user_id text NOT NULL,status text NOT NULL DEFAULT 'pending',fingerprint text NOT NULL,data jsonb NOT NULL,expires_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now())`;
+ await sql`CREATE UNIQUE INDEX IF NOT EXISTS ai_action_once ON nexusflow.ai_actions(message_id,fingerprint)`;
+ await sql`CREATE TABLE IF NOT EXISTS nexusflow.ai_shares(id text PRIMARY KEY,conversation_id text NOT NULL REFERENCES nexusflow.ai_conversations(id),tenant_id text NOT NULL,user_id text NOT NULL,expires_at timestamptz NOT NULL,created_at timestamptz NOT NULL DEFAULT now())`;
+ // 重启不重放可能已提交的业务写入，必须人工回读核对。
+ await sql`UPDATE nexusflow.ai_messages SET status='failed',data=data||'{"error":"服务已重启，请回读业务结果后再继续"}'::jsonb WHERE status='answering'`;
+ await sql`UPDATE nexusflow.ai_actions SET status='uncertain',data=data||'{"error":"服务在执行期间重启，请核对业务结果，禁止自动重试"}'::jsonb WHERE status='executing'`;
+}

@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutGrid, Inbox, Briefcase, ClipboardList, Calendar, Building2, UserRound, Folder, Wrench, ShieldCheck,
+  LayoutGrid, Inbox, Briefcase, ClipboardList, Calendar, Building2, UserRound, Folder, Wrench, ShieldCheck, MessageSquare,
 } from "lucide-react";
 import { cx } from "@/lib/utils";
 import { useAuth, absorbPortalToken } from "@/lib/auth";
@@ -21,6 +21,7 @@ const NAV = [
       { href: "/", icon: LayoutGrid, key: "home", label: "首页" },
       { href: "/inbox", icon: Inbox, key: "inbox", label: "收件箱" },
       { href: "/my-work", icon: ClipboardList, key: "mywork", label: "我的工作" },
+      { href: "/chat", icon: MessageSquare, key: "chat", label: "AI 助手" },
     ],
   },
   {
@@ -49,6 +50,7 @@ const MANAGE_NAV = [
 function activeKey(pathname: string): string {
   if (pathname === "/" ) return "home";
   if (pathname.startsWith("/inbox")) return "inbox";
+  if (pathname.startsWith("/chat")) return "chat";
   if (pathname.startsWith("/projects")) return "projects";
   if (pathname.startsWith("/my-work") || pathname.startsWith("/dispatch")) return "mywork";
   if (pathname.startsWith("/load")) return "load";

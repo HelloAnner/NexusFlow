@@ -17,14 +17,14 @@ const uuid=()=>crypto.randomUUID();
 import { orgsSchema } from "./domains/org/schema.ts";
 import { peopleSchema } from "./domains/people/schema.ts";
 import { projectsSchema } from "./domains/projects/schema.ts";
-import { tasksSchema } from "./domains/tasks/schema.ts";
+import { tasksSchema,milestonesSchema } from "./domains/tasks/schema.ts";
 import { dispatchSchema } from "./domains/dispatch/schema.ts";
 import { approvalsSchema } from "./domains/approvals/schema.ts";
 import { filesSchema } from "./domains/files/schema.ts";
 import { visibility_grantsSchema } from "./domains/projects/schema.ts";
 import { configSchema } from "./domains/config/schema.ts";
 import { task_assignmentsSchema } from "./domains/tasks/schema.ts";
-const schemas:Partial<Record<Collection,z.ZodTypeAny>>={orgs:orgsSchema,people:peopleSchema,projects:projectsSchema,tasks:tasksSchema,dispatch:dispatchSchema,approvals:approvalsSchema,files:filesSchema,visibility_grants:visibility_grantsSchema,config:configSchema,task_assignments:task_assignmentsSchema};
+const schemas:Partial<Record<Collection,z.ZodTypeAny>>={orgs:orgsSchema,people:peopleSchema,projects:projectsSchema,tasks:tasksSchema,dispatch:dispatchSchema,approvals:approvalsSchema,files:filesSchema,visibility_grants:visibility_grantsSchema,config:configSchema,task_assignments:task_assignmentsSchema,milestones:milestonesSchema};
 function db(){if(!sql)throw new Error("DATABASE_URL required");return sql;}
 export { taskTargetOrganizations } from "./domains/tasks/service.ts";
 export async function listRecords(user:User,kind:Collection):Promise<Array<Record<string,any>>> {
@@ -45,6 +45,7 @@ export async function createRecord(user:User,kind:Collection,input:Record<string
  if(kind==="people")await validatePeopleCreate(user,data);
  if(kind==="projects")await validateProjectsCreate(user,data);
  if(kind==="tasks")await validateTasksCreate(user,data);
+ if(kind==='milestones'){const parent=await getRecord(user,'tasks',String(data.task_id));if(!parent||!['draft','in_progress','paused'].includes(String(parent.status)))throw Error('parent task locked or not found');if(String(data.date)<String(parent.start_date)||String(data.date)>String(parent.end_date))throw Error('invalid milestone date outside task');}
  if(kind==="config")await validateConfigCreate(user,data);
  if(kind==="task_assignments")await validateTaskAssignmentsCreate(user,data);
  if(kind==="dispatch")await validateDispatchCreate(user,data);
@@ -54,7 +55,7 @@ export async function createRecord(user:User,kind:Collection,input:Record<string
  if(kind==="orgs"&&!['super_admin','center_director'].includes(user.role))throw new Error("organization management permission required");
  const id=uuid();await db().begin(async tx=>{await lockAssignmentCreate(tx,user,kind,id,data);await lockDispatchCreate(tx,user,kind,id,data);if(kind==="orgs")await validateOrgParent(tx,user.tenant_id,id,data.parent_id,data.type);await tx`INSERT INTO nexusflow.records(id,kind,tenant_id,created_by,data) VALUES(${id},${kind},${user.tenant_id},${user.id},${tx.json(data as any)})`;await createTaskAssignments(tx,user,kind,id,data);await syncAssignmentMembers(tx,user,kind,id,data);await addAudit(tx,user,kind+".create",kind,id,{after:data});});return getRecord(user,kind,id);
 }
-export async function updateRecord(user:User,kind:Collection,id:string,patch:Record<string,unknown>) {
+export async function updateRecord(user:User,kind:Collection,id:string,patch:Record<string,unknown>,expectedVersion?:string) {
  if(kind==="orgs"&&["demo_seed","department_approver_id","center_approver_id"].some(k=>k in patch))throw new Error("approval identity fields are managed by account roles");
  if("id" in patch||"created_at" in patch||"updated_at" in patch||"created_by" in patch||"tenant_id" in patch)throw new Error("server-managed fields cannot be changed");
  guardTasksPatch(user,kind,patch);
@@ -66,8 +67,10 @@ export async function updateRecord(user:User,kind:Collection,id:string,patch:Rec
  guardApprovalsPatch(user,kind,patch);
  guardFilesPatch(user,kind,patch);
  guardProjectsPatch(user,kind,patch);
- const current=await getRaw(kind,id,user);if(!current)return null;if(!await canWriteRecord(user,kind,current,"update"))throw new Error("forbidden");
- const next={...current.data,...patch};if(kind==="config"&&current.data.status==="published"&&("value" in patch||"key" in patch))return createRecord(user,"config",{...next,status:"draft",version:Number(current.data.version||0)});if(kind==="config"&&current.data.status!=="draft")throw new Error("only configuration drafts can be edited");const validated=kind==="tasks"?{...next,status:"draft"}:kind==="projects"?{...next,status:"planning"}:kind==="config"?{...next,status:"draft"}:next;const parsed=schemas[kind]?.safeParse(validated);if(parsed&&!parsed.success)throw new Error("invalid record: "+parsed.error.issues.map(x=>x.message).join("; "));
+ const current=await getRaw(kind,id,user);if(!current)return null;if(expectedVersion&&new Date(current.updated_at).toISOString()!==new Date(expectedVersion).toISOString())throw Error('record changed; preview again');if(!await canWriteRecord(user,kind,current,"update"))throw new Error("forbidden");
+ if(['tasks','milestones'].includes(kind)&&['done','archived','cancelled'].includes(String(current.data.status)))throw Error('record locked after completion');
+ if(kind==='milestones'&&'task_id' in patch)throw Error('milestone task cannot be changed');
+ const next={...current.data,...patch};if(kind==='milestones'){const parent=await getRecord(user,'tasks',String(next.task_id));if(!parent||!['draft','in_progress','paused'].includes(String(parent.status)))throw Error('parent task locked');if(String(next.date)<String(parent.start_date)||String(next.date)>String(parent.end_date))throw Error('invalid milestone date outside task');}if(kind==="config"&&current.data.status==="published"&&("value" in patch||"key" in patch))return createRecord(user,"config",{...next,status:"draft",version:Number(current.data.version||0)});if(kind==="config"&&current.data.status!=="draft")throw new Error("only configuration drafts can be edited");const validated=kind==="tasks"?{...next,status:"draft"}:kind==="projects"?{...next,status:"planning"}:kind==="config"?{...next,status:"draft"}:next;const parsed=schemas[kind]?.safeParse(validated);if(parsed&&!parsed.success)throw new Error("invalid record: "+parsed.error.issues.map(x=>x.message).join("; "));
  if(kind==="projects")await validateProjectsUpdate(user,next);
  await db().begin(async tx=>{if(kind==="orgs"&&("parent_id" in patch||"type" in patch)){await tx`LOCK TABLE nexusflow.records IN SHARE ROW EXCLUSIVE MODE`;await validateOrgParent(tx,current.tenant_id,id,next.parent_id,next.type);}const locked=await tx`SELECT data,updated_at FROM nexusflow.records WHERE id=${id} AND kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${current.tenant_id} FOR UPDATE`;if(!locked[0]||new Date(locked[0].updated_at).valueOf()!==new Date(current.updated_at).valueOf())throw new Error("record changed; retry the update");await tx`UPDATE nexusflow.records SET data=${tx.json(next as any)},updated_at=now() WHERE id=${id} AND kind=${kind} AND tenant_id IS NOT DISTINCT FROM ${current.tenant_id}`;await addAudit(tx,{...user,tenant_id:current.tenant_id},kind+".update",kind,id,{before:current.data,after:next});});return getRecord(user,kind,id);
 }

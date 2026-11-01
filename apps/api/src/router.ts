@@ -30,6 +30,9 @@ import { registerRoutes as registerGantt,registerRecords as registerGanttRecords
 import { registerPortalSync } from "./domains/portal_sync.ts";
 import { registerRbac } from "./rbac.ts";
 import { withRbacContext } from "./rbac.ts";
+import { registerAssistant } from './domains/assistant/routes.ts';
+import { registerPlanning } from './domains/planning/routes.ts';
+import { scheduleGuard } from './domains/planning/guard.ts';
 app.use("*",async(c,next)=>{
  const supplied=c.req.header("x-request-id"),request_id=supplied&&/^[a-zA-Z0-9._-]{1,128}$/.test(supplied)?supplied:crypto.randomUUID();
  c.set("request_id",request_id);c.header("x-request-id",request_id);
@@ -46,13 +49,15 @@ const publicPaths=new Set(["/api/auth/login","/api/auth/logout","/api/auth/regis
 app.use("/api/*",async(c,next)=>{if(publicPaths.has(c.req.path)||c.req.path.startsWith("/api/portal/sync/v1")||c.req.path.startsWith("/api/portal/rbac/v1")||c.req.path==="/api/system/version"&&c.req.method==="GET"||portalFilesPublicPath.test(c.req.path))return next();const loadedUser=await currentUser(c);if(!loadedUser)return c.json({error:"unauthorized"},401);const user=await withRbacContext(loadedUser);
  const registered=app.routes.some(route=>!route.path.includes("*")&&(route.method===c.req.method||route.method==="ALL")&&new RegExp("^"+route.path.replace(/:[^/]+/g,"[^/]+")+"$").test(c.req.path));
  if(!registered)return c.json({error:"not found"},404);
- if(!portalAllows(user,c.req.path,c.req.method))return c.json({error:"forbidden"},403);c.set("user",user);await next();});
+ if(!portalAllows(user,c.req.path,c.req.method))return c.json({error:"forbidden"},403);c.set("user",user);await scheduleGuard(c,next);});
 app.onError((e,c)=>{const status=errorStatus(e);return c.json({error:status===500?"internal error":e.message,code:`HTTP_${status}`,request_id:c.get("request_id")},status);});
 app.get("/api/system/version",c=>c.json(systemVersion()));
 app.get("/healthz",c=>c.json({ok:true,...systemVersion()}));
 app.get("/readyz",async c=>{try{await probeDependencies();await probeStorage();return c.json({ok:true,read_only:true,database:true,redis:true,object_storage:true});}catch{return c.json({ok:false,read_only:true,error:"dependencies unavailable"},503);}});
 app.post("/api/auth/login",login);app.post("/api/auth/register",register);app.post("/api/auth/logout",logout);app.get("/api/auth/me",c=>c.json(actor(c)));app.patch("/api/auth/me",updateProfile);app.post("/api/auth/password",changePassword);app.get("/auth/portal/callback",portalCallback);
 
+registerAssistant(app);
+registerPlanning(app);
 registerOrg(app);
 registerPeople(app);
 registerProjects(app);

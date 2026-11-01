@@ -5,7 +5,7 @@ test("create preserves its JSON body after option parsing",()=>{const args=parse
 test("important workflows map to dedicated API operations",()=>{
  expect(commandRequest(parseArgs(["dispatch","submit","d-1"])).path).toBe("/api/dispatch/d-1/submit");
  expect(commandRequest(parseArgs(["approvals","decision","a-1","--approved","false","--reason","revise"])).body).toEqual({approved:false,reason:"revise"});
- expect(commandRequest(parseArgs(["tasks","action","t-1","--action","report","--progress","40"])).body).toEqual({action:"report",progress:"40"});
+ expect(commandRequest(parseArgs(["tasks","action","t-1","--action","report","--progress","40"])).body).toEqual({action:"report",progress:40});
  expect(commandRequest(parseArgs(["reports","export","files","--from","2026-01-01","--out","files.json"])).download).toBe("files.json");
  expect(commandRequest(parseArgs(["people","load","u-1","--date=2026-06-01"])).path).toBe("/api/load/u-1?date=2026-06-01");
  expect(commandRequest(parseArgs(["load","list","--date","2026-06-22","--org-id","o-1"])).path).toBe("/api/load?date=2026-06-22&org_id=o-1");

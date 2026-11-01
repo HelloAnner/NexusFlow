@@ -39,7 +39,7 @@ export class Client {
  }
  async login(username:string,password:string) {
   if(!username||!password)throw Error("administrator credentials required in environment");
-  const value=await this.json("/api/auth/login","POST",{username,password});
+  const value=await this.json("/api/auth/login","POST",{username,password,...(process.env.NEXUSFLOW_TENANT_ID?{tenant_id:process.env.NEXUSFLOW_TENANT_ID}:{})});
   return this.acceptSession(value);
  }
  private acceptSession(value:any) {

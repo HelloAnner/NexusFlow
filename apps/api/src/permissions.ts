@@ -4,6 +4,7 @@ import { sql } from "./db.ts";
 export type User = {
   id:string; username:string; role:string; tenant_id:string|null; org_id:string|null; portal_permissions:string[]|null;
   display_name?:string;
+  data_scope_stamp?:string;
   /** 由 rbac.withRbacContext 注入；无覆盖时不设置。 */
   feature_denies?:string[];
   project_overrides?:Record<string,Record<string,"allow"|"deny">>;
@@ -30,7 +31,7 @@ export function allowedAction(user:User,kind:string,action:"read"|"write") {
   if(kind==="tools")return canManage(user);
   if(kind==="projects")return canManage(user);
   if(kind==="task_assignments")return canManage(user)||user.role==="project_lead"||user.role==="member";
-  return ["tasks","files"].includes(kind);
+  return ["tasks","files","milestones"].includes(kind);
 }
 async function grant(user:User,projectId:string,action:"view"|"edit"|"dispatch") {
   if(!sql)return false;
@@ -86,7 +87,9 @@ export async function canProjectAction(user:User,projectId:string,action:"view"|
 }
 export async function canReadRecord(user:User,kind:string,row:{id?:string;tenant_id:string|null;created_by:string|null;data:Record<string,unknown>}):Promise<boolean> {
   if(user.role!=="super_admin"&&row.tenant_id!==user.tenant_id)return false;
+  if(!allowedAction(user,kind,'read'))return false;
   const d=row.data;
+  if(typeof d.project_id==='string'&&(featureDenied(user,'project','view')||user.project_overrides?.[d.project_id]?.view==='deny'))return false;
   if(["invitations","admin","config","config_versions","visibility_grants"].includes(kind))return canManage(user)&&(!d.org_id||await orgWithin(user,String(d.org_id)));if(kind==="reports")return row.created_by===user.id||canManage(user)&&(!d.org_id||await orgWithin(user,String(d.org_id)));
   if(kind==="people"){if(["super_admin","center_director"].includes(user.role))return true;if(scopedManagers.has(user.role))return Boolean(d.org_id&&await orgWithin(user,String(d.org_id)));return d.user_id===user.id;}
   if(kind==="orgs"){
@@ -108,6 +111,7 @@ export async function canReadRecord(user:User,kind:string,row:{id?:string;tenant
     return ["super_admin","center_director"].includes(user.role)||(canManage(user)&&within)||member||viewGrant;
   }
   if(kind==="inbox")return d.user_id===user.id;
+  if(kind==='milestones'||kind==='worklogs'){if(!sql)return false;const parents=await sql`SELECT id,tenant_id,created_by,data FROM nexusflow.records WHERE id=${String(d.task_id||'')} AND kind='tasks' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`;const parent=parents[0];return Boolean(parent&&await canReadRecord(user,'tasks',{id:parent.id,tenant_id:parent.tenant_id,created_by:parent.created_by,data:parent.data as Record<string,unknown>}));}
   if(kind==="task_assignments"){if(!sql)return false;const rows=await sql`SELECT id,tenant_id,created_by,data FROM nexusflow.records WHERE id=${String(d.task_id||"")} AND kind='tasks' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`;const task=rows[0];if(!task||!await canReadRecord(user,"tasks",{id:String(task.id),tenant_id:task.tenant_id??null,created_by:task.created_by??null,data:task.data as Record<string,unknown>}))return false;return d.user_id===user.id||row.created_by===user.id||canManage(user);}
   if(kind==="approvals"){if(d.approver_id===user.id||row.created_by===user.id)return true;return canManage(user)&&await orgWithin(user,String(d.target_org_id||"")||null);}
   if(kind==="mentions"){
@@ -142,6 +146,7 @@ export async function canReadRecord(user:User,kind:string,row:{id?:string;tenant
 export async function canWriteRecord(user:User,kind:string,row:{id?:string;tenant_id:string|null;created_by:string|null;data:Record<string,unknown>},action:"create"|"update"|"delete") {
   if(!allowedAction(user,kind,"write")&&!(kind==="dispatch"&&action==="create"&&row.data.workflow==="supplemental"))return false;
   if(["approvals","inbox","conflicts","worklogs","load","seed","config_versions","mentions","files"].includes(kind))return false;
+  if(kind==='milestones'){if(!sql)return false;const parents=await sql`SELECT id,data FROM nexusflow.records WHERE id=${String(row.data.task_id||'')} AND kind='tasks' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`;const parent=parents[0];return Boolean(parent&&!['done','archived','cancelled'].includes(String((parent.data as any).status))&&await canEditTask(user,{...parent.data,id:parent.id}));}
   if(action==="create"){
     if(kind==="dispatch"&&row.data.workflow==="supplemental"){if(!sql)return false;const rows=await sql`SELECT created_by,data FROM nexusflow.records WHERE id=${String(row.data.task_id||"")} AND kind='tasks' AND tenant_id IS NOT DISTINCT FROM ${user.tenant_id}`,task=rows[0];if(!task||!canManage(user)&&task.created_by!==user.id&&(task.data as any).owner_id!==user.id)return false;}
     if(row.tenant_id!==user.tenant_id&&user.role!=="super_admin")return false;

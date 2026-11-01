@@ -1,0 +1,94 @@
+NexusFlow AI 助手
+=================
+
+入口：工作台 > 我的工作 > AI 助手，地址 /nexusflow/chat。
+通用内核沿用 DocuMind 的 pi-agent-core/pi-ai 0.85.1；业务不调用其他系统。
+
+执行链路
+--------
+对话/CLI -> 业务工具白名单 -> 当前身份原业务 API -> 校验/权限/事务/审计
+                           |
+                           +-> 高影响写入预览 -> 用户确认 -> 二次检查 -> 执行回读
+
+没有任意 URL、SQL、Shell、密钥、生产 seed 或部署工具。
+模型不能确认自己的计划。日常明确的本人填报/备注、标记已读和新建草稿可直接处理；
+其他写入生成确认卡。同一回合多项操作支持一次确认，逐项执行，失败停止，不假装整体回滚。
+
+覆盖
+----
+实际工具目录是 apps/api/src/domains/assistant/catalog.ts。
+它同时驱动模型工具、CLI capabilities 和接口映射检查，不维护第二份可漂移的工具实现。
+
+人员/账号：列表、档案、部门/项目归属、角色、状态、可派发、分管、邀请及撤销。
+组织：组织树、创建、编辑、移动、启停、引用检查删除。
+权限：实体、人员、有效矩阵、单项授权/拒绝/重置、整体重置、失效清理。
+项目：基础信息、成员、启动、暂停、恢复、完成、归档、恢复档案。
+任务：草稿、编辑、分工、发布、确认、填报、延期、暂停/恢复/取消、成果、验收及归档。
+分工：查询、创建、确认、个人进度工时、调期、换人、取消、成果要求、提交、退回、验收。
+排期：日历、甘特、正式/预估占用、调期预检、工作日历、完工风险。
+协调：标准/后补派发、提交、原发起确认、审批、冲突查询/解决/限期强制协调。
+资料：上传附件、文本/PDF/Office读取、预览下载、归入项目任务、版本、回滚、归档。
+其他：我的工作、未来待办、收件箱、工作台、报表和导出、配置版本发布、业务工具台、审计。
+不开放原系统明令禁止的删除，也不赋予原业务接口没有授予当前用户的权限。
+
+排期口径
+--------
+任务延期保留各分工自己的日期和投入，不把所有人的安排抹成同一个数。
+新日期重新检查容量、全天冲突、人员状态、项目截止及里程碑；提交时再检查一次。
+每租户的资源写入使用数据库 try-lock 串行保护，忙时明确返回 409，而非同时超额提交。
+普通工时饱和不等于全天锁定；待确认分工单独计为预估占用。
+过载保持现有业务的警告口径；全天重叠、不可用人员等为阻断项。
+配置 work_calendar 可发布 weekdays/holidays/extra_workdays；未配置时明确标注默认周一至周五。
+预测使用预计工时减已确认工时；存在未确认工时、缺预计或容量时返回未知。
+例：预计20h，确认8h，未来3工作日每天可投入2h，剩余12h > 可用6h。
+预测是按当前投入持续推进的估计，不是承诺日期。
+
+安全与恢复
+----------
+会话按租户和用户隔离；每次工具调用重新加载身份和 RBAC。
+历史引用重新鉴权；角色或来源范围变化后保守隐藏旧业务消息，不把旧结果继续交给模型。
+聚合结果额外绑定范围指纹。分享有效7天，必须登录且仍有来源权限，不提供匿名项目数据。
+停止只阻止后续步骤，已提交操作不会自动撤销。相同请求 ID 不重复执行。
+相同确认卡不能重放写入。服务重启时，未完成写入标记为 uncertain，人工核对后继续。
+邀请凭据加密保存，只通过当前用户的安全领取接口交付，不进入模型、事件或普通日志。
+不发送或持久化供应商原始思维链。
+
+模型配置（服务器私密 .env，不入库）
+---------------------------------
+NEXUSFLOW_LLM_BASE_URL
+NEXUSFLOW_LLM_API_KEY
+NEXUSFLOW_LLM_MODEL
+NEXUSFLOW_CHAT_MODELS    可选模型的逗号分隔白名单
+
+模型/思考配置在每轮开始前校验并冻结，不修改全局 Agent，不静默换模型。
+未配置模型时明确显示不可用，不能生成演示回答。
+
+CLI
+---
+nexusflow chat '检查我未来两周的任务和风险' --json
+nexusflow chat --continue '检查刚才任务的完工风险' --json
+nexusflow ai capabilities --json
+nexusflow ai tool tasks_reschedule '{"id":"真实任务ID","data":{"end_date":"2026-11-12"}}' --json
+nexusflow ai action 操作ID --json
+nexusflow ai confirm 操作ID --json
+nexusflow ai confirm-batch 会话ID 消息ID --json
+nexusflow ai cancel 操作ID --json
+nexusflow ai trace 会话ID 消息ID --json
+nexusflow conversations list --json
+nexusflow conversations show 会话ID --json
+nexusflow conversations stop 会话ID 消息ID --json
+nexusflow planning calendar --from 2026-11-02 --to 2026-11-13 --json
+nexusflow planning forecast 任务ID --json
+nexusflow worklogs confirm 工时ID --json
+nexusflow verify assistant --json
+
+ai reveal 操作ID 仅供用户主动领取邀请凭据；测试日志不得打印其输出。
+登录支持 NEXUSFLOW_TENANT_ID。--continue 的会话记忆按服务器/租户/用户隔离。
+
+验收
+----
+服务器运行类型检查和 Bun 回归；工具目录逐项核对真实路由。
+真实模型验收用产品 CLI，不用仅 mock 的成功代替。
+写入测试使用 scripts/assistant-fixture.ts 的独立测试租户，不能使用生产 seed。
+验收结束仅清理该脚本自己创建且有专用前缀的租户和对象，不碰存量业务数据。
+最终结果以对应提交的服务器 STATUS、CLI 回读和验收报告为准。

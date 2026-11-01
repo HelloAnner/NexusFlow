@@ -61,6 +61,7 @@ sql.begin = async (fn: (tx: any) => Promise<any>) => {
   const snapshot = structuredClone(records);
   try { return await fn(sql); } catch (e) { records = snapshot; throw e; }
 };
+sql.reserve=async()=>Object.assign(async(strings:TemplateStringsArray,...values:any[])=>strings.join('').includes('pg_try_advisory_lock')?[{locked:true}]:sql(strings,...values),{release:()=>{}});
 mock.module(`${root}/db.ts`, () => ({ sql, redis, migrate: async () => {}, probeDependencies: async () => {} }));
 const { config } = await import(`${root}/config.ts`);Object.assign(config,{jwtSecret:"review-only-secret-at-least-32-bytes"});
 const { createSession, portalAllows, revokeUserSessions } = await import(`${root}/auth.ts`);

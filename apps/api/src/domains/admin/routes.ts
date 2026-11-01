@@ -25,7 +25,9 @@ app.get("/api/admin/users",async c=>{
  const profiles=await sql`SELECT id,data FROM nexusflow.records WHERE kind='people' AND (${user.role==='super_admin'} OR tenant_id IS NOT DISTINCT FROM ${user.tenant_id})`;
  const byUser=new Map<string,Record<string,any>>();
  for(const row of profiles){const data=row.data as Record<string,any>;if(typeof data.user_id==="string")byUser.set(data.user_id,{person_id:row.id,...data});}
- const items=rows.map((row:any)=>{
+ const selected=c.req.query('user_id')?rows.filter((row:any)=>String(row.id)===c.req.query('user_id')):rows;
+ if(c.req.query('user_id')&&!selected.length)return c.json({error:'user not found'},404);
+ const items=selected.map((row:any)=>{
   const person=byUser.get(String(row.id))??{};
   return {...row,
    person_id:person.person_id??null,

@@ -78,7 +78,15 @@ async function loadOverrides(tenantId: string, userId: string): Promise<RbacOver
 /** 每个请求加载一次：功能禁用 + 项目覆盖，供 permissions.ts 同步判断。 */
 export async function withRbacContext(user: User): Promise<User> {
   if (!sql || !user.tenant_id) return user;
-  const overrides = await loadOverrides(user.tenant_id, user.id);
+  // ponytail: 聚合历史采用保守的范围指纹；数据量增大后再按来源对象维护增量版本。
+  const scope = await sql`SELECT md5(coalesce(string_agg(id||scope::text,'|' ORDER BY id),'')) AS stamp FROM (
+    SELECT id,jsonb_build_array(kind,data->'owner_id',data->'user_id',data->'person_id',data->'member_ids',data->'org_id',data->'parent_id',data->'visibility',data->'actions',data->'expires_at',CASE WHEN kind='visibility_grants' AND data->>'expires_at' IS NOT NULL THEN (data->>'expires_at')::timestamptz>now() ELSE NULL END,CASE WHEN kind IN ('visibility_grants','role_delegations') THEN data->'status' ELSE NULL END) AS scope
+    FROM nexusflow.records WHERE tenant_id IS NOT DISTINCT FROM ${user.tenant_id}
+      AND (kind IN ('orgs','projects','people') OR kind IN ('visibility_grants','role_delegations') AND data->>'user_id'=${user.id}
+        OR kind IN ('tasks','task_assignments') AND (data->>'owner_id'=${user.id} OR data->>'user_id'=${user.id} OR data->'member_ids' ? ${user.id}))
+  ) security_scope`;
+  user={...user,data_scope_stamp:typeof scope[0]?.stamp==='string'?scope[0].stamp:''};
+  const overrides = await loadOverrides(user.tenant_id!, user.id);
   if (overrides.length === 0) return user;
   const featureDenies: string[] = [];
   const projectOverrides: Record<string, Record<string, 'allow' | 'deny'>> = {};
