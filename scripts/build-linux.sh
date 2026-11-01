@@ -25,7 +25,9 @@ cp "$STAGE/build-runtime/bun" "$STAGE/build-runtime/VERSION" "$HOST_RUNTIME/"
 export PATH="$STAGE/build-runtime:$PATH"
 git -C "$ROOT" archive --format=tar "$COMMIT" | tar "${TAR_FLAGS[@]}" -x -C "$STAGE/source"
 python3 "$STAGE/source/scripts/check-read-safety.py" "$STAGE/source"
-for app in apps/api apps/web cli; do (cd "$STAGE/source/$app" && bun install --frozen-lockfile --registry=https://registry.npmmirror.com --network-concurrency=8); done
+# Use the platform trust bundle (also used by curl); never disable TLS verification.
+CA_FLAGS=(); if [[ -r /etc/ssl/cert.pem ]]; then CA_FLAGS=(--cafile=/etc/ssl/cert.pem); fi
+for app in apps/api apps/web cli; do (cd "$STAGE/source/$app" && bun install --frozen-lockfile --registry=https://registry.npmmirror.com --network-concurrency=8 "${CA_FLAGS[@]}"); done
 (cd "$STAGE/source/apps/web" && NEXUSFLOW_STATIC_EXPORT=1 NEXUSFLOW_BASE_PATH=/nexusflow bun run build)
 [[ -f "$STAGE/source/apps/web/out/index.html" ]] || { echo 'static export missing'; exit 1; }
 # Dependency attachment is used only for server tsc/tests (no native web build there).
