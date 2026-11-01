@@ -92,3 +92,4 @@ ai reveal 操作ID 仅供用户主动领取邀请凭据；测试日志不得打�
 写入测试使用 scripts/assistant-fixture.ts 的独立测试租户，不能使用生产 seed。
 验收结束仅清理该脚本自己创建且有专用前缀的租户和对象，不碰存量业务数据。
 最终结果以对应提交的服务器 STATUS、CLI 回读和验收报告为准。
+2026-11-01 的实际结果、证据路径和未覆盖边界见 ai-assistant-acceptance.txt。

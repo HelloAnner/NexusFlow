@@ -10,6 +10,7 @@ import subprocess
 import sys
 import time
 import uuid
+import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
 if platform.system()!='Linux': raise SystemExit('server only')
@@ -130,6 +131,24 @@ def verify():
     uploaded=command('leader','files','upload',textfile,'--category','personal-report','--scope','personal')
     attachment=command('leader','chat','只概括附件里的项目编号和目标，不执行任何修改。','--file-ids',uploaded['id'])
     check('NF-AI-2026' in attachment['content'],'real model reads the actual attachment bytes')
+    samples=[]
+    for ext,entry,xml in [
+      ('docx','word/document.xml','<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>NF-AI-DOCX-2026</w:t></w:r></w:p></w:body></w:document>'),
+      ('xlsx','xl/worksheets/sheet1.xml','<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row><c t="inlineStr"><is><t>NF-AI-XLSX-2026</t></is></c></row></sheetData></worksheet>'),
+      ('pptx','ppt/slides/slide1.xml','<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>NF-AI-PPTX-2026</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>')]:
+        path=run/('sample.'+ext)
+        with zipfile.ZipFile(str(path),'w',zipfile.ZIP_DEFLATED) as archive:archive.writestr(entry,xml)
+        samples.append((path,'NF-AI-'+ext.upper()+'-2026'))
+    content='BT /F1 12 Tf 20 100 Td (NF-AI-PDF-2026) Tj ET'
+    objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>','<< /Length '+str(len(content))+' >>\nstream\n'+content+'\nendstream']
+    pdf='%PDF-1.4\n';offsets=[]
+    for n,obj in enumerate(objects):
+        offsets.append(len(pdf));pdf+=str(n+1)+' 0 obj\n'+obj+'\nendobj\n'
+    xref=len(pdf);pdf+='xref\n0 6\n0000000000 65535 f \n'+''.join(str(offset).zfill(10)+' 00000 n \n' for offset in offsets)+'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n'+str(xref)+'\n%%EOF'
+    path=run/'sample.pdf';path.write_bytes(pdf.encode('ascii'));samples.append((path,'NF-AI-PDF-2026'))
+    for path,marker in samples:
+        sample=command('leader','files','upload',path,'--category','personal-report','--scope','personal')
+        check(marker in tool('files_read',{'id':sample['id']})['result']['context'],'compiled server extracts actual '+path.suffix[1:]+' attachment bytes')
     share=command('leader','ai','share',attachment['conversation_id'])
     check(command('leader','ai','shared',share['id'])['messages'],'authenticated owner can open a controlled share')
     command('worker','ai','shared',share['id'],fail=True)
