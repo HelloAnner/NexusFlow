@@ -1,6 +1,7 @@
 "use client";
 import { useCallback,useEffect,useRef,useState } from "react";
 import { api,sessionEpoch,subscribeSession } from "@/lib/api";
+import { newId } from '@/lib/utils';
 import { streamMessage,type Conversation,type ChatMessage,type ChatFile,type ChatModel,type RuntimeEvent } from "@/lib/assistant";
 
 export function useAssistant(){
@@ -26,8 +27,8 @@ export function useAssistant(){
   let conversationId=id;
   try{
    if(!conversationId){const created=await api<Conversation>("/ai/conversations",{method:"POST",body:JSON.stringify({title:content.slice(0,40)})});if(g!==generation.current)return false;conversationId=created.id;setId(created.id);window.history.replaceState(null,"",`?c=${created.id}`);}
-   activeId.current=conversationId;const temp=crypto.randomUUID();assistantId.current=temp;
-   setMessages(previous=>[...previous,...(retry?[]:[{id:crypto.randomUUID(),role:"user" as const,content,status:"completed",events:[],files:attachments}]),{id:temp,role:"assistant",content:"",status:"answering",events:[]}]);
+   activeId.current=conversationId;const temp=newId();assistantId.current=temp;
+   setMessages(previous=>[...previous,...(retry?[]:[{id:newId(),role:"user" as const,content,status:"completed",events:[],files:attachments}]),{id:temp,role:"assistant",content:"",status:"answering",events:[]}]);
    const selected=models.find(m=>m.id===model),enabled=thinking==="auto"?selected?.thinking_default:thinking==="deep";
    let terminal=false;
    const event=(e:RuntimeEvent)=>{
@@ -38,7 +39,7 @@ export function useAssistant(){
     setMessages(previous=>previous.map(m=>m.id===temp||m.id===e.response_message_id?{...m,id:e.response_message_id,events:[...m.events,e],...(e.event_type==="response.delta"?{content:m.content+String(e.payload.delta||"")}:{ }),...(e.event_type==="response.reset"?{content:""}:{}),...(e.event_type==="execution.completed"?{content:String(e.payload.content||m.content),status:"completed",model_id:e.payload.model_id}:{}),...(e.event_type==="execution.failed"?{status:"failed"}:{}),...(e.event_type==="execution.cancelled"?{status:"cancelled"}:{})}:m));
    };
    const path=retry?`/ai/conversations/${conversationId}/messages/${retry.id}/retry`:`/ai/conversations/${conversationId}/messages`;
-   await streamMessage(path,{content,client_request_id:crypto.randomUUID(),file_ids:attachments.map(f=>f.id),model_id:model,thinking_enabled:enabled},abort.signal,event);
+   await streamMessage(path,{content,client_request_id:newId(),file_ids:attachments.map(f=>f.id),model_id:model,thinking_enabled:enabled},abort.signal,event);
    if(!terminal&&!abort.signal.aborted)throw Error("连接已断开，请刷新历史核对执行结果，勿重复提交操作");
    if(g===generation.current){await refresh();const value=await api<{messages:ChatMessage[]}>(`/ai/conversations/${conversationId}/messages`);if(g===generation.current)setMessages(value.messages);}
    return true;

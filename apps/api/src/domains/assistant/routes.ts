@@ -64,7 +64,7 @@ export function registerAssistant(app:ApiApp){
  app.post('/api/ai/conversations/:id/share',async c=>{const u=actor(c),cid=c.req.param('id');await owned(u,cid);const id=crypto.randomUUID();await db()`INSERT INTO nexusflow.ai_shares(id,conversation_id,tenant_id,user_id,expires_at) VALUES(${id},${cid},${u.tenant_id!},${u.id},now()+interval '7 days')`;return c.json({id,expires_in_days:7},201);});
  app.get('/api/ai/shares/:id',async c=>{
   const u=actor(c),shares=await db()`SELECT s.*,c.status FROM nexusflow.ai_shares s JOIN nexusflow.ai_conversations c ON c.id=s.conversation_id WHERE s.id=${c.req.param('id')} AND s.tenant_id=${u.tenant_id!} AND s.expires_at>now() AND c.status='active'`;if(!shares[0])return c.json({error:'share not found'},404);
-  const share=shares[0],rt=runtime(app,c,String(share.conversation_id)),rows=await db()`SELECT * FROM nexusflow.ai_messages WHERE conversation_id=${share.conversation_id} ORDER BY created_at,id`;
+  const share=shares[0],rt=runtime(app,c,String(share.conversation_id)),rows=await db()`SELECT * FROM nexusflow.ai_messages WHERE conversation_id=${share.conversation_id} ORDER BY message_order`;
   for(const row of rows){const d=row.data as any;if(d.permission_stamp&&d.permission_stamp!==permissionStamp(u)||hasAggregate(d.refs||[])&&d.scope_stamp&&d.scope_stamp!==u.data_scope_stamp||!await referencesAllowed(rt,d.refs||[]))return c.json({error:'forbidden: 接收人缺少会话来源权限或管理范围不同'},403);}
   return c.json({messages:rows.map(row=>({id:row.id,role:row.role,content:row.content,status:row.status,events:[],model_id:(row.data as any).model_id}))});
  });

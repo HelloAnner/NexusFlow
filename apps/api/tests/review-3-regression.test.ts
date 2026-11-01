@@ -13,7 +13,7 @@ const root = new URL("../src", import.meta.url).pathname;
 type Row = { id:string; kind:string; tenant_id:string|null; created_by:string; data:Record<string,any>; updated_at:Date; created_at:Date; xmin:string };
 let sqlWrites:string[]=[];
 let records:Row[] = [], users:any[] = [], audits:any[] = [], failRevoke=false, beforeNextBegin:(()=>Promise<void>)|null=null, nextXmin=0, activeXmin:string|null=null;
-let afterNextCommit:(()=>void)|null=null,failNextRecordRead=false;
+let afterNextCommit:(()=>void)|null=null,failNextRecordRead=false,denyNextScheduleLock=false;
 const cache=new Map<string,string>(), sets=new Map<string,Set<string>>();
 const redis:any={status:"ready", get:async(k:string)=>cache.get(k)??null,
   async eval(script:string,n:number,...args:any[]) {
@@ -79,7 +79,7 @@ const sql:any=async(strings:TemplateStringsArray,...v:any[])=>{
   return [];
 };
 sql.json=(v:any)=>v;sql.begin=async(fn:any)=>{const hook=beforeNextBegin;beforeNextBegin=null;if(hook)await hook();const old=structuredClone(records),oldUsers=structuredClone(users),audit=structuredClone(audits),previousXmin=activeXmin;activeXmin=String(++nextXmin);try{const value=await fn(sql);const after=afterNextCommit;afterNextCommit=null;if(after)after();return value;}catch(e){records=old;users=oldUsers;audits=audit;throw e;}finally{activeXmin=previousXmin;}};
-sql.reserve=async()=>Object.assign(async(strings:TemplateStringsArray,...values:any[])=>strings.join('').includes('pg_try_advisory_lock')?[{locked:true}]:sql(strings,...values),{release:()=>{}});
+sql.reserve=async()=>Object.assign(async(strings:TemplateStringsArray,...values:any[])=>strings.join('').includes('pg_try_advisory_lock')?[{locked:denyNextScheduleLock?(denyNextScheduleLock=false,false):true}]:sql(strings,...values),{release:()=>{}});
 mock.module(`${root}/db.ts`,()=>({sql,redis,migrate:async()=>{},probeDependencies:async()=>{}}));
 const {config}=await import(`${root}/config.ts`);Object.assign(config,{jwtSecret:"review-only-secret-at-least-32-bytes"});
 const {createSession,portalAllows}=await import(`${root}/auth.ts`);
@@ -100,9 +100,11 @@ function row(id:string,kind:string,data:any,creator="u1",tenant:string|null="t1"
 function task(patch:any={}){return {name:"Task",type:"market",owner_id:"u1",org_id:"o1",member_ids:[],start_date:"2026-06-01",end_date:"2026-06-01",daily_hours:2,status:"draft",all_day:false,...patch};}
 function addAccount(user:any){const account={...user,status:"active",portal_id:user.portal_permissions===null?null:"portal-review"};users=users.filter(u=>u.id!==user.id);users.push(account);}
 async function request(path:string,method="GET",body?:any,user=center){addAccount(user);const token=await createSession(user);return app.request(path,{method,headers:{authorization:`Bearer ${token}`,"content-type":"application/json"},...(body===undefined?{}:{body:JSON.stringify(body)})});}
-beforeEach(()=>{Object.assign(config,initialConfig);records=[row("c1","orgs",{name:"Center",type:"center"}),row("o1","orgs",{name:"One",type:"department",parent_id:"c1"}),row("o2","orgs",{name:"Two",type:"department",parent_id:"c1"})];users=[{...member,status:"active",portal_id:null},{...member,id:"u2",username:"two",org_id:"o2",status:"active",portal_id:null}];audits=[];sqlWrites=[];cache.clear();sets.clear();failRevoke=false;beforeNextBegin=null;nextXmin=0;activeXmin=null;afterNextCommit=null;failNextRecordRead=false;globalThis.fetch=blockFetch;});
+beforeEach(()=>{Object.assign(config,initialConfig);records=[row("c1","orgs",{name:"Center",type:"center"}),row("o1","orgs",{name:"One",type:"department",parent_id:"c1"}),row("o2","orgs",{name:"Two",type:"department",parent_id:"c1"})];users=[{...member,status:"active",portal_id:null},{...member,id:"u2",username:"two",org_id:"o2",status:"active",portal_id:null}];audits=[];sqlWrites=[];cache.clear();sets.clear();failRevoke=false;beforeNextBegin=null;nextXmin=0;activeXmin=null;afterNextCommit=null;failNextRecordRead=false;denyNextScheduleLock=false;globalThis.fetch=blockFetch;});
 afterAll(()=>{globalThis.fetch=previousFetch;for(const [key,value] of [["DEMO_SEED_ENABLED",seedEnvironment.enabled],["DEMO_SEED_TENANT_ID",seedEnvironment.tenant]]){if(value===undefined)delete process.env[key!];else process.env[key!]=value;}});
 
+test('resource lock rejection propagates a valid JSON response without entering the handler',async()=>{denyNextScheduleLock=true;const response=await request('/api/tasks/missing/action','POST',{action:'pause',reason:'busy'});expect(response.status).toBe(409);expect((await response.json()).error).toContain('busy');expect(sqlWrites).toEqual([]);});
+test('admin profile versions are not mistaken for a generic admin record id',async()=>{addAccount(center);users.find(u=>u.id==='u2')!.updated_at=new Date(0);const token=await createSession(center);const response=await app.request('/api/admin/users/u2/profile',{method:'PATCH',headers:{authorization:`Bearer ${token}`,'content-type':'application/json','if-match':new Date(0).toISOString()},body:JSON.stringify({display_name:'Checked profile',updated_at:new Date(0).toISOString()})});expect(response.status).toBe(200);expect((await response.json()).user.display_name).toBe('Checked profile');});
 test("admin profile PATCH preserves omitted fields, syncs profiles, and audits names",async()=>{
  const target=()=>users.find(u=>u.id==="u2")!;target().display_name="Two";target().org_ids=["o2"];
  records.push(row("profile-two","people",{user_id:"u2",name:"Two",org_id:"o2"},"u2"));

@@ -16,14 +16,14 @@ if platform.system()!='Linux': raise SystemExit('server only')
 spec=importlib.util.spec_from_file_location('server_env',ROOT/'scripts/server-env.py')
 server_env=importlib.util.module_from_spec(spec);spec.loader.exec_module(server_env)
 values=server_env.environment('/opt/nexusflow/.env')
-bun=ROOT.parent/'runtime/bun'
 cli=Path(sys.argv[1]) if len(sys.argv)>1 else ROOT.parent/'nexusflow-cli'
+bun=cli.parent/'runtime/bun'
 run=Path('/opt/nexusflow/verify/ai-assistant')/('live-'+str(int(time.time())))
 run.mkdir(parents=True,mode=0o700)
 (run/'home').mkdir(mode=0o700)
 fixture=run/'fixture.json'
 private_env={**os.environ,**values,'PATH':str(bun.parent)+':/usr/bin:/bin'}
-setup=subprocess.run([str(bun),str(ROOT/'scripts/assistant-fixture.ts'),'setup',str(fixture)],env=private_env,capture_output=True,text=True)
+setup=subprocess.run([str(bun),str(ROOT/'scripts/assistant-fixture.ts'),'setup',str(fixture)],env=private_env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
 if setup.returncode: raise SystemExit('isolated fixture setup failed: '+setup.stderr[-400:])
 f=json.loads(fixture.read_text());checks=[];calls=0
 base={'NEXUSFLOW_URL':'http://127.0.0.1:8089','NEXUSFLOW_BASE_PATH':'/nexusflow','HOME':str(run/'home'),'PATH':private_env['PATH']}
@@ -31,7 +31,7 @@ tokens={}
 def command(who,*args,fail=False,timeout=330):
     global calls
     user=f['users'][who]; env={**os.environ,**base,'NEXUSFLOW_TENANT_ID':user['tenant_id'],'NEXUSFLOW_TOKEN':tokens.get(who,'')}
-    result=subprocess.run([str(cli),*map(str,args),'--json'],env=env,capture_output=True,text=True,timeout=timeout);calls+=1
+    result=subprocess.run([str(cli),*map(str,args),'--json'],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True,timeout=timeout);calls+=1
     if fail:
         if result.returncode==0: raise AssertionError('expected rejection: '+str(args[:2]))
         return result.stderr
@@ -41,7 +41,7 @@ def command(who,*args,fail=False,timeout=330):
 def login(who):
     user=f['users'][who]; tokenfile=run/('token-'+who+'-'+uuid.uuid4().hex)
     env={**os.environ,**base,'NEXUSFLOW_TENANT_ID':user['tenant_id'],'NEXUSFLOW_USER':user['username'],'NEXUSFLOW_PASSWORD':user['password']}
-    result=subprocess.run([str(cli),'auth','login','--token-file',str(tokenfile),'--json'],env=env,capture_output=True,text=True)
+    result=subprocess.run([str(cli),'auth','login','--token-file',str(tokenfile),'--json'],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
     if result.returncode:raise RuntimeError('fixture login failed: '+who)
     tokens[who]=tokenfile.read_text()
 def check(condition,label):
@@ -64,6 +64,7 @@ def action(name,id,data=None,who='leader'):
 def get_task(id,who='leader'):return command(who,'tasks','show',id)
 
 def verify():
+    check(command('leader','version')['version']==command('leader','version','--local')['version'],'server and CLI use the same committed version')
     for who in f['users']:login(who)
     catalog=command('leader','ai','capabilities')['items']
     check(len(catalog)>100 and len({t['name'] for t in catalog})==len(catalog),'complete unique business tool catalog')
@@ -205,7 +206,7 @@ def verify():
     check(len(command('leader','conversations','show',idem['id'])['messages'])==2,'duplicate client request id creates only one message pair')
     conv=command('leader','conversations','create','取消验收会话')
     env={**os.environ,**base,'NEXUSFLOW_TOKEN':tokens['leader'],'NEXUSFLOW_TENANT_ID':f['tenant']}
-    process=subprocess.Popen([str(cli),'chat','请详细检查未来一年的项目计划和人员风险，先查询事实，不要修改。','--conversation',conv['id'],'--json'],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    process=subprocess.Popen([str(cli),'chat','请详细检查未来一年的项目计划和人员风险，先查询事实，不要修改。','--conversation',conv['id'],'--json'],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
     active=None
     for _ in range(80):
         messages=command('leader','conversations','show',conv['id'])['messages']
@@ -224,9 +225,9 @@ def verify():
 
 try:
     verify()
-    cleanup=subprocess.run([str(bun),str(ROOT/'scripts/assistant-fixture.ts'),'cleanup',str(fixture)],env=private_env,capture_output=True,text=True)
+    cleanup=subprocess.run([str(bun),str(ROOT/'scripts/assistant-fixture.ts'),'cleanup',str(fixture)],env=private_env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
     if cleanup.returncode:raise RuntimeError('fixture cleanup failed: '+cleanup.stderr[-400:])
-    report={'passed':True,'checks':checks,'cli_calls':calls,'fixture_cleaned':True,'server_version':json.loads(subprocess.check_output([str(cli),'version','--json'],env={**os.environ,**base},text=True))}
+    report={'passed':True,'checks':checks,'cli_calls':calls,'fixture_cleaned':True,'server_version':json.loads(subprocess.check_output([str(cli),'version','--json'],env={**os.environ,**base},universal_newlines=True))}
     (run/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2));print('ASSISTANT_REAL_CLI_PASS '+str(run/'report.json'))
 except Exception as error:
     (run/'report.json').write_text(json.dumps({'passed':False,'checks':checks,'cli_calls':calls,'error':str(error),'fixture_preserved':True},ensure_ascii=False,indent=2));print('ASSISTANT_REAL_CLI_FAIL '+str(error)+'; '+str(run/'report.json'),file=sys.stderr);sys.exit(1)

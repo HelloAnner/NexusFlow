@@ -49,7 +49,7 @@ const publicPaths=new Set(["/api/auth/login","/api/auth/logout","/api/auth/regis
 app.use("/api/*",async(c,next)=>{if(publicPaths.has(c.req.path)||c.req.path.startsWith("/api/portal/sync/v1")||c.req.path.startsWith("/api/portal/rbac/v1")||c.req.path==="/api/system/version"&&c.req.method==="GET"||portalFilesPublicPath.test(c.req.path))return next();const loadedUser=await currentUser(c);if(!loadedUser)return c.json({error:"unauthorized"},401);const user=await withRbacContext(loadedUser);
  const registered=app.routes.some(route=>!route.path.includes("*")&&(route.method===c.req.method||route.method==="ALL")&&new RegExp("^"+route.path.replace(/:[^/]+/g,"[^/]+")+"$").test(c.req.path));
  if(!registered)return c.json({error:"not found"},404);
- if(!portalAllows(user,c.req.path,c.req.method))return c.json({error:"forbidden"},403);c.set("user",user);await scheduleGuard(c,next);});
+ if(!portalAllows(user,c.req.path,c.req.method))return c.json({error:"forbidden"},403);c.set("user",user);return scheduleGuard(c,next);});
 app.onError((e,c)=>{const status=errorStatus(e);return c.json({error:status===500?"internal error":e.message,code:`HTTP_${status}`,request_id:c.get("request_id")},status);});
 app.get("/api/system/version",c=>c.json(systemVersion()));
 app.get("/healthz",c=>c.json({ok:true,...systemVersion()}));

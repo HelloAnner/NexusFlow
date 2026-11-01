@@ -5,7 +5,7 @@ export function db(){if(!sql)throw Error("DATABASE_URL required");return sql;}
 export async function owned(user:User,id:string){const rows=await db()`SELECT * FROM nexusflow.ai_conversations WHERE id=${id} AND tenant_id=${user.tenant_id!} AND user_id=${user.id} AND status='active'`;if(!rows[0])throw Error("conversation not found");return rows[0];}
 export async function getMessages(runtime:Runtime){
  await owned(runtime.user,runtime.conversationId);
- const rows=await db()`SELECT * FROM nexusflow.ai_messages WHERE conversation_id=${runtime.conversationId} AND tenant_id=${runtime.user.tenant_id!} AND user_id=${runtime.user.id} ORDER BY created_at,id`;
+ const rows=await db()`SELECT * FROM nexusflow.ai_messages WHERE conversation_id=${runtime.conversationId} AND tenant_id=${runtime.user.tenant_id!} AND user_id=${runtime.user.id} ORDER BY message_order`;
  const result=[];
  for(const row of rows){const data=row.data as any;
   const allowed=(row.role==='user'||!data.permission_stamp||data.permission_stamp===permissionStamp(runtime.user))&&(!hasAggregate(data.refs||[])||!data.scope_stamp||data.scope_stamp===runtime.user.data_scope_stamp)&&await referencesAllowed(runtime,data.refs||[]);

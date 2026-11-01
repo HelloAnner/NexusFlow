@@ -1,5 +1,17 @@
 export const cx = (...xs: (string | false | null | undefined)[]) => xs.filter(Boolean).join(" ");
 
+// HTTP 页面不提供 randomUUID，但仍可使用 getRandomValues 生成标准 UUID v4。
+export function newId(): string {
+  const crypto = globalThis.crypto;
+  if (typeof crypto?.randomUUID === "function") return crypto.randomUUID();
+  if (typeof crypto?.getRandomValues !== "function") throw new Error("当前浏览器不支持安全随机数，请更换浏览器");
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6]! & 0x0f) | 0x40;
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+  const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 export const DEMO_TODAY = "2025-06-24"; // 与设计稿一致的演示「今天」（周三）
 
 export const AVATAR_COLORS = ["var(--color-green)", "var(--color-blue)", "var(--color-purple)", "var(--color-pink)", "var(--color-orange)", "var(--color-ink-2)"];
