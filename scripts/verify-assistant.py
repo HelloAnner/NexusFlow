@@ -166,7 +166,14 @@ def verify():
     for assignment in command('leader','tasks','assignments',coordination['id'])['items']:
         who='worker' if assignment['user_id']==worker else 'department2'
         action('task_assignments_confirm',assignment['id'],{},who)
+    command('department2','tasks','update',coordination['id'],json.dumps({'summary':'must not change'}),fail=True)
+    forbidden=tool('tasks_pause',{'id':coordination['id'],'data':{'reason':'must not change'}},'department2')['result']['action_id']
+    command('department2','ai','confirm',forbidden,fail=True)
     result_file=command('worker','files','upload',textfile,'--category','overall-report','--task-id',coordination['id'],'--scope','space')
+    check(tool('files_get',{'id':result_file['id']},'department2')['result']['id']==result_file['id'],'cross-department participation can read shared deliverables')
+    forbidden=tool('files_archive',{'id':result_file['id'],'data':{'reason':'must not change'}},'department2')['result']['action_id']
+    command('department2','ai','confirm',forbidden,fail=True)
+    check(get_task(coordination['id'])['status']=='in_progress' and command('worker','files','show',result_file['id'])['status']=='active','personal participation never grants foreign task or file management')
     action('task_assignments_submit',wa['id'],{'result':'真实成果已提交','file_ids':[result_file['id']]},'worker')
     action('task_assignments_return',wa['id'],{'reason':'请完善说明'})
     action('task_assignments_submit',wa['id'],{'result':'已补充说明','file_ids':[result_file['id']]},'worker')
