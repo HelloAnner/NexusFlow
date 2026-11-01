@@ -25,7 +25,7 @@ cp "$STAGE/build-runtime/bun" "$STAGE/build-runtime/VERSION" "$HOST_RUNTIME/"
 export PATH="$STAGE/build-runtime:$PATH"
 git -C "$ROOT" archive --format=tar "$COMMIT" | tar "${TAR_FLAGS[@]}" -x -C "$STAGE/source"
 python3 "$STAGE/source/scripts/check-read-safety.py" "$STAGE/source"
-for app in apps/api apps/web cli; do (cd "$STAGE/source/$app" && bun install --frozen-lockfile); done
+for app in apps/api apps/web cli; do (cd "$STAGE/source/$app" && bun install --frozen-lockfile --registry=https://registry.npmmirror.com); done
 (cd "$STAGE/source/apps/web" && NEXUSFLOW_STATIC_EXPORT=1 NEXUSFLOW_BASE_PATH=/nexusflow bun run build)
 [[ -f "$STAGE/source/apps/web/out/index.html" ]] || { echo 'static export missing'; exit 1; }
 # Dependency attachment is used only for server tsc/tests (no native web build there).
