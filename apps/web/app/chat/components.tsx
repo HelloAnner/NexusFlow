@@ -37,7 +37,7 @@ export function Message({message,busy,onRetry,onFeedback,onError}:{message:ChatM
  return <article className={`ai-message ai-${message.role}`}>
   {message.role==="assistant"&&<div className="ai-identity">NexusFlow <span className="ai-muted">{message.model_id||"项目协同助手"}</span></div>}
   {message.role==="assistant"&&calls.length>0&&<section className="ai-trace"><button className="ai-trace-toggle" aria-expanded={open} onClick={()=>setOpen(!open)}>{running?<LoaderCircle size={14} className="animate-spin"/>:<Check size={14}/>} {running?"正在处理":"执行过程"} · {calls.length} 个步骤 <ChevronDown size={14}/></button>{open&&<ol>{calls.map(([key,t])=><li key={key}><span>{t.status==="started"?"正在":t.status==="failed"?"失败：":"已完成："}{t.label}</span>{t.ms!=null&&<small>{(t.ms/1000).toFixed(1)}s</small>}<details><summary>详情</summary><pre>{json({参数:t.args,结果:t.result})}</pre></details></li>)}</ol>}</section>}
-  {message.content?<div className="ai-markdown"><Streamdown isAnimating={running} animated={false}>{message.content}</Streamdown></div>:running?<p className="ai-muted" role="status">正在处理…</p>:null}
+  {message.content?<Streamdown className="ai-markdown" isAnimating={running} animated={false}>{message.content}</Streamdown>:running?<p className="ai-muted" role="status">正在处理…</p>:null}
   {(message.files||[]).map(f=><FileButton key={f.id} file={f} onError={onError}/>)}
   {pending.length>1&&<button className="ai-primary" disabled={confirming||busy} onClick={()=>void confirmAll()}>{confirming?'正在执行…':`确认本轮 ${pending.length} 项操作`}</button>}
   {shownActions.map(a=><ActionCard key={a.id} initial={a} onError={onError}/>)}

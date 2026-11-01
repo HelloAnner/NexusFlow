@@ -1,6 +1,6 @@
 "use client";
-import { useEffect,useRef,useState } from "react";
-import { ArrowUp,Bookmark,FileText,History,LoaderCircle,Paperclip,Pencil,Plus,Search,Share2,Square,Trash2,X } from "lucide-react";
+import { useEffect,useLayoutEffect,useRef,useState } from "react";
+import { ArrowUp,Bookmark,ChevronDown,FileText,History,LoaderCircle,Paperclip,Pencil,Plus,Search,Share2,Square,Trash2,X } from "lucide-react";
 import { api } from "@/lib/api";
 import { copyToClipboard } from '@/lib/clipboard';
 import { type ChatFile } from "@/lib/assistant";
@@ -9,7 +9,8 @@ import { FileButton,Message } from "./components";
 import "./chat.css";
 export default function AssistantPage(){
  const chat=useAssistant(),[input,setInput]=useState(""),[panel,setPanel]=useState(""),[query,setQuery]=useState(""),[attachments,setAttachments]=useState<ChatFile[]>([]),[uploading,setUploading]=useState(false);
- const fileInput=useRef<HTMLInputElement>(null),bottom=useRef<HTMLDivElement>(null),scroll=useRef<HTMLDivElement>(null),follow=useRef(true);
+ const fileInput=useRef<HTMLInputElement>(null),inputRef=useRef<HTMLTextAreaElement>(null),bottom=useRef<HTMLDivElement>(null),scroll=useRef<HTMLDivElement>(null),follow=useRef(true);
+ useLayoutEffect(()=>{const field=inputRef.current;if(field){field.style.height='auto';field.style.height=`${field.scrollHeight}px`;}},[input]);
  const current=chat.conversations.find(c=>c.id===chat.id),selected=chat.models.find(m=>m.id===chat.model);
  useEffect(()=>{if(follow.current)bottom.current?.scrollIntoView({behavior:"instant"});},[chat.messages]);
  useEffect(()=>setAttachments([]),[chat.id]);
@@ -32,14 +33,14 @@ export default function AssistantPage(){
   <div className="ai-composer-wrap">
    {chat.error&&<div className="ai-notice" role="alert"><span>{chat.error}</span><button aria-label="关闭提示" onClick={()=>chat.setError("")}><X size={14}/></button></div>}
    <form className="ai-composer" onSubmit={e=>{e.preventDefault();void send();}}>
-    {attachments.length>0&&<div className="ai-attachments">{attachments.map(f=><span key={f.id}><FileText size={13}/>{f.name}<button type="button" aria-label={`移除 ${f.name}`} onClick={()=>setAttachments(prev=>prev.filter(a=>a.id!==f.id))}><X size={13}/></button></span>)}</div>}
-    <textarea aria-label="对话内容" value={input} placeholder="安排工作，或检查项目、排期与风险…" disabled={chat.loading} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send();}}} onPaste={e=>{const files=Array.from(e.clipboardData.files);if(files.length){e.preventDefault();void upload(files);}}}/>
+    {attachments.length>0&&<div className="ai-attachments">{attachments.map(f=><span key={f.id}><FileText size={13}/><span className="ai-attachment-name" title={f.name}>{f.name}</span><button type="button" aria-label={`移除 ${f.name}`} onClick={()=>setAttachments(prev=>prev.filter(a=>a.id!==f.id))}><X size={13}/></button></span>)}</div>}
+    <div className="ai-composer-input-row"><textarea ref={inputRef} rows={1} aria-label="对话内容" value={input} placeholder="安排工作，或检查项目、排期与风险…" disabled={chat.loading} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();void send();}}} onPaste={e=>{const files=Array.from(e.clipboardData.files);if(files.length){e.preventDefault();void upload(files);}}}/></div>
     <div className="ai-composer-tools"><div className="ai-actions">
      <input ref={fileInput} type="file" multiple hidden onChange={e=>{void upload(Array.from(e.target.files||[]));e.target.value="";}}/>
-     <button type="button" aria-label="上传附件" disabled={uploading||chat.busy} onClick={()=>fileInput.current?.click()}>{uploading?<LoaderCircle size={16} className="animate-spin"/>:<Paperclip size={16}/>}</button>
-     <select aria-label="选择对话模型" value={chat.model} disabled={chat.busy||!chat.models.length} onChange={e=>{chat.setModel(e.target.value);chat.setThinking("auto");}}>{!chat.models.length&&<option value="">模型未配置</option>}{chat.models.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select>
-     <select aria-label="思考模式" value={chat.thinking} disabled={chat.busy} onChange={e=>chat.setThinking(e.target.value)}><option value="auto">自动思考</option><option value="deep" disabled={selected?.thinking_mode==="unsupported"}>深度思考</option><option value="fast" disabled={selected?.thinking_mode==="always_on"}>快速</option></select>
-    </div>{chat.busy?<button className="ai-send" type="button" aria-label="停止处理" onClick={()=>void chat.stop()}><Square size={16}/></button>:<button className="ai-send" type="submit" aria-label="发送消息" disabled={!input.trim()||!chat.model||uploading}><ArrowUp size={18}/></button>}</div>
+     <button className="ai-attach" type="button" aria-label="上传附件" title="上传附件" disabled={uploading||chat.busy} onClick={()=>fileInput.current?.click()}>{uploading?<LoaderCircle size={16} className="animate-spin"/>:<Paperclip size={16}/>}</button>
+     <label className="ai-select"><select aria-label="选择对话模型" value={chat.model} disabled={chat.busy||!chat.models.length} onChange={e=>{chat.setModel(e.target.value);chat.setThinking("auto");}}>{!chat.models.length&&<option value="">模型未配置</option>}{chat.models.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select><ChevronDown size={12} aria-hidden="true"/></label>
+     <label className="ai-select"><select aria-label="思考模式" value={chat.thinking} disabled={chat.busy} onChange={e=>chat.setThinking(e.target.value)}><option value="auto">自动思考</option><option value="deep" disabled={selected?.thinking_mode==="unsupported"}>深度思考</option><option value="fast" disabled={selected?.thinking_mode==="always_on"}>快速</option></select><ChevronDown size={12} aria-hidden="true"/></label>
+    </div>{chat.busy?<button className="ai-send" type="button" aria-label="停止处理" title="停止处理" onClick={()=>void chat.stop()}><Square size={13} fill="currentColor"/></button>:<button className="ai-send" type="submit" aria-label="发送消息" title="发送消息" disabled={!input.trim()||!chat.model||uploading}><ArrowUp size={18}/></button>}</div>
    </form>
   </div>
   {panel&&<div className="ai-backdrop" onClick={()=>setPanel("")}><aside className="ai-drawer" role="dialog" aria-modal="true" aria-label={panel==="history"?"会话历史":"会话文件"} onClick={e=>e.stopPropagation()} onKeyDown={e=>{if(e.key==="Escape")setPanel("");}}>
