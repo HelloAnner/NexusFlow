@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Script from "next/script";
+import { ROUTE_CACHE_INIT_SCRIPT } from '@/lib/route-cache';
 import { BRAND_ICON_URL } from "@/components/brand-icon";
 import "./globals.css";
 import { Providers } from "@/components/providers";
@@ -19,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-CN" data-theme="light" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <Script id="nf-route-cache" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: ROUTE_CACHE_INIT_SCRIPT }} />
       </head>
       <body>
         <ThemeProvider>
