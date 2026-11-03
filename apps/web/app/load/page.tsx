@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Modal, Field, inputCls, toast, errorText } from "@/components/feedback";
-import { dayLabel } from "@/lib/home";
+import { dayLabel, RISK_META } from "@/lib/home";
 import { avatarColor, cx, num, str } from "@/lib/utils";
 
 type Daily = { date: string; hours: number; capacity: number; ratio: number };
@@ -21,12 +21,8 @@ type Conflict = {
 };
 type TaskLite = { id?: string; name?: string; title?: string };
 
-const CONFLICT_LABEL: Record<string, string> = {
-  workload_overload: "任务负载过载",
-  all_day_overlap: "全天任务冲突",
-  person_unavailable: "成员不可用",
-  invalid_date_range: "任务日期异常",
-};
+// 冲突类型文案与首页风险雷达同源，未知类型直接显示接口返回的类型值。
+const conflictLabel = (type?: string) => RISK_META[str(type)]?.label ?? str(type, "冲突");
 
 const heat = (d?: Daily) => {
   if (!d) return "var(--color-fill)";
@@ -154,7 +150,7 @@ export default function LoadPage() {
                     <span className="text-[13px] font-semibold">{personName(c.person_id)}</span>
                     {c.severity === "blocking" && <Badge color="var(--color-red)">阻塞</Badge>}
                     {c.status === "forced" && <Badge color="var(--color-orange)">已限期强制</Badge>}
-                    <span className="ml-auto text-[11.5px] text-ink-3">{CONFLICT_LABEL[c.type] ?? c.type}</span>
+                    <span className="ml-auto text-[11.5px] text-ink-3">{conflictLabel(c.type)}</span>
                   </div>
                   <p className="mt-2 flex items-center gap-1.5 text-[12.5px] text-ink-2">
                     <span className={cx("h-3 w-[2.5px] rounded-full", c.severity === "blocking" ? "bg-red" : "bg-orange")} />
@@ -188,7 +184,7 @@ export default function LoadPage() {
       >
         <div className="flex flex-col gap-3">
           <p className="text-[12.5px] leading-6 text-ink-2">
-            {personName(target?.person_id)} · {taskName(target?.task_id)} · {CONFLICT_LABEL[target?.type ?? ""] ?? target?.type}
+            {personName(target?.person_id)} · {taskName(target?.task_id)} · {conflictLabel(target?.type)}
           </p>
           <Field label="强制原因">
             <textarea

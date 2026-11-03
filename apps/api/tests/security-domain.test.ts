@@ -22,6 +22,8 @@ test("portal ticket scopes are enforced even for elevated local roles",()=>{
 test("daily load overlaps only on matching dates and validates calendar dates",()=>{
  const tasks=[{id:"a",status:"in_progress",owner_id:"u1",start_date:"2026-06-01",end_date:"2026-06-02",daily_hours:5},{id:"b",status:"in_progress",owner_id:"u1",start_date:"2026-06-03",end_date:"2026-06-04",daily_hours:5}];
  expect(calculateDailyLoads(tasks,["u1"],"2026-06-01","2026-06-04").every(x=>!x.overloaded)).toBe(true);
+ expect(calculateDailyLoads(tasks,["u1"],"2026-06-01","2026-06-01")[0]!.ratio).toBe(63);
+ expect(calculateDailyLoads(tasks,["u1"],"2026-06-01","2026-06-04",{u1:0})[0]!.ratio).toBe(0);
  expect(calculateDailyLoads(tasks,["u1"],"2026-06-01","2026-06-04",{u1:4}).some(x=>x.overloaded)).toBe(true);
  tasks[1]!.start_date="2026-06-02";expect(calculateDailyLoads(tasks,["u1"],"2026-06-01","2026-06-04").some(x=>x.overloaded)).toBe(true);
  expect(validateRange("2026-02-30","2026-03-01")).toBe(false);expect(validateRange("apple","zebra")).toBe(false);

@@ -6,11 +6,13 @@ import {
   MessageCircle, NotebookPen, CalendarCheck, BarChart3,
 } from "lucide-react";
 import { Card, Badge, PageHeader, SearchBox, Empty } from "@/components/ui";
-import type { Tool } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState } from "@/lib/query-state";
 import { soft, str } from "@/lib/utils";
 import { useData } from "@/lib/data";
+
+// 工具行字段全部来自 /tools 返回的记录，不做本地兜底数据。
+type Tool = { id: string; name: string; desc: string; usage: string; ai?: boolean; icon: string; color: string };
 
 const ICONS: Record<string, React.ComponentType<{ size?: number | string; style?: React.CSSProperties }>> = {
   "file-output": FileOutput, languages: Languages, "pen-line": PenLine, stamp: Stamp,
@@ -34,7 +36,7 @@ export default function ToolsPage() {
   const query=useData<unknown[]>("tools", "/tools"),state=recordQueryState(query);
   const [q, setQ] = useState("");
   if(state.kind!=="ready")return <><PageHeader title="智能工具台" /><QueryNotice state={state} retry={()=>query.refetch()} emptyText="暂无工具" /></>;
-  const tools=state.items.map((x):Tool=>({id:str(x.id),name:str(x.name),desc:str(x.description,str(x.desc,"—")),usage:str(x.usage,"—"),ai:x.category==="agent"||x.ai===true,icon:str(x.icon,"wrench"),color:"var(--color-ink-3)",recent:str(x.recent)}));
+  const tools=state.items.map((x):Tool=>({id:str(x.id),name:str(x.name),desc:str(x.description,str(x.desc,"—")),usage:str(x.usage,"—"),ai:x.category==="agent"||x.ai===true,icon:str(x.icon,"wrench"),color:"var(--color-ink-3)"}));
   const kw = q.trim().toLowerCase();
   const shown = kw ? tools.filter((t) => `${t.name}${t.desc}${t.usage}`.toLowerCase().includes(kw)) : tools;
 

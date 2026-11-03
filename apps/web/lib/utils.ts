@@ -12,8 +12,6 @@ export function newId(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-export const DEMO_TODAY = "2025-06-24"; // 与设计稿一致的演示「今天」（周三）
-
 export const AVATAR_COLORS = ["var(--color-green)", "var(--color-blue)", "var(--color-purple)", "var(--color-pink)", "var(--color-orange)", "var(--color-ink-2)"];
 
 export function avatarColor(name: string): string {

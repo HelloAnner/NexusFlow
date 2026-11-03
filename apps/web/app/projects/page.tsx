@@ -7,7 +7,6 @@ import {
   Card, Badge, Avatar, Bar, Marker, PageHeader,
   SearchBox, Empty, TYPE_COLOR,
 } from "@/components/ui";
-import type { Project } from "@/lib/demo";
 import { QueryNotice } from "@/components/query-notice";
 import { recordQueryState,measured } from "@/lib/query-state";
 import { useData } from "@/lib/data";
@@ -20,7 +19,12 @@ import { Modal, Field, inputCls, toast, errorText } from "@/components/feedback"
 const TYPES = ["科研", "市场", "出差", "文职", "党建", "学习", "休假"];
 const LEVELS = ["公司级", "处级", "中心级"];
 
-type ProjectRow = Omit<Project,"progress"> & {progress?:number;members?:string[]};
+// 列表行字段全部来自 /projects 返回的记录，不做本地兜底数据。
+type ProjectRow = {
+ id: string; name: string; type: string; level: string; owner: string; ownerColor: string;
+ start: string; end: string; progress?: number; status: string; updated: string;
+ marker: "circle" | "square" | "triangle" | "dash"; color: string; members?: string[];
+};
 function normalize(items: Record<string,unknown>[]): ProjectRow[] {
  return items.map((x):ProjectRow=>({id:str(x.id),name:str(x.name),type:str(x.type,"—"),level:str(x.level),owner:str(x.owner,str(x.owner_id,"—")),ownerColor:avatarColor(str(x.owner_id)),start:str(x.start_date),end:str(x.end_date),progress:measured(x.progress),status:str(x.status,"—"),updated:str(x.updated_at,"—"),marker:"circle",color:"var(--color-ink-3)",members:Array.isArray(x.member_ids)?x.member_ids.filter((id):id is string=>typeof id==="string"):undefined}));
 }

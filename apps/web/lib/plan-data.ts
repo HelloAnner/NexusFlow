@@ -1,6 +1,14 @@
-import type { GanttGroup,GanttTask } from "./demo";
 import { isRecord,type QueryState } from "./query-state";
 import { dayDiff } from "./utils";
+
+// 甘特条形图的字段契约：由页面按真实任务接口（/gantt）派生，不在前端内置任何项目数据。
+export type GanttTask = {
+ id: string; name: string; start: number; end: number;
+ kind: "done" | "prog" | "plan" | "mixed";
+ progress?: number; overdueTo?: number; overdueLabel?: string; note?: string;
+ popover?: { owner: string; ownerColor: string; plan: string; forecast: string; blockedBy: string; code: string };
+};
+export type GanttGroup = { type: string; typeColor: string; owner: string; ownerColor: string; tasks: GanttTask[] };
 
 type PlanState={kind:"pending"}|{kind:"error";message:string}|{kind:"empty";message:string}|{kind:"ready";project:Record<string,unknown>;groups:GanttGroup[];start:string;days:number};
 function strings(value:Record<string,unknown>,keys:string[]){return keys.every(key=>typeof value[key]==="string");}

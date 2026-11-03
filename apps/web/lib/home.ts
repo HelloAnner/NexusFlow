@@ -26,7 +26,6 @@ export type HomeResponse = {
   stats?: { today_due?: number; pending_approvals?: number; open_conflicts?: number; active_projects?: number };
   timeline?: TaskRow[];
   risk_radar?: ConflictRow[];
-  team_load?: unknown[];
   team_load_7d?: { dates?: string[]; people?: TeamLoadPerson[] };
 };
 
