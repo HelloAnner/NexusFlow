@@ -1,7 +1,6 @@
 import { expect,test } from "bun:test";
 import { queryState,recordQueryState,measured } from "../../web/lib/query-state.ts";
-import { projectPlanState } from "../../web/lib/plan-data.ts";
-import type { GanttGroup } from "../../web/lib/demo.ts";
+import { projectPlanState,type GanttGroup } from "../../web/lib/plan-data.ts";
 
 const pending={data:undefined,isPending:true,isError:false,error:null};
 const success=(data:unknown[])=>({data,isPending:false,isError:false,error:null});
