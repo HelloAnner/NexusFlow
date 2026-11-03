@@ -54,6 +54,12 @@ test('identity lookup does not swallow server errors or require directory access
  failure=503;await expect(normalizeReferences(runtime,spec('admin_profile'),{id:'person-a',data:{}})).rejects.toThrow('business failure');
  failure=403;expect(await normalizeReferences(runtime,spec('tasks_create'),{data:{owner_id:'account-a'}})).toMatchObject({data:{owner_id:'account-a'}});
 });
+test('catalog does not offer generic updates that the domain always rejects',()=>{
+ for(const name of ['dispatch_update','visibility_grants_update'])expect(toolSpecs.some(t=>t.name===name)).toBe(false);
+ const director={id:'current',username:'me',tenant_id:'tenant',org_id:'org',role:'center_director',portal_permissions:null};
+ expect(toolAvailable(director,spec('portal_file_links_set'))).toBe(false);
+ expect(toolAvailable({...director,role:'super_admin'},spec('portal_file_links_set'))).toBe(true);
+});
 test('bodyless business actions do not require a fictitious data object',()=>{
  for(const name of ['orgs_delete','tasks_publish','dispatch_submit','dispatch_confirm','inbox_read','config_delete','invitations_revoke','visibility_grants_revoke','admin_project_remove','permission_reset','permission_prune','reports_export']){
   expect(parameters(spec(name)).required).not.toContain('data');

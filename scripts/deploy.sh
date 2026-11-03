@@ -10,16 +10,20 @@ COMMIT="$("$ROOT/scripts/require-main.sh")"
 DIR="$REMOTE/validation/$COMMIT"
 ssh "$HOST" "umask 077; mkdir -p '$DIR/runtime'"
 OUT="$ROOT/dist/linux-x86_64"
-# 这条链路大文件 scp 会被重置；改成 gzip 流直传（与 Portal 同款），失败重试三次。
+# 仅改写待验收附件，不碰生产文件。rsync 原生增量/断点续传避免弱网上反复重传大附件；
+# 两端缺少 rsync 时仍可走 gzip 流。最终服务器 SHA256 校验不变。
 put() { # put LOCAL REMOTE
-  local src="$1" dst="$2" attempt want size got reuse
-  want=$(sha256sum "$src" | cut -d' ' -f1); size=$(wc -c < "$src" | tr -d ' ')
+  local src="$1" dst="$2" attempt want got reuse delta=0
+  want=$(sha256sum "$src" | cut -d' ' -f1)
   got=$(ssh "$HOST" "sha256sum '$dst' 2>/dev/null | cut -d' ' -f1" || true)
   [[ $got == "$want" ]] && return 0
-  reuse=$(ssh "$HOST" "f=\$(find '$REMOTE/validation' -type f -name '$(basename "$dst")' -size ${size}c 2>/dev/null | head -1); if [ -n \"\$f\" ] && [ \"\$(sha256sum \"\$f\" | cut -d' ' -f1)\" = '$want' ]; then cp \"\$f\" '$dst'; echo reused; fi" || true)
+  reuse=$(ssh "$HOST" "if [ ! -s '$dst' ]; then f=\$(find '$REMOTE/validation' -maxdepth 3 -type f -name '$(basename "$dst")' ! -path '$dst' 2>/dev/null | head -1); if [ -n \"\$f\" ]; then cp \"\$f\" '$dst'; fi; fi; if [ -s '$dst' ] && [ \"\$(sha256sum '$dst' | cut -d' ' -f1)\" = '$want' ]; then echo reused; fi" || true)
   [[ $reuse == reused ]] && { echo "reused $dst from prior attachment"; return 0; }
+  if command -v rsync >/dev/null && ssh "$HOST" 'command -v rsync >/dev/null'; then delta=1; fi
   for attempt in 1 2 3; do
-    if [[ "$src" == *.gz ]]; then
+    if [[ $delta == 1 ]]; then
+      rsync --checksum --partial --inplace --compress --timeout=120 "$src" "$HOST:$dst" && return 0
+    elif [[ "$src" == *.gz ]]; then
       cat "$src" | ssh "$HOST" "cat > '$dst'" && return 0
     else
       gzip -c "$src" | ssh "$HOST" "gunzip -c > '$dst'" && return 0

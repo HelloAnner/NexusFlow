@@ -12,7 +12,7 @@ for(const [kind,label] of collections){
  if(writable.has(kind)){
   const fields=kind==='tasks'?'必填 name,type,owner_id,start_date,end_date,daily_hours；可选 project_id,org_id,member_ids,all_day,estimated_hours,summary。type 先查询配置或现有任务。':kind==='projects'?'必填 name,owner_id,org_id；可选 member_ids,visibility。':kind==='orgs'?'必填 name,type；type 为 company/second_level/center/department/studio，可选 parent_id,enabled。':kind==='people'?'必填 name,org_id；可选 user_id,status,daily_standard_hours,skills。':kind==='dispatch'?'必填 task_id,requester_id,workflow(standard/supplemental),target_org_ids。':kind==='config'?'key 为 task_types 时 value={types:[类型编码]}；key 为 work_calendar 时 value={weekdays:[1,2,3,4,5],holidays:[日期],extra_workdays:[日期]}。':kind==='milestones'?'必填 name,task_id,date(YYYY-MM-DD)；可选 status(planned/done)，日期必须在任务内。':kind==='visibility_grants'?'必填 project_id,user_id,actions(view/edit 数组)；可选 expires_at(ISO 日期时间)。':kind==='tools'?'data={name,url,description,enabled,icon}，沿用业务工具台字段。':'data 必须遵守当前业务字段契约。';
   add(`${kind}_create`,`创建${label}`,kind,'POST',`/api/${kind}`,`创建${label}草稿。${fields}`,{data:true});
-  add(`${kind}_update`,`编辑${label}`,kind,'PATCH',`/api/${kind}/:id`,`编辑${label}基础字段；不得改服务端字段。${kind==='projects'?'可修改 name,owner_id,member_ids,visibility,org_id；生命周期走项目动作。':kind==='people'?'可修改工作状态、容量、技能；账号/部门绑定走 admin_profile 或 admin_binding。':kind==='milestones'?'可修改 name,date,status(planned/done)，不能修改 task_id。':'状态、排期、任务成员变动必须走专门业务动作。'}`,{data:true,read:`/api/${kind}/:id`});
+  if(!['dispatch','visibility_grants'].includes(kind))add(`${kind}_update`,`编辑${label}`,kind,'PATCH',`/api/${kind}/:id`,`编辑${label}基础字段；不得改服务端字段。${kind==='projects'?'可修改 name,owner_id,member_ids,visibility,org_id；生命周期走项目动作。':kind==='people'?'可修改工作状态、容量、技能；账号/部门绑定走 admin_profile 或 admin_binding。':kind==='milestones'?'可修改 name,date,status(planned/done)，不能修改 task_id。':'状态、排期、任务成员变动必须走专门业务动作。'}`,{data:true,read:`/api/${kind}/:id`});
  }
 }
 for(const [kind,label,actions] of [
@@ -78,7 +78,7 @@ add('milestones_delete','删除里程碑','milestones','DELETE','/api/milestones
 add('task_types','查询可用任务类型','tasks','GET','/api/planning/task-types','创建任务之前读取当前租户已发布的任务类型编码。');
 add('business_options','查询业务字段可选值','tasks','GET','/api/planning/options','查询资料类别、组织类型、角色、管理/专业等级、职责、工作状态和项目职责的真实编码；写入前使用这些编码，不得猜测。');
 add('portal_file_links','查询文件身份关联','admin','GET','/api/admin/portal-file-links','管理员检查门户文件身份关联。',{manager:true});
-add('portal_file_links_set','维护文件身份关联','admin','PUT','/api/admin/portal-file-links','管理员维护门户身份与本地账号关联，操作字段放 data。',{manager:true,data:true,read:'/api/admin/portal-file-links'});
+add('portal_file_links_set','维护文件身份关联','admin','PUT','/api/admin/portal-file-links','仅超级管理员；data={portal_tenant_id,portal_user_id,local_user_id,status:active/revoked,reason}。local_user_id 为 admin_users 返回的本地账号 ID，不能使用人员档案 ID；门户 ID 不转换。',{manager:true,data:true,read:'/api/admin/portal-file-links'});
 add('my_work','查询我的任务分工待办与未来风险','tasks','GET','/api/planning/mine','query.from/to 日期范围，默认今天起两周。');
 add('schedule_calendar','查询区间容量和排期','tasks','GET','/api/planning/calendar','query.from/to,person_id；包括真实分工、正式占用和预估占用。');
 add('schedule_forecast','计算任务完工风险','tasks','GET','/api/planning/forecast/:id','id 为任务 id；缺少预计工时或容量返回未知，不推测确定日期。');
@@ -89,6 +89,7 @@ export function toolAvailable(user:User,spec:ToolSpec){
  // 待办自身操作和报表快照使用原接口的读取授权，不套用通用记录写权限。
  const read=spec.method==='GET'||spec.custom==='preview'||['inbox_read','inbox_complete','reports_export'].includes(spec.name);
  if(['orgs_create','orgs_delete','admin_binding','admin_status','admin_delegations','config_publish','conflicts_force'].includes(spec.name)&&!['super_admin','center_director'].includes(user.role))return false;
+ if(['portal_file_links','portal_file_links_set'].includes(spec.name)&&user.role!=='super_admin')return false;
  if(spec.name==='auth_profile')return portalAllows(user,'/api/auth/me','PATCH');
  if(spec.manager&&!canManage(user))return false;
  // 普通成员可为自己的任务准备后补派发；具体 workflow 与归属仍由业务 API 校验。

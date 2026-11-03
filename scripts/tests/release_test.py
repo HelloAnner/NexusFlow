@@ -84,6 +84,23 @@ with tempfile.TemporaryDirectory() as directory:
             assert not any('xattr' in key or 'acl' in key or 'fflags' in key for member in archive for key in member.pax_headers)
 # Execute only the release failure function against disposable files and stubbed systemd.
 text=(root/'scripts/deploy.sh').read_text()
+# Exercise the uploader with a failed first transfer in disposable staging files, never over SSH.
+assert 'rsync --checksum --partial --inplace --compress --timeout=120' in text
+uploader=text[text.index('put() {'):text.index('put "$OUT/nexusflow"')]
+with tempfile.TemporaryDirectory() as directory:
+    target=pathlib.Path(directory); prior=target/'root/validation/prior'; prior.mkdir(parents=True)
+    current=target/'root/validation/current'; current.mkdir()
+    (target/'payload').write_bytes(b'new attachment with verified content')
+    (prior/'payload').write_bytes(b'old deployed attachment')
+    shell='''set -eu
+HOST=fixture; REMOTE="$1/root"; attempts=0
+ssh(){ shift; if [[ "$*" == 'command -v rsync >/dev/null' ]]; then return 0; fi; bash -c "$*"; }
+sleep(){ :; }
+rsync(){ local dst="${@: -1}" src="${@: -2:1}"; dst="${dst#fixture:}"; attempts=$((attempts+1)); if [[ $attempts == 1 ]]; then printf partial > "$dst"; return 1; fi; cp "$src" "$dst"; }
+'''+uploader+'\nput "$1/payload" "$1/root/validation/current/payload"\n[[ $attempts == 2 ]]\n'
+    subprocess.run(['bash','-c',shell,'check',directory],check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    assert (current/'payload').read_bytes()==(target/'payload').read_bytes()
+    assert (prior/'payload').read_bytes()==b'old deployed attachment'
 failure=text[text.index('failed() {'):text.index('trap failed EXIT')]
 with tempfile.TemporaryDirectory() as directory:
     target=pathlib.Path(directory)
