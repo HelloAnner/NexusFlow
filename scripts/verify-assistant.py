@@ -258,7 +258,11 @@ def verify():
     invitation=apply('invitations_create',{'data':{'role':'member','org_id':dept['id']}})
     secure=command('leader','ai','reveal',invitation['id'])
     check(len(secure['invitation_token'])>20 and 'invitation_token' not in json.dumps(invitation),'invitation credential is encrypted and delivered outside model data')
-    action('invitations_revoke',invitation['result']['response']['invitation']['id'],{})
+    invitation_id=invitation['result']['response']['invitation']['id']
+    renewed=action('invitations_resend',invitation_id)
+    renewed_secure=command('leader','ai','reveal',renewed['id'])
+    check(renewed_secure['invitation_token']!=secure['invitation_token'] and 'invite_url' not in json.dumps(renewed),'invitation resend is available through conversation with a rotated credential kept outside model data')
+    action('invitations_revoke',invitation_id,{})
     action('tasks_cancel',task['id'],{'reason':'验收结束清理占用'})
     action('tasks_cancel',second_task['id'],{'reason':'验收结束清理占用'})
     overload=created('tasks_create',{'name':'AI验收过载','type':'market','owner_id':leader,'org_id':dept['id'],'start_date':days[0],'end_date':days[2],'daily_hours':9})

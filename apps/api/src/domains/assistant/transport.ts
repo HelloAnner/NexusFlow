@@ -24,7 +24,7 @@ export async function callApi(runtime:Runtime,call:Call){
  const response=await runtime.app.request(`http://nexusflow.internal${call.path}`,{method:call.method||"GET",headers,...(call.body===undefined?{}:{body:JSON.stringify(call.body)}),signal:runtime.signal});
  const type=response.headers.get("content-type")||"";if(!type.includes("application/json"))throw Error("invalid business API response");
  const value=await response.json() as any;if(!response.ok)throw new BusinessApiError(value.error||`business API failed (${response.status})`,response.status);
- if(call.path==='/api/invitations'&&call.method==='POST'&&typeof value.token==='string')runtime.secureResult=seal({invitation_token:value.token});
+ if(/^\/api\/invitations(?:\/[^/]+\/resend)?$/.test(call.path)&&call.method==='POST'&&typeof value.token==='string')runtime.secureResult=seal({invitation_token:value.token});
  const clean=sanitize(value);
  if((call.method||"GET")==="GET"){
   // 保存当前被读过的受保护入口；历史重放前重新鉴权，不复用旧权限快照。

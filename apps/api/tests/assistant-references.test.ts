@@ -61,7 +61,7 @@ test('catalog does not offer generic updates that the domain always rejects',()=
  expect(toolAvailable({...director,role:'super_admin'},spec('portal_file_links_set'))).toBe(true);
 });
 test('bodyless business actions do not require a fictitious data object',()=>{
- for(const name of ['orgs_delete','tasks_publish','dispatch_submit','dispatch_confirm','inbox_read','config_delete','invitations_revoke','visibility_grants_revoke','admin_project_remove','permission_reset','permission_prune','reports_export']){
+ for(const name of ['orgs_delete','tasks_publish','dispatch_submit','dispatch_confirm','inbox_read','config_delete','invitations_revoke','invitations_resend','visibility_grants_revoke','admin_project_remove','permission_reset','permission_prune','reports_export']){
   expect(parameters(spec(name)).required).not.toContain('data');
  }
  expect(makeCall(spec('permission_reset'),{query:{subject_id:'account-a'}})).toEqual({path:'/api/v1/rbac/matrix?subject_id=account-a',method:'DELETE'});
