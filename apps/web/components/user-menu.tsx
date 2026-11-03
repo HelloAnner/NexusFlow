@@ -2,18 +2,16 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { UserRound, ShieldCheck, Moon, Sun, LogOut, X } from "lucide-react";
+import { UserRound, ShieldCheck, LogOut, X } from "lucide-react";
 import { useAuth, type SessionUser } from "@/lib/auth";
 import { apiBase } from "@/lib/api";
-import { useTheme } from "@/lib/theme";
 import { cx, initial } from "@/lib/utils";
 import { roleLabel } from "@/lib/home";
+import { ThemeOptions } from "@/components/theme-options";
 
 /** 侧栏底部的用户入口：点开账户菜单，设置页以 AppWindow 弹层打开（与 Northline/DocuMind 一致）。 */
 export function UserMenu({ user, manage }: { user: SessionUser; manage: boolean }) {
   const { logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const dark = theme === "dark";
   const [open, setOpen] = useState(false);
   const [windowPage, setWindowPage] = useState<{ href: string; title: string } | null>(null);
 
@@ -49,10 +47,7 @@ export function UserMenu({ user, manage }: { user: SessionUser; manage: boolean 
                 <ShieldCheck size={16} strokeWidth={1.7} />租户设置
               </button>
             )}
-            <button type="button" className={item} onClick={toggleTheme}>
-              {dark ? <Sun size={16} strokeWidth={1.7} /> : <Moon size={16} strokeWidth={1.7} />}
-              {dark ? "切换亮色" : "切换暗色"}
-            </button>
+            <ThemeOptions />
             <div className="my-1.5 h-px bg-border" />
             <button
               type="button"

@@ -1,21 +1,67 @@
-/** 主题自检：部署产物必须带上亮/暗 token、首屏定主题脚本，否则暗色切换会闪或失效。 */
-export async function checkTheme(base: string, fetcher: typeof fetch = fetch) {
-  const pageUrl = new URL(base.replace(/\/+$/, "") + "/");
-  const page = await fetcher(pageUrl, { redirect: "error", signal: AbortSignal.timeout(30_000) });
-  if (!page.ok || !page.headers.get("content-type")?.includes("text/html")) throw new Error("Theme page must return HTML");
-  const html = await page.text();
-  if (!/<html\b[^>]*\bdata-theme=["'](light|dark)["']/i.test(html)) throw new Error("Missing data-theme on <html>");
-  if (!html.includes('nexusflow-theme')) throw new Error("Missing theme init script (no flash-free first paint)");
+/** 主题自检：部署产物必须带上亮/暗 token、首屏定主题脚本和四套系统统一的外观控件。 */
+const THEME_LABELS = ["跟随系统", "亮色", "暗色"];
 
-  const hrefs = [...html.matchAll(/<link\b[^>]*\brel=["']stylesheet["'][^>]*\bhref=["']([^"']+)["']/gi)].map((m) => m[1]);
-  if (!hrefs.length) throw new Error("Missing stylesheet link");
-  const css = (await Promise.all(hrefs.map(async (href) => {
-    const url = new URL(href, pageUrl);
-    const res = await fetcher(url, { redirect: "error", signal: AbortSignal.timeout(30_000) });
-    return res.ok ? res.text() : "";
-  }))).join("\n");
-  if (!css.includes("[data-theme=dark]") && !css.includes('[data-theme="dark"]')) throw new Error("Missing dark theme tokens in CSS");
-  if (!/color-scheme:\s*dark/.test(css)) throw new Error("Dark theme must set color-scheme:dark");
-  if (!css.includes("--color-canvas") || !css.includes("--color-ink")) throw new Error("Missing design tokens in CSS");
-  return { ok: true, page: pageUrl.href, stylesheets: hrefs.length, dark: true, light: true };
+export async function checkTheme(
+  base: string,
+  fetcher: typeof fetch = fetch,
+  routes: string[] = ["/"],
+) {
+  const origin = base.replace(/\/+$/, "");
+  let firstPage = "";
+  const assets: string[] = [];
+  const stylesheets: string[] = [];
+  const scripts: string[] = [];
+
+  for (const route of routes) {
+    const pageUrl = new URL(origin + route);
+    const page = await fetcher(pageUrl, { redirect: "error", signal: AbortSignal.timeout(30_000) });
+    if (!page.ok || !page.headers.get("content-type")?.includes("text/html")) {
+      if (route === routes[0]) throw new Error(`Theme page must return HTML: ${pageUrl.href}`);
+      continue;
+    }
+    const html = await page.text();
+    if (!firstPage) firstPage = html;
+
+    const hrefs = [...html.matchAll(/<link\b[^>]*\brel=["']stylesheet["'][^>]*\bhref=["']([^"']+)["']/gi)].map((m) => m[1]);
+    if (!hrefs.length && route === routes[0]) throw new Error("Missing stylesheet link");
+    stylesheets.push(...hrefs);
+    scripts.push(
+      ...[...html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)].map((m) => m[1]),
+    );
+
+    for (const href of [...new Set([...hrefs, ...scripts])]) {
+      const res = await fetcher(new URL(href, pageUrl), { redirect: "error", signal: AbortSignal.timeout(30_000) });
+      if (res.ok) assets.push(await res.text());
+    }
+  }
+
+  if (!/<html\b[^>]*\bdata-theme=["'](light|dark)["']/i.test(firstPage)) throw new Error("Missing data-theme on <html>");
+  if (!firstPage.includes("nexusflow-theme")) throw new Error("Missing theme init script (no flash-free first paint)");
+  // 默认跟随系统：首屏脚本读系统偏好，只有手动选择才写存储。
+  if (!firstPage.includes("prefers-color-scheme") || !firstPage.includes('"system"')) {
+    throw new Error("Theme init script must default to following the system theme");
+  }
+
+  const bundle = assets.join("\n");
+  if (!bundle.includes("[data-theme=dark]") && !bundle.includes('[data-theme="dark"]')) throw new Error("Missing dark theme tokens in CSS");
+  if (!/color-scheme:\s*dark/.test(bundle)) throw new Error("Dark theme must set color-scheme:dark");
+  if (!bundle.includes("--color-canvas") || !bundle.includes("--color-ink")) throw new Error("Missing design tokens in CSS");
+  // 统一外观控件：账户菜单三段式 + 账户行小图标。
+  for (const label of THEME_LABELS) {
+    if (!bundle.includes(label)) throw new Error(`Missing theme option label: ${label}`);
+  }
+  if (!bundle.includes("theme-options") || !bundle.includes("theme-toggle")) {
+    throw new Error("Missing unified theme control (.theme-options / .theme-toggle)");
+  }
+
+  return {
+    ok: true,
+    page: new URL(origin + routes[0]).href,
+    routes: routes.length,
+    stylesheets: new Set(stylesheets).size,
+    scripts: new Set(scripts).size,
+    dark: true,
+    light: true,
+    control: "跟随系统|亮色|暗色",
+  };
 }
