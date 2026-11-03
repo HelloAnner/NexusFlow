@@ -1,0 +1,79 @@
+NexusFlow 演示数据（demo v1）
+================================
+
+目的
+----
+给现有真实租户（anner / moss）补齐一整套可演示的业务数据：
+项目、任务、子任务（任务分配）、里程碑、工时、冲突、派发、审批、
+收件箱、提及、工具台、组织、人员与账号。
+
+只写 NexusFlow 自己的 Postgres（nexusflow schema）与 MinIO 文件对象，
+不改业务代码，也不写 Northline / Documind 的数据库。
+
+记录 kind 与数量
+----------------
+  orgs             9   公司 > 二级单位 > 中心 > 部门 / 工作室
+  people          12   每个账号一份人员档案（职级、技能、工时标准、在岗状态）
+  projects        12   科研/市场/出差/文职/党建/学习/休假 × 公司级/处级/中心级
+  tasks           39   草稿/待确认/进行中/待协调/待验收/已完成/已取消
+  task_assignments 62  任务子分配（active/accepted/pending_*）
+  milestones      10
+  worklogs       119
+  conflicts        7   过载、全天重叠、成员不可用（与实时计算合并）
+  dispatch         4
+  approvals        4   待审批 + 已批准/已驳回
+  inbox           15   anner 8 条 / moss 7 条
+  mentions         3
+  tools            9
+  files            7   资料库真实可下载文件（PDF/Word/PPT/Excel/PNG/TXT）
+
+演示账号
+--------
+  demo.wangjianguo  王建国  中心副主任
+  demo.liwenjing    李文静  研发部主任
+  demo.zhangwei     张伟    项目部主任
+  demo.chensiyuan   陈思远  项目负责人（负载过载演示）
+  demo.liuyang      刘洋    后端工程师
+  demo.zhaomin      赵敏    项目经理
+  demo.sunqian      孙倩    知识管理工程师（出差状态，成员不可用演示）
+  demo.zhoujie      周杰    机器人研发工程师
+  demo.wudi         吴迪    安全测评工程师
+  demo.wangqiang    王强    现场实施工程师（全天任务冲突演示）
+  统一密码：Nexus@2026
+  注意：Portal 同步会把这批账号镜像为门户成员并接管登录；若被接管，按门户身份登录。
+
+设计冲突（负载页「强制协调」可直接演示）
+--------------------------------------
+  陈思远  数据中台两项任务叠加 9h/天          workload_overload
+  王强    东线全天出差 + 检测报告叠加 14h/天  all_day_overlap + workload_overload
+  孙倩    出差期间仍有任务                    person_unavailable
+
+生成 / 重放
+-----------
+脚本：scripts/demo-data.ts（只输出 SQL，固定 id，可重复执行）
+
+  # 1. 读取目标租户的用户/组织/人员 id
+  ssh nexusflow "sudo docker exec nexusflow-postgres psql -U nexusflow -d nexusflow -A -t \
+    -c \"select json_build_object(...)\"" > /tmp/nf-lookups.json
+
+  # 2. 生成并执行 SQL（TODAY 用服务器 UTC 日期，与 /api/home 口径一致）
+  TODAY=$(ssh nexusflow 'date -u +%F') MANIFEST=/tmp/nf-manifest.json \
+    bun scripts/demo-data.ts > /tmp/nf-demo.sql
+  ssh nexusflow 'sudo docker exec -i nexusflow-postgres psql -U nexusflow -d nexusflow \
+    -v ON_ERROR_STOP=1' < /tmp/nf-demo.sql
+
+  # 3. 资料库文件（首次或需要补文件时，用管理员 CLI 上传）
+  nexusflow files upload <文件> --category overall-report \
+    --project-id <id> --scope space
+
+幂等规则：所有记录带 data.demo='v1'，使用 sha1 派生的固定 id；
+重放时覆盖同 id 记录，并删除上一轮存在、本轮已不存在的 demo 记录。
+不会删除已有的真实项目/任务/文件。
+
+核对
+----
+  GET /api/home            首页焦点、风险雷达、团队负载
+  GET /api/projects        12 个演示项目（另有 2 个历史项目）
+  GET /api/tasks           39 个任务
+  GET /api/load/conflicts  7 项冲突（含固定 id，可 POST /force）
+  GET /api/admin/users     13 个账号及人员档案
