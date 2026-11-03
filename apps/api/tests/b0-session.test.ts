@@ -14,7 +14,7 @@ async function withBrowser(check:(storage:Map<string,string>,location:{pathname:
  const previousFetch=globalThis.fetch,windowDescriptor=Object.getOwnPropertyDescriptor(globalThis,"window"),storageDescriptor=Object.getOwnPropertyDescriptor(globalThis,"localStorage"),previousAuth=useAuth.getState();
  const storage=new Map([["nf_token","test-session-A"]]),location={pathname:"/nexusflow/projects",href:"unchanged"};
  Object.defineProperty(globalThis,"window",{configurable:true,value:{location}});
- Object.defineProperty(globalThis,"localStorage",{configurable:true,value:{getItem:(key:string)=>storage.get(key)??null}});
+ Object.defineProperty(globalThis,"localStorage",{configurable:true,value:{getItem:(key:string)=>storage.get(key)??null,removeItem:(key:string)=>{storage.delete(key);}}});
  resetApiSession();useAuth.setState({user:{id:"A",username:"A",name:"A",role:"member"},checked:false});
  try{await check(storage,location);}finally{
   useAuth.setState({user:previousAuth.user,checked:previousAuth.checked});
