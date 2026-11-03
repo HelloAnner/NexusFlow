@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Minimal server-only checks; no service, DB, release or credential access."""
-import importlib.util,pathlib,subprocess,tempfile,shutil,socket,threading,time,os,tarfile,io
+import importlib.util,pathlib,subprocess,tempfile,shutil,socket,threading,time,os,tarfile,io,hashlib
 root=pathlib.Path(__file__).resolve().parents[2]
 checks=(root/'scripts/server-checks.sh').read_text()
 assert 'exec env -i ' in checks and 'for app in apps/api cli; do' in checks
@@ -82,6 +82,27 @@ with tempfile.TemporaryDirectory() as directory:
             assert archive.getmember('payload').mode&0o111==0o111
             assert archive.getmember('link').issym() and archive.getmember('link').linkname=='payload'
             assert not any('xattr' in key or 'acl' in key or 'fflags' in key for member in archive for key in member.pax_headers)
+# Locked-graph cache keeps exact archive bytes for code-only changes, rejects tampering or lock changes.
+with tempfile.TemporaryDirectory() as directory:
+    repo=pathlib.Path(directory); out=repo/'out'; out.mkdir()
+    subprocess.run(['git','init',str(repo)],check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    for app in ['apps/api','apps/web','cli']:
+        path=repo/app; path.mkdir(parents=True); (path/'package.json').write_text('{}'); (path/'bun.lock').write_text('locked')
+    (repo/'scripts').mkdir(); (repo/'scripts/runtime.sh').write_text('pinned')
+    def cache_commit():
+        subprocess.run(['git','-C',str(repo),'add','apps','cli','scripts'],check=True,stdout=subprocess.PIPE)
+        subprocess.run(['git','-C',str(repo),'-c','user.name=Cache test','-c','user.email=cache@example.invalid','commit','-m','fixture'],check=True,stdout=subprocess.PIPE)
+        return subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip()
+    previous=cache_commit(); (out/'COMMIT').write_text(previous); (out/'dependencies.tar.gz').write_bytes(b'checked archive')
+    (out/'SHA256SUMS').write_text(hashlib.sha256(b'checked archive').hexdigest()+'  dependencies.tar.gz\n')
+    guard=build[build.index('# Reuse only a checksum-verified'):build.index('# Build only a committed archive')]
+    def cache_value(commit):
+        shell='set -eu\nROOT="$1"; OUT="$ROOT/out"; COMMIT="$2"\n'+guard+'\necho "$REUSE_DEPENDENCIES"\n'
+        return subprocess.check_output(['bash','-c',shell,'check',directory,commit],text=True).strip()
+    assert cache_value(previous)=='1'
+    (repo/'apps/api/code.ts').write_text('business change'); current=cache_commit(); assert cache_value(current)=='1'
+    (out/'dependencies.tar.gz').write_bytes(b'tampered'); assert cache_value(current)=='0'
+    (out/'dependencies.tar.gz').write_bytes(b'checked archive'); (repo/'apps/api/bun.lock').write_text('changed'); current=cache_commit(); assert cache_value(current)=='0'
 # Execute only the release failure function against disposable files and stubbed systemd.
 text=(root/'scripts/deploy.sh').read_text()
 # Exercise the uploader with a failed first transfer in disposable staging files, never over SSH.
@@ -102,6 +123,19 @@ rsync(){ local dst="${@: -1}" src="${@: -2:1}"; dst="${dst#fixture:}"; attempts=
     subprocess.run(['bash','-c',shell,'check',directory],check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     assert (current/'payload').read_bytes()==(target/'payload').read_bytes()
     assert (prior/'payload').read_bytes()==b'old deployed attachment'
+# Chunk assembly uses the explicit current part list, never a glob containing stale trailing parts.
+with tempfile.TemporaryDirectory() as directory:
+    target=pathlib.Path(directory); parts=target/'root/archive.tar.gz.parts'; parts.mkdir(parents=True)
+    (parts/'part-zz').write_bytes(b'stale trailing data')
+    (target/'archive.tar.gz').write_bytes(bytes(range(256))*(17*1024*1024//256))
+    shell='''set -eu
+HOST=fixture; REMOTE="$1/root"
+ssh(){ shift; if [[ "$*" == 'command -v rsync >/dev/null' ]]; then return 0; fi; bash -c "$*"; }
+rsync(){ local dst="${@: -1}"; cp "${@: -2:1}" "${dst#fixture:}"; }
+'''+uploader+'\nput "$1/archive.tar.gz" "$1/root/archive.tar.gz"\n'
+    subprocess.run(['bash','-c',shell,'check',directory],check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+    assert (target/'root/archive.tar.gz').read_bytes()==(target/'archive.tar.gz').read_bytes()
+    assert not parts.exists()
 failure=text[text.index('failed() {'):text.index('trap failed EXIT')]
 with tempfile.TemporaryDirectory() as directory:
     target=pathlib.Path(directory)

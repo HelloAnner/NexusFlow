@@ -4,6 +4,16 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 COMMIT="$("$ROOT/scripts/require-main.sh")"
 TIME="$(git -C "$ROOT" show -s --format=%cI "$COMMIT")"
 OUT="$ROOT/dist/linux-x86_64"
+# Reuse only a checksum-verified dependency attachment with the identical locked graph.
+# ponytail: no repo-owned install hooks today; include their sources in this key if introduced.
+REUSE_DEPENDENCIES=0
+if [[ -f "$OUT/COMMIT" && -f "$OUT/SHA256SUMS" && -f "$OUT/dependencies.tar.gz" ]]; then
+  PREVIOUS=$(head -1 "$OUT/COMMIT")
+  if [[ $PREVIOUS =~ ^[0-9a-f]{40}$ ]] && git -C "$ROOT" diff --quiet "$PREVIOUS" "$COMMIT" -- apps/api/package.json apps/api/bun.lock apps/web/package.json apps/web/bun.lock cli/package.json cli/bun.lock scripts/runtime.sh; then
+    EXPECTED=$(awk '$2=="dependencies.tar.gz" {print $1}' "$OUT/SHA256SUMS")
+    [[ $(sha256sum "$OUT/dependencies.tar.gz" | cut -d' ' -f1) != "$EXPECTED" ]] || REUSE_DEPENDENCIES=1
+  fi
+fi
 # Build only a committed archive, not files changed concurrently in a worktree.
 STAGE="$(mktemp -d)"; trap 'rm -rf "$STAGE"' EXIT
 mkdir -p "$OUT" "$STAGE/source"
@@ -33,7 +43,11 @@ for app in apps/api apps/web cli; do (cd "$STAGE/source/$app" && bun install --f
 # Dependency attachment is used only for server tsc/tests (no native web build there).
 # Git blobs, not staging files: source stays exact to COMMIT and has no host metadata.
 git -C "$ROOT" archive --format=tar "$COMMIT" | gzip > "$OUT/source.tar.gz"
-(cd "$STAGE/source" && tar "${TAR_FLAGS[@]}" -czf "$OUT/dependencies.tar.gz" apps/api/node_modules apps/web/node_modules cli/node_modules)
+if [[ $REUSE_DEPENDENCIES == 1 ]]; then
+  echo 'reused checksum-verified dependencies: manifests, lockfiles and runtime unchanged'
+else
+  (cd "$STAGE/source" && tar "${TAR_FLAGS[@]}" -czf "$OUT/dependencies.tar.gz" apps/api/node_modules apps/web/node_modules cli/node_modules)
+fi
 python3 - "$STAGE/source/apps/web/out" "$STAGE/source/apps/api/src/web-assets.generated.ts" <<'PY'
 import base64,json,pathlib,sys
 root=pathlib.Path(sys.argv[1]); target=pathlib.Path(sys.argv[2])

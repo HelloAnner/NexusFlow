@@ -13,16 +13,30 @@ OUT="$ROOT/dist/linux-x86_64"
 # 仅改写待验收附件，不碰生产文件。rsync 原生增量/断点续传避免弱网上反复重传大附件；
 # 两端缺少 rsync 时仍可走 gzip 流。最终服务器 SHA256 校验不变。
 put() { # put LOCAL REMOTE
-  local src="$1" dst="$2" attempt want got reuse delta=0
+  local src="$1" dst="$2" attempt want got reuse delta=0 parts part ordered=''
   want=$(sha256sum "$src" | cut -d' ' -f1)
   got=$(ssh "$HOST" "sha256sum '$dst' 2>/dev/null | cut -d' ' -f1" || true)
   [[ $got == "$want" ]] && return 0
   reuse=$(ssh "$HOST" "if [ ! -s '$dst' ]; then previous=\$(cat '$REMOTE/DEPLOYED_COMMIT' 2>/dev/null || true); f=\"$REMOTE/validation/\$previous/$(basename "$dst")\"; if [ ! -f \"\$f\" ]; then f=\$(find '$REMOTE/validation' -maxdepth 3 -type f -name '$(basename "$dst")' ! -path '$dst' 2>/dev/null | head -1); fi; if [ -n \"\$f\" ]; then cp \"\$f\" '$dst'; fi; fi; if [ -s '$dst' ] && [ \"\$(sha256sum '$dst' | cut -d' ' -f1)\" = '$want' ]; then echo reused; fi" || true)
   [[ $reuse == reused ]] && { echo "reused $dst from prior attachment"; return 0; }
+  # 这条链路的大流会被中断；已压缩的大附件按 8MiB 分片，每片仍走同一校验/重试。
+  if [[ "$src" == *.tar.gz && $(wc -c < "$src") -gt 16777216 ]]; then
+    parts=$(mktemp -d)
+    split -b 8m "$src" "$parts/part-"
+    ssh "$HOST" "mkdir -p '$dst.parts'" || { rm -rf "$parts"; return 1; }
+    for part in "$parts"/part-*; do
+      put "$part" "$dst.parts/$(basename "$part")" || { rm -rf "$parts"; return 1; }
+      ordered+=" '$dst.parts/$(basename "$part")'"
+    done
+    rm -rf "$parts"
+    ssh "$HOST" "cat $ordered > '$dst.assembled' && mv '$dst.assembled' '$dst' && rm -rf '$dst.parts'" || return 1
+    [[ $(ssh "$HOST" "sha256sum '$dst' | cut -d' ' -f1") == "$want" ]]
+    return
+  fi
   if command -v rsync >/dev/null && ssh "$HOST" 'command -v rsync >/dev/null'; then delta=1; fi
   for attempt in 1 2 3; do
     if [[ $delta == 1 ]]; then
-      rsync --checksum --partial --inplace --compress --timeout=120 "$src" "$HOST:$dst" && return 0
+      rsync --checksum --partial --inplace --compress --timeout=120 -e 'ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o ConnectTimeout=20' "$src" "$HOST:$dst" && return 0
     elif [[ "$src" == *.gz ]]; then
       cat "$src" | ssh "$HOST" "cat > '$dst'" && return 0
     else
