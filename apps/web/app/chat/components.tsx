@@ -4,6 +4,7 @@ import { Check,ChevronDown,Copy,FileText,LoaderCircle,RefreshCw,ThumbsDown,Thumb
 import { Streamdown } from "streamdown";
 import { api } from "@/lib/api";
 import { copyToClipboard } from '@/lib/clipboard';
+import { BrandIcon } from "@/components/brand-icon";
 import { downloadChatFile,chatFileBlob,type Action,type ChatFile,type ChatMessage,type RuntimeEvent } from "@/lib/assistant";
 const json=(v:unknown)=>JSON.stringify(v,null,2);
 export function FileButton({file,onError}:{file:ChatFile;onError:(error:string)=>void}){
@@ -35,7 +36,7 @@ export function Message({message,busy,onRetry,onFeedback,onError}:{message:ChatM
  const confirmAll=async()=>{const session=message.events.find(e=>e.event_type==='execution.started') as any;if(!session?.session_id){onError('请刷新会话后再确认');return;}setConfirming(true);try{const result=await api<{results:Action[];stopped:boolean;error?:string}>(`/ai/conversations/${session.session_id}/messages/${message.id}/confirm-actions`,{method:'POST',body:JSON.stringify({action_ids:pending.map(a=>a.id)})});setBatch(result.results);if(result.stopped)onError(result.error||'部分操作未执行，请逐项查看结果');}catch(e){onError((e as Error).message);}finally{setConfirming(false);}};
  useEffect(()=>{if(!running)setOpen(false);},[running]);
  return <article className={`ai-message ai-${message.role}`}>
-  {message.role==="assistant"&&<div className="ai-identity">NexusFlow <span className="ai-muted">{message.model_id||"项目协同助手"}</span></div>}
+  {message.role==="assistant"&&<div className="ai-identity"><BrandIcon size={20} busy={running} decorative/>NexusFlow <span className="ai-muted">{message.model_id||"项目协同助手"}</span></div>}
   {message.role==="assistant"&&calls.length>0&&<section className="ai-trace"><button className="ai-trace-toggle" aria-expanded={open} onClick={()=>setOpen(!open)}>{running?<LoaderCircle size={14} className="animate-spin"/>:<Check size={14}/>} {running?"正在处理":"执行过程"} · {calls.length} 个步骤 <ChevronDown size={14}/></button>{open&&<ol>{calls.map(([key,t])=><li key={key}><span>{t.status==="started"?"正在":t.status==="failed"?"失败：":"已完成："}{t.label}</span>{t.ms!=null&&<small>{(t.ms/1000).toFixed(1)}s</small>}<details><summary>详情</summary><pre>{json({参数:t.args,结果:t.result})}</pre></details></li>)}</ol>}</section>}
   {message.content?<Streamdown className="ai-markdown" isAnimating={running} animated={false}>{message.content}</Streamdown>:running?<p className="ai-muted" role="status">正在处理…</p>:null}
   {(message.files||[]).map(f=><FileButton key={f.id} file={f} onError={onError}/>)}

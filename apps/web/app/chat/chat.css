@@ -46,7 +46,7 @@
 .ai-primary{background:var(--color-ink)!important;color:var(--color-canvas)!important}.ai-primary:hover{opacity:.85}
 .ai-welcome{padding-top:min(14vh,140px);padding-bottom:32px}
 .ai-welcome h2{font-size:26px;font-weight:600;letter-spacing:-.04em;margin:18px 0 24px}
-.ai-welcome-mark{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--color-border);border-radius:12px}
+.ai-welcome-mark{width:56px;height:56px;display:grid;place-items:center}
 .ai-suggestions{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 .ai-suggestions button{border-bottom:1px solid var(--color-border);padding:10px 0!important;justify-content:space-between;min-width:min(280px,100%);border-radius:0!important;color:var(--color-ink-2)}
 

@@ -3,6 +3,7 @@ import { useEffect,useLayoutEffect,useRef,useState } from "react";
 import { ArrowUp,Bookmark,ChevronDown,FileText,History,LoaderCircle,Paperclip,Pencil,Plus,Search,Share2,Square,Trash2,X } from "lucide-react";
 import { api } from "@/lib/api";
 import { copyToClipboard } from '@/lib/clipboard';
+import { BrandIcon } from "@/components/brand-icon";
 import { type ChatFile } from "@/lib/assistant";
 import { useAssistant } from "./use-assistant";
 import { FileButton,Message } from "./components";
@@ -26,7 +27,7 @@ export default function AssistantPage(){
   </div></header>
   <div className="ai-scroll" ref={scroll} onScroll={()=>{const e=scroll.current;if(e)follow.current=e.scrollHeight-e.scrollTop-e.clientHeight<100;}}>
    <div className="ai-content" aria-busy={chat.loading}>
-    {chat.loading?<p className="ai-muted" role="status">正在读取会话…</p>:chat.messages.length?chat.messages.map((m,index)=><Message key={m.id} message={m} busy={chat.busy} onError={chat.setError} onFeedback={rating=>void chat.feedback(m,rating).catch(e=>chat.setError(e.message))} onRetry={()=>{const parent=[...chat.messages.slice(0,index)].reverse().find(p=>p.role==="user");if(parent)void chat.send(parent.content,parent.files||[],m);}}/>):<section className="ai-welcome"><div className="ai-welcome-mark"><History size={23}/></div><h2>有什么需要协调？</h2><div className="ai-suggestions">{["检查我未来两周的任务和风险","看看我负责的项目进展","检查人员负载和排期冲突"].map(q=><button key={q} onClick={()=>setInput(q)}>{q}<ArrowUp size={14}/></button>)}</div></section>}
+    {chat.loading?<p className="ai-muted" role="status">正在读取会话…</p>:chat.messages.length?chat.messages.map((m,index)=><Message key={m.id} message={m} busy={chat.busy} onError={chat.setError} onFeedback={rating=>void chat.feedback(m,rating).catch(e=>chat.setError(e.message))} onRetry={()=>{const parent=[...chat.messages.slice(0,index)].reverse().find(p=>p.role==="user");if(parent)void chat.send(parent.content,parent.files||[],m);}}/>):<section className="ai-welcome"><div className="ai-welcome-mark"><BrandIcon size={56} hero decorative/></div><h2>有什么需要协调？</h2><div className="ai-suggestions">{["检查我未来两周的任务和风险","看看我负责的项目进展","检查人员负载和排期冲突"].map(q=><button key={q} onClick={()=>setInput(q)}>{q}<ArrowUp size={14}/></button>)}</div></section>}
     <div ref={bottom}/>
    </div>
   </div>
