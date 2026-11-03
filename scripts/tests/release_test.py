@@ -92,13 +92,13 @@ with tempfile.TemporaryDirectory() as directory:
     def cache_commit():
         subprocess.run(['git','-C',str(repo),'add','apps','cli','scripts'],check=True,stdout=subprocess.PIPE)
         subprocess.run(['git','-C',str(repo),'-c','user.name=Cache test','-c','user.email=cache@example.invalid','commit','-m','fixture'],check=True,stdout=subprocess.PIPE)
-        return subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip()
+        return subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],universal_newlines=True).strip()
     previous=cache_commit(); (out/'COMMIT').write_text(previous); (out/'dependencies.tar.gz').write_bytes(b'checked archive')
     (out/'SHA256SUMS').write_text(hashlib.sha256(b'checked archive').hexdigest()+'  dependencies.tar.gz\n')
     guard=build[build.index('# Reuse only a checksum-verified'):build.index('# Build only a committed archive')]
     def cache_value(commit):
         shell='set -eu\nROOT="$1"; OUT="$ROOT/out"; COMMIT="$2"\n'+guard+'\necho "$REUSE_DEPENDENCIES"\n'
-        return subprocess.check_output(['bash','-c',shell,'check',directory,commit],text=True).strip()
+        return subprocess.check_output(['bash','-c',shell,'check',directory,commit],universal_newlines=True).strip()
     assert cache_value(previous)=='1'
     (repo/'apps/api/code.ts').write_text('business change'); current=cache_commit(); assert cache_value(current)=='1'
     (out/'dependencies.tar.gz').write_bytes(b'tampered'); assert cache_value(current)=='0'
