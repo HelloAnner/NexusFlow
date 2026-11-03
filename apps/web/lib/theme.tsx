@@ -48,15 +48,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!mounted) return;
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem(STORAGE_KEY, theme);
   }, [theme, mounted]);
+
+  // 只有用户手动切换时才写 localStorage；不写则一直保持跟随系统
+  const apply = (t: Theme) => {
+    localStorage.setItem(STORAGE_KEY, t);
+    setThemeState(t);
+  };
 
   return (
     <ThemeContext.Provider
       value={{
         theme,
-        toggleTheme: () => setThemeState((prev) => (prev === "dark" ? "light" : "dark")),
-        setTheme: setThemeState,
+        toggleTheme: () => apply(theme === "dark" ? "light" : "dark"),
+        setTheme: apply,
       }}
     >
       {children}
