@@ -4,7 +4,7 @@ import { type CommandRequest, csvOption } from "./shared";
 export function planningRequest(args:CliArgs):CommandRequest|undefined {
  const {command,action,positionals:p}=args;
  if(command==='planning'){
-  if(!['mine','calendar','forecast','preview'].includes(action))throw Error('planning mine|calendar|forecast|preview');
+  if(!['mine','calendar','forecast','preview','options','task-types'].includes(action))throw Error('planning mine|calendar|forecast|preview|options|task-types');
   const query=new URLSearchParams();for(const key of ['from','to','person-id'])if(option(args,key))query.set(key.replaceAll('-','_'),option(args,key));
   if(['forecast','preview'].includes(action)&&!p[0])throw Error('task id required');
   const path=`/api/planning/${action}${['forecast','preview'].includes(action)?`/${encodeURIComponent(p[0]!)}`:''}${query.size?`?${query}`:''}`;

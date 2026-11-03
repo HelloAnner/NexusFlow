@@ -8,6 +8,8 @@ test('planning and worklog commands map to actual APIs with typed schedule value
  expect(commandRequest(parseArgs(['planning','preview','t','{"end_date":"2026-11-09"}']))).toEqual({path:'/api/planning/preview/t',method:'POST',body:{end_date:'2026-11-09'}});
  expect(commandRequest(parseArgs(['planning','calendar','--from','2026-11-02','--to','2026-11-06','--person-id','u'])).path).toBe('/api/planning/calendar?from=2026-11-02&to=2026-11-06&person_id=u');
  expect(commandRequest(parseArgs(['worklogs','confirm','w'])).path).toBe('/api/worklogs/w/confirm');
+ expect(commandRequest(parseArgs(['planning','options']))).toEqual({path:'/api/planning/options',method:'GET'});
+ expect(commandRequest(parseArgs(['planning','task-types']))).toEqual({path:'/api/planning/task-types',method:'GET'});
 });
 test('AI confirmation and conversation operations use authenticated dedicated routes',async()=>{
  const calls:any[]=[];const client={json:async(...args:any[])=>{calls.push(args);return {status:'succeeded'};}} as unknown as Client;

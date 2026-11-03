@@ -47,7 +47,7 @@ function help(){console.log(`nexusflow <auth|version|verify|home|gantt|orgs|peop
 chat QUESTION [--conversation ID|--continue] [--model ID] [--thinking auto|on|off] [--file-ids CSV] [--request-id ID] [--json]
 ai models|capabilities|tool NAME JSON|action ID|confirm ID|confirm-batch CONVERSATION MESSAGE|cancel ID|trace CONVERSATION MESSAGE|share CONVERSATION|shared SHARE|reveal ACTION_ID
 conversations list|create TITLE|show ID|files ID|rename ID TITLE|favorite ID --enabled true|delete ID|stop ID MESSAGE|feedback ID MESSAGE --rating up|down
-planning mine|calendar --from DATE --to DATE [--person-id ID]; planning forecast TASK_ID; planning preview TASK_ID JSON; worklogs confirm ID; verify assistant
+planning options|task-types; planning mine|calendar --from DATE --to DATE [--person-id ID]; planning forecast TASK_ID; planning preview TASK_ID JSON; worklogs confirm ID; verify assistant
 Actions: list/show/create/update/delete; auth login|register|logout|me|rename|passwd; tasks assign|assignments|publish|action; task-assignments list|show|update|requirements|action; visibility_grants create|list|show, visibility-grants revoke; dispatch submit|confirm; approvals decision; conflicts resolve|force; files upload|download|rollback|archive|versions|portal-list|portal-content|portal-preview; reports export; inbox read|complete; config publish|versions; admin preflight|audit|users|delegations|user-status|user-binding|user-profile|user-projects|user-project|user-project-remove; perm catalog|subjects|matrix|set|reset|check|prune; health [ready]; seed [status]
 brand check: verify SVG favicon, system identity and application base path.
 theme check: verify the served build ships light/dark tokens and the no-flash theme script.

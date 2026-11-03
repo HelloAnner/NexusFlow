@@ -31,6 +31,25 @@ NexusFlow AI 助手
 其他：我的工作、未来待办、收件箱、工作台、报表和导出、配置版本发布、业务工具台、审计。
 不开放原系统明令禁止的删除，也不赋予原业务接口没有授予当前用户的权限。
 
+人员与账号引用
+--------------
+people.id 是人员档案 ID，people.user_id / admin_users.id 是登录账号 ID。
+项目/任务负责人及成员、分工、派发请求人、授权对象和 admin 用户路径必须用账号 ID。
+对话和 ai tool 共用引用适配：仅对工具契约声明的账号字段，把当前有权读取的
+人员档案解析为绑定账号；配置 value、说明文字、项目 ID 等不做猜测转换。
+生成卡前检查分派账号同租户且有效；确认时仍由原 API 再校验权限和业务条件。
+未绑定账号的人员不能分派，账号停用或跨租户不会被自动替换为当前用户。
+卡片保存规范化后的实际账号；确认时不再按人员档案重新解释，不静默更换对象。
+失败旧卡保留审计，修正参数后新建卡，不重放历史失败或结果不确定的写入。
+
+business_options / planning options 直接返回 shared 中的资料类别、角色、组织类型、
+管理/专业等级、职责、工作状态和项目职责编码；任务类型另用 task_types。
+项目成员由 projects_update 编辑，任务成员通过分工添加/换人/取消；不能混用。
+提及使用 mentions_list/get。普通成员自己的后补派发也有工具入口，仍受权限覆盖、
+门户作用域、发起人归属及原有审批约束限制，不会自动通过审批。
+本人待办处理和报表导出沿用各自接口的读取授权，不被通用记录写权限误挡。
+无需请求体的发布/确认/撤销/删除动作不再要求模型提供虚构的 data 对象。
+
 排期口径
 --------
 任务延期保留各分工自己的日期和投入，不把所有人的安排抹成同一个数。
@@ -71,6 +90,8 @@ CLI
 nexusflow chat '检查我未来两周的任务和风险' --json
 nexusflow chat --continue '检查刚才任务的完工风险' --json
 nexusflow ai capabilities --json
+nexusflow planning options --json
+nexusflow planning task-types --json
 nexusflow ai tool tasks_reschedule '{"id":"真实任务ID","data":{"end_date":"2026-11-12"}}' --json
 nexusflow ai action 操作ID --json
 nexusflow ai confirm 操作ID --json

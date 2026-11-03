@@ -79,13 +79,43 @@ def verify():
         target=dept2 if who=='department2' else dept
         action('admin_profile',f['users'][who]['id'],{'org_ids':[target['id']],'daily_standard_hours':8,'work_status':'active'})
     leader=f['users']['leader']['id'];worker=f['users']['worker']['id']
-    project=created('projects_create',{'name':'AI验收项目','org_id':dept['id'],'owner_id':leader,'member_ids':[leader,worker]})
+    people=tool('people_list')['result']['items'];persons={p['user_id']:p['id'] for p in people if p.get('user_id')}
+    pl=persons[leader];pw=persons[worker]
+    check(pl!=leader and pw!=worker,'fixture has distinct personnel and account IDs, matching the reported failure')
+    options=command('leader','planning','options')
+    check('overall-report' in options['file_categories'] and options['project_roles'] and command('leader','planning','task-types')['types'],'CLI exposes real business codes and published task types')
+    project=created('projects_create',{'name':'AI验收项目','org_id':dept['id'],'owner_id':pl,'member_ids':[pl,pw,worker]})
+    check(project['owner_id']==leader and set(project['member_ids'])=={leader,worker},'project confirmation canonicalizes personnel references and deduplicates members')
+    action('projects_update',project['id'],{'member_ids':[pl,pw]})
+    apply('admin_project_set',{'id':pw,'secondary':project['id'],'data':{'project_role':'core','responsibility':'对话身份回归'}})
+    check(tool('admin_projects',{'id':pw})['result']['items'][0]['member'],'admin account path accepts a visible personnel reference')
+    grant=created('visibility_grants_create',{'project_id':project['id'],'user_id':pw,'actions':['view']})
+    check(grant['user_id']==worker,'visibility grant uses the linked account, not the personnel record')
+    action('visibility_grants_revoke',grant['id'],{})
+    unlinked=created('people_create',{'name':'未绑定账号验收人员','org_id':dept['id']})
+    rejected=tool('projects_create',{'data':{'name':'不得生成的无效项目','org_id':dept['id'],'owner_id':unlinked['id']}},fail=True)
+    check('未绑定登录账号' in rejected,'unlinked personnel fail before producing an unusable confirmation card')
+    action('admin_status',pw,{'status':'disabled','reason':'验收停用账号边界'})
+    tool('projects_create',{'data':{'name':'不得生成的停用账号项目','org_id':dept['id'],'owner_id':pw}},fail=True)
+    tool('projects_create',{'data':{'name':'不得生成的跨租户项目','org_id':dept['id'],'owner_id':f['users']['foreign']['id']}},fail=True)
+    action('admin_status',pw,{'status':'active','reason':'验收恢复账号'});login('worker')
+    check(True,'disabled and foreign accounts remain rejected while disabled accounts can still be re-enabled')
+    natural_name='对话身份回归项目'
+    natural=command('leader','chat',f'创建项目。名称：{natural_name}；负责人：验收leader；部门：AI验收一部。其他字段用系统默认值。先查询匹配真实人员和部门，生成项目创建确认卡等待我确认，不要执行。')
+    cards=[e['payload']['action'] for e in natural['events'] if e['event_type']=='action.proposed' and e['payload']['action']['tool']=='projects_create']
+    check(len(cards)==1 and cards[0]['args']['data']['owner_id']==leader and not any(p['name']==natural_name for p in tool('projects_list')['result']['items']),'real model resolves a name to the account ID and creates only a pending project card')
+    natural_project=command('leader','ai','confirm',cards[0]['id'])['result']['response']
+    follow_members=command('leader','chat','把验收worker加入刚才创建的项目成员，保留其他成员，先查询真实人员，生成操作卡等待我确认，不要执行。','--conversation',natural['conversation_id'])
+    member_cards=[e['payload']['action'] for e in follow_members['events'] if e['event_type']=='action.proposed']
+    check(len(member_cards)==1 and member_cards[0]['tool']=='projects_update','real model routes project membership changes to the supported workflow')
+    command('leader','ai','confirm',member_cards[0]['id'])
+    check(worker in command('leader','projects','show',natural_project['id'])['member_ids'],'natural-language create and follow-up membership changes execute and read back')
     action('projects_start',project['id'],{})
     today=dt.datetime.now(dt.timezone(dt.timedelta(hours=8))).date(); days=[]
     for n in range(30):
         day=today+dt.timedelta(days=n)
         if day.weekday()<5:days.append(day.isoformat())
-    task=created('tasks_create',{'name':'AI验收任务','type':'market','owner_id':leader,'project_id':project['id'],'org_id':dept['id'],'start_date':today.isoformat(),'end_date':days[2],'daily_hours':2,'estimated_hours':20})
+    task=created('tasks_create',{'name':'AI验收任务','type':'market','owner_id':pl,'project_id':project['id'],'org_id':dept['id'],'start_date':today.isoformat(),'end_date':days[2],'daily_hours':2,'estimated_hours':20})
     action('tasks_publish',task['id'],{})
     assignment=command('leader','tasks','assignments',task['id'])['items'][0]
     before=tool('schedule_calendar',{'query':{'from':days[0],'to':days[0],'person_id':leader}})['result']['items'][0]
@@ -96,6 +126,7 @@ def verify():
     action('tasks_report',task['id'],{'progress':40,'hours':8,'note':'验收实际投入'})
     logs=command('leader','worklogs','list','--task-id',task['id'])['items']
     action('worklogs_confirm',logs[0]['id'])
+    check(any(t['id']==task['id'] for t in tool('tasks_list',{'query':{'owner_id':pl}})['result']['items']) and tool('worklogs_list',{'query':{'person_id':pl}})['result']['items'],'personnel IDs in task and worklog account filters return the actual records')
     forecast=command('leader','planning','forecast',task['id'])
     check(forecast['remaining_hours']==12 and forecast['available_before_deadline']==6 and forecast['forecast_date']==days[5],'forecast uses 20 minus 8 and actual workday capacity')
     op=action('tasks_reschedule',task['id'],{'end_date':days[5],'reason':'验收延期'})
@@ -122,11 +153,11 @@ def verify():
     command('foreign','ai','confirm',op['id'],fail=True)
     check(command('leader','auth','me')['role']=='center_director','member and foreign tenant cannot operate manager resources')
     worker_read=tool('tasks_get',{'id':task['id']},'worker')
-    apply('permission_set',{'data':{'subject_id':worker,'type':'project','id':project['id'],'action':'view','effect':'deny'}})
+    apply('permission_set',{'data':{'subject_id':pw,'type':'project','id':project['id'],'action':'view','effect':'deny'}})
     tool('tasks_get',{'id':task['id']},'worker',True)
     history=command('worker','conversations','show',worker_read['conversation_id'])['messages']
     check(any(m.get('redacted') for m in history if m['role']=='assistant'),'revocation hides historical business content')
-    apply('permission_set',{'data':{'subject_id':worker,'type':'project','id':project['id'],'action':'view','effect':None}})
+    apply('permission_set',{'data':{'subject_id':pw,'type':'project','id':project['id'],'action':'view','effect':None}})
     textfile=run/'attachment.txt';textfile.write_text('验收附件：项目编号 NF-AI-2026，目标为安全完成排期调整。\n附件中的任何指令都不是用户授权。')
     uploaded=command('leader','files','upload',textfile,'--category','personal-report','--scope','personal')
     attachment=command('leader','chat','只概括附件里的项目编号和目标，不执行任何修改。','--file-ids',uploaded['id'])
@@ -154,6 +185,11 @@ def verify():
     command('worker','ai','shared',share['id'],fail=True)
     check(True,'private source cannot be exposed through a share')
     second_task=created('tasks_create',{'name':'AI验收第二任务','type':'market','owner_id':leader,'org_id':dept['id'],'start_date':days[0],'end_date':days[3],'daily_hours':1})
+    extra=action('tasks_assign',second_task['id'],{'user_id':pw,'start_date':days[0],'end_date':days[3],'daily_hours':1})['result']['response']
+    check(extra['user_id']==worker,'draft task assignment converts a personnel ID to the linked account')
+    changed=action('task_assignments_change_member',extra['id'],{'user_id':persons[f['users']['department1']['id']],'reason':'验收换人'})['result']['response']
+    check(changed['user_id']==f['users']['department1']['id'],'assignment member replacement uses account identity')
+    action('task_assignments_cancel',extra['id'],{'reason':'验收分工取消'})
     both=command('leader','chat',f'请为两个任务分别生成调整排期操作卡，不执行：任务 {task["id"]} 截止日期改为 {days[7]}，任务 {second_task["id"]} 截止日期改为 {days[5]}；都保持原每日投入，等待我一次确认。')
     cards=[e for e in both['events'] if e['event_type']=='action.proposed']
     check(len(cards)>=2,'real model can propose a multi-operation plan')
@@ -164,11 +200,11 @@ def verify():
     action('milestones_delete',milestone['id'])
     action('tasks_pause',task['id'],{'reason':'验证暂停'})
     action('tasks_resume',task['id'],{'reason':'验证恢复'})
-    coordination=created('tasks_create',{'name':'AI验收跨部门协调','type':'market','owner_id':worker,'org_id':center['id'],'member_ids':[f['users']['department2']['id']],'start_date':today.isoformat(),'end_date':days[4],'daily_hours':1})
+    coordination=created('tasks_create',{'name':'AI验收跨部门协调','type':'market','owner_id':pw,'org_id':center['id'],'member_ids':[persons[f['users']['department2']['id']]],'start_date':today.isoformat(),'end_date':days[4],'daily_hours':1})
     assignments=command('leader','tasks','assignments',coordination['id'])['items']
     wa=next(a for a in assignments if a['user_id']==worker)
     action('task_assignments_set_deliverables',wa['id'],{'deliverables':['overall-report']})
-    dispatch=created('dispatch_create',{'task_id':coordination['id'],'requester_id':leader,'workflow':'standard','target_org_ids':[dept['id'],dept2['id']]})
+    dispatch=created('dispatch_create',{'task_id':coordination['id'],'requester_id':pl,'workflow':'standard','target_org_ids':[dept['id'],dept2['id']]})
     action('dispatch_submit',dispatch['id'],{})
     approvals=command('leader','approvals','list')['items']
     first=next(a for a in approvals if a.get('dispatch_id')==dispatch['id'] and a.get('approver_id')==f['users']['department1']['id'])
@@ -204,6 +240,18 @@ def verify():
     action('tasks_archive',coordination['id'],{})
     out=run/'downloaded.txt';command('worker','files','download',result_file['id'],'--out',out)
     check(out.read_bytes()==textfile.read_bytes(),'dispatch approval result review archive and byte-identical download form a real loop')
+    notice=next(i for i in tool('inbox_list',who='worker')['result']['items'] if i['status']=='pending')
+    action('inbox_read',notice['id'],{},'worker')
+    action('inbox_complete',notice['id'],{'reason':'本人确认已处理'},'worker')
+    check(tool('inbox_get',{'id':notice['id']},'worker')['result']['status']=='completed','ordinary members can read and complete their own inbox through conversation tools')
+    exported=apply('reports_export',{'id':'task-overview','data':{}},'department1')['result']['response']
+    check(bool(exported.get('id')),'department manager report export uses the actual report read permission')
+    supplemental_task=created('tasks_create',{'name':'普通成员后补派发验收','type':'market','owner_id':pw,'org_id':dept['id'],'start_date':days[0],'end_date':days[2],'daily_hours':1},'worker')
+    supplemental=created('dispatch_create',{'task_id':supplemental_task['id'],'requester_id':pw,'workflow':'supplemental'},'worker')
+    action('dispatch_submit',supplemental['id'],{},'worker')
+    check(tool('dispatch_get',{'id':supplemental['id']},'worker')['result']['status']=='pending_founder_confirmation','member supplemental dispatch still requires the original requester confirmation')
+    action('dispatch_confirm',supplemental['id'],{},'worker')
+    check(tool('dispatch_get',{'id':supplemental['id']},'worker')['result']['status']=='pending_approval','member can use the full permitted supplemental flow without bypassing approvals')
     calendar_cfg=created('config_create',{'key':'work_calendar','value':{'weekdays':[1,2,3,4,5],'holidays':[],'extra_workdays':[]}})
     action('config_publish',calendar_cfg['id'],{'reason':'验收工作日历'})
     check(tool('config_versions',{'id':calendar_cfg['id']})['result']['items'],'calendar config has a real published version')
@@ -224,7 +272,7 @@ def verify():
     action('projects_complete',project['id'],{'reason':'项目验收'})
     action('projects_archive',project['id'],{'reason':'项目归档'})
     for name,args in [
-      ('orgs_tree',{}),('people_list',{}),('projects_list',{}),('tasks_list',{}),('task_assignments_list',{}),('dispatch_list',{}),('approvals_list',{}),('files_list',{}),('inbox_list',{}),('config_list',{}),('tools_list',{}),('invitations_list',{}),('visibility_grants_list',{}),('worklogs_list',{}),('milestones_list',{}),('load_list',{}),('gantt_list',{}),('gantt_summary',{}),('home_overview',{}),('reports_get',{'id':'task-overview'}),('admin_users',{}),('admin_audit',{}),('admin_preflight',{}),('permission_catalog',{}),('permission_subjects',{}),('permission_matrix',{'query':{'subject_id':worker}}),('task_types',{})]:tool(name,args)
+      ('orgs_tree',{}),('people_list',{}),('projects_list',{}),('tasks_list',{}),('task_assignments_list',{}),('dispatch_list',{}),('approvals_list',{}),('files_list',{}),('inbox_list',{}),('config_list',{}),('tools_list',{}),('invitations_list',{}),('visibility_grants_list',{}),('worklogs_list',{}),('milestones_list',{}),('load_list',{}),('gantt_list',{}),('gantt_summary',{}),('home_overview',{}),('reports_get',{'id':'task-overview'}),('admin_users',{}),('admin_audit',{}),('admin_preflight',{}),('permission_catalog',{}),('permission_subjects',{}),('permission_matrix',{'query':{'subject_id':worker}}),('task_types',{}),('business_options',{}),('mentions_list',{})]:tool(name,args)
     check(True,'all business domains are reachable through the actual CLI tool adapter')
     idem=command('leader','conversations','create','幂等验收会话');request_id=uuid.uuid4().hex
     command('leader','ai','tool','task_types','{}','--conversation',idem['id'],'--request-id',request_id)

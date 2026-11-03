@@ -5,6 +5,7 @@ import { withRbacContext } from "../../rbac.ts";
 import { createHash } from "node:crypto";
 import { seal } from './secrets.ts';
 export type Call = {path:string;method?:string;body?:unknown;expectedVersion?:string};
+export class BusinessApiError extends Error {constructor(message:string,readonly status:number){super(message);}}
 export type Runtime = {app:ApiApp;headers:Headers;user:User;conversationId:string;messageId:string;query:string;signal:AbortSignal;refs:Set<string>;secureResult?:string;emit:(type:string,payload:Record<string,any>)=>Promise<void>};
 function canonical(value:any):any{if(value instanceof Date)return value.toISOString();if(Array.isArray(value))return value.map(canonical);if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])]));return value;}
 export const fingerprint=(value:unknown)=>createHash('sha256').update(JSON.stringify(canonical(value))).digest('hex');
@@ -22,13 +23,13 @@ export async function callApi(runtime:Runtime,call:Call){
  const headers=new Headers(runtime.headers);if(call.expectedVersion)headers.set('if-match',call.expectedVersion);
  const response=await runtime.app.request(`http://nexusflow.internal${call.path}`,{method:call.method||"GET",headers,...(call.body===undefined?{}:{body:JSON.stringify(call.body)}),signal:runtime.signal});
  const type=response.headers.get("content-type")||"";if(!type.includes("application/json"))throw Error("invalid business API response");
- const value=await response.json() as any;if(!response.ok)throw Error(value.error||`business API failed (${response.status})`);
+ const value=await response.json() as any;if(!response.ok)throw new BusinessApiError(value.error||`business API failed (${response.status})`,response.status);
  if(call.path==='/api/invitations'&&call.method==='POST'&&typeof value.token==='string')runtime.secureResult=seal({invitation_token:value.token});
  const clean=sanitize(value);
  if((call.method||"GET")==="GET"){
   // 保存当前被读过的受保护入口；历史重放前重新鉴权，不复用旧权限快照。
   runtime.refs.add(call.path);
-  const collection=call.path.match(/^\/api\/(orgs|people|projects|tasks|task_assignments|files|invitations|dispatch|approvals|conflicts|config|tools|worklogs|milestones|visibility_grants)(?:\?|$)/)?.[1];
+  const collection=call.path.match(/^\/api\/(orgs|people|projects|tasks|task_assignments|files|invitations|dispatch|approvals|conflicts|config|tools|worklogs|milestones|visibility_grants|mentions)(?:\?|$)/)?.[1];
   if(collection&&Array.isArray(value.items))for(const item of value.items)if(typeof item.id==="string")runtime.refs.add(`/api/${collection}/${encodeURIComponent(item.id)}`);
  }
  return clean;

@@ -10,9 +10,11 @@ import { prepareFiles } from './files.ts';
 import { objectRequest } from '../../storage.ts';
 import { allowedTaskTypes } from '../config/service.ts';
 import { reconcileTaskConflicts } from '../conflicts/service.ts';
+import { fileCategories,orgTypes,roles,managementLevels,professionalLevels,dutyTags,workStatuses,projectRoles } from '../../../../../packages/shared/src/index.ts';
 export const scheduleInput=z.object({start_date:z.string().date().optional(),end_date:z.string().date().optional(),daily_hours:z.number().min(0).max(24).optional(),all_day:z.boolean().optional(),reason:z.string().max(2000).optional(),expected_updated_at:z.string().optional()}).strict();
 export function registerPlanning(app:ApiApp){
  app.get('/api/planning/task-types',async c=>c.json({types:await allowedTaskTypes(actor(c))}));
+ app.get('/api/planning/options',c=>c.json({file_categories:fileCategories,org_types:orgTypes,roles,management_levels:managementLevels,professional_levels:professionalLevels,duty_tags:dutyTags,work_statuses:workStatuses,project_roles:projectRoles}));
  app.get('/api/planning/calendar',async c=>c.json(await calendar(actor(c),c.req.query())));
  app.get('/api/planning/forecast/:id',async c=>c.json(await forecast(actor(c),c.req.param('id'))));
  app.post('/api/planning/preview/:id',async c=>c.json(await previewSchedule(actor(c),c.req.param('id'),scheduleInput.parse(await c.req.json()))));
