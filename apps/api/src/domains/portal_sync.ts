@@ -338,4 +338,20 @@ export function registerPortalSync(app: ApiApp): void {
       return fail(c, 422, "invalid_request", error instanceof Error ? error.message : String(error));
     }
   });
+
+  // Portal 全局登出：把该门户账号在本系统的全部会话搒掉。
+  // 子系统不能自己判断“门户是不是已经退出”，只能由 Portal 下发这个事件。
+  app.post(`${PREFIX}/users/:portalUserId/sessions/revoke`, async (c) => {
+    if (!tokenOk(c.req.header("X-Portal-Internal-Token") ?? "")) return fail(c, 404, "not_found", "Not found");
+    if (!sql) return fail(c, 503, "db_unavailable", "database unavailable");
+    const portalUserId = c.req.param("portalUserId");
+    if (!uuid(portalUserId)) return fail(c, 422, "invalid_portal_user_id", "invalid portal user id");
+    const linked = await sql`SELECT id FROM nexusflow.users WHERE portal_id=${portalUserId}`;
+    if (!linked.length) return fail(c, 404, "local_user_not_found", "local user not found");
+    let revoked = 0;
+    for (const row of linked) {
+      try { await revokeUserSessions(String(row.id)); revoked += 1; } catch { /* session store unavailable */ }
+    }
+    return c.json({ portal_user_id: portalUserId, local_users: linked.length, sessions_revoked: revoked });
+  });
 }

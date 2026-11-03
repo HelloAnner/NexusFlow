@@ -77,6 +77,23 @@ export function Shell({ children }: { children: React.ReactNode }) {
     if (!checked) fetchMe();
   }, [checked, fetchMe]);
 
+  // 门户全局登出（或另一个 tab 换号）会让本 tab 的会话失效。
+  // 定时 + 回到前台各确认一次，不用等到下一次报错才发现自己已经被踢。
+  const authenticated = Boolean(user);
+  useEffect(() => {
+    if (!authenticated) return;
+    const check = () => { void fetchMe(); };
+    const timer = window.setInterval(check, 30_000);
+    const onVisible = () => { if (document.visibilityState === "visible") check(); };
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", check);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [authenticated, fetchMe]);
+
   // 浏览器标签标题跟随租户：租户名 - 项目管理系统。带 pathname：客户端路由会重新应用 layout metadata。
   const tenantName = user?.tenantName?.trim();
   useEffect(() => {

@@ -33,6 +33,8 @@ export const useAuth = create<AuthState>((set, get) => ({
       return user;
     } catch (error) {
       if (error instanceof ApiError && error.code === "SESSION_CHANGED") return get().user;
+      // 会话被门户全局登出撤销：本地凭证一并丢掉。
+      if (error instanceof ApiError && error.status === 401) localStorage.removeItem("nf_token");
       set({ user: null, checked: true });
       return null;
     }

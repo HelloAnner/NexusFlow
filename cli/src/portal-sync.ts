@@ -26,6 +26,11 @@ export async function portalSync(client: Client, args: CliArgs) {
     if (!portalUserId || !password) throw Error("portal-sync password requires --portal-user-id and --password");
     return client.json(`/api/portal/sync/v1/users/${encodeURIComponent(portalUserId)}/password`, "PUT", { password }, headers);
   }
+  if (action === "revoke") {
+    const portalUserId = option(args, "portal-user-id");
+    if (!portalUserId) throw Error("portal-sync revoke requires --portal-user-id");
+    return client.json(`/api/portal/sync/v1/users/${encodeURIComponent(portalUserId)}/sessions/revoke`, "POST", {}, headers);
+  }
   if (action === "selftest") {
     const health = await client.json("/api/portal/sync/v1/health", "GET", undefined, headers);
     const capabilities = await client.json("/api/portal/sync/v1/capabilities", "GET", undefined, headers);
@@ -41,5 +46,5 @@ export async function portalSync(client: Client, args: CliArgs) {
       members_checked: Array.isArray(members.items) ? members.items.length : 0,
     };
   }
-  throw Error("portal-sync supports status|tenants|members|password|selftest");
+  throw Error("portal-sync supports status|tenants|members|password|revoke|selftest");
 }
