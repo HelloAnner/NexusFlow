@@ -92,11 +92,12 @@ with tempfile.TemporaryDirectory() as directory:
     current=target/'root/validation/current'; current.mkdir()
     (target/'payload').write_bytes(b'new attachment with verified content')
     (prior/'payload').write_bytes(b'old deployed attachment')
+    (target/'root/DEPLOYED_COMMIT').write_text('prior')
     shell='''set -eu
 HOST=fixture; REMOTE="$1/root"; attempts=0
 ssh(){ shift; if [[ "$*" == 'command -v rsync >/dev/null' ]]; then return 0; fi; bash -c "$*"; }
 sleep(){ :; }
-rsync(){ local dst="${@: -1}" src="${@: -2:1}"; dst="${dst#fixture:}"; attempts=$((attempts+1)); if [[ $attempts == 1 ]]; then printf partial > "$dst"; return 1; fi; cp "$src" "$dst"; }
+rsync(){ local dst="${@: -1}" src="${@: -2:1}"; dst="${dst#fixture:}"; attempts=$((attempts+1)); if [[ $attempts == 1 ]]; then [[ $(cat "$dst") == 'old deployed attachment' ]]; printf partial > "$dst"; return 1; fi; cp "$src" "$dst"; }
 '''+uploader+'\nput "$1/payload" "$1/root/validation/current/payload"\n[[ $attempts == 2 ]]\n'
     subprocess.run(['bash','-c',shell,'check',directory],check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     assert (current/'payload').read_bytes()==(target/'payload').read_bytes()

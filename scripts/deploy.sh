@@ -17,7 +17,7 @@ put() { # put LOCAL REMOTE
   want=$(sha256sum "$src" | cut -d' ' -f1)
   got=$(ssh "$HOST" "sha256sum '$dst' 2>/dev/null | cut -d' ' -f1" || true)
   [[ $got == "$want" ]] && return 0
-  reuse=$(ssh "$HOST" "if [ ! -s '$dst' ]; then f=\$(find '$REMOTE/validation' -maxdepth 3 -type f -name '$(basename "$dst")' ! -path '$dst' 2>/dev/null | head -1); if [ -n \"\$f\" ]; then cp \"\$f\" '$dst'; fi; fi; if [ -s '$dst' ] && [ \"\$(sha256sum '$dst' | cut -d' ' -f1)\" = '$want' ]; then echo reused; fi" || true)
+  reuse=$(ssh "$HOST" "if [ ! -s '$dst' ]; then previous=\$(cat '$REMOTE/DEPLOYED_COMMIT' 2>/dev/null || true); f=\"$REMOTE/validation/\$previous/$(basename "$dst")\"; if [ ! -f \"\$f\" ]; then f=\$(find '$REMOTE/validation' -maxdepth 3 -type f -name '$(basename "$dst")' ! -path '$dst' 2>/dev/null | head -1); fi; if [ -n \"\$f\" ]; then cp \"\$f\" '$dst'; fi; fi; if [ -s '$dst' ] && [ \"\$(sha256sum '$dst' | cut -d' ' -f1)\" = '$want' ]; then echo reused; fi" || true)
   [[ $reuse == reused ]] && { echo "reused $dst from prior attachment"; return 0; }
   if command -v rsync >/dev/null && ssh "$HOST" 'command -v rsync >/dev/null'; then delta=1; fi
   for attempt in 1 2 3; do
