@@ -45,7 +45,7 @@ app.use("*",async(c,next)=>{
   }
  });
 });
-const publicPaths=new Set(["/api/auth/login","/api/auth/logout","/api/auth/register"]);
+const publicPaths=new Set(["/api/auth/login","/api/auth/logout","/api/auth/register","/api/auth/invitations/validate"]);
 app.use("/api/*",async(c,next)=>{if(publicPaths.has(c.req.path)||c.req.path.startsWith("/api/portal/sync/v1")||c.req.path.startsWith("/api/portal/rbac/v1")||c.req.path==="/api/system/version"&&c.req.method==="GET"||portalFilesPublicPath.test(c.req.path))return next();const loadedUser=await currentUser(c);if(!loadedUser)return c.json({error:"unauthorized"},401);const user=await withRbacContext(loadedUser);
  const registered=app.routes.some(route=>!route.path.includes("*")&&(route.method===c.req.method||route.method==="ALL")&&new RegExp("^"+route.path.replace(/:[^/]+/g,"[^/]+")+"$").test(c.req.path));
  if(!registered)return c.json({error:"not found"},404);

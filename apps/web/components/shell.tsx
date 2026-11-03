@@ -78,10 +78,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
   }, [checked, fetchMe]);
 
   useEffect(() => {
-    if (pathname !== "/login" && checked && !user) router.replace("/login");
+    if (!["/login", "/register"].includes(pathname) && checked && !user) router.replace("/login");
   }, [pathname, checked, user, router]);
 
-  if (pathname === "/login") return <>{children}</>;
+  if (["/login", "/register"].includes(pathname)) return <>{children}</>;
 
   if (!checked || !user) {
     return <div className="flex h-screen items-center justify-center bg-canvas text-[12.5px] text-ink-3">加载中…</div>;

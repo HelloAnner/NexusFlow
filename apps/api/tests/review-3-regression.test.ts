@@ -25,7 +25,7 @@ const redis:any={status:"ready", get:async(k:string)=>cache.get(k)??null,
   }
 };
 function equalFilter(items:any[],q:string,v:any[],field:string) {
-  const match=new RegExp(`(?:WHERE |AND |OR )${field}=(\\$\\d+|'[^']*')`).exec(q);
+  const match=new RegExp(`(?:WHERE |AND |OR )${field}(?:::text)?=(\\$\\d+|'[^']*')`).exec(q);
   if(!match)return items;
   const value=match[1]!.startsWith("$")?v[Number(match[1]!.slice(1))]:match[1]!.slice(1,-1);
   return items.filter(r=>r[field] instanceof Date&&value instanceof Date?r[field].valueOf()===value.valueOf():r[field]===value);
@@ -102,6 +102,27 @@ function addAccount(user:any){const account={...user,status:"active",portal_id:u
 async function request(path:string,method="GET",body?:any,user=center){addAccount(user);const token=await createSession(user);return app.request(path,{method,headers:{authorization:`Bearer ${token}`,"content-type":"application/json"},...(body===undefined?{}:{body:JSON.stringify(body)})});}
 beforeEach(()=>{Object.assign(config,initialConfig);records=[row("c1","orgs",{name:"Center",type:"center"}),row("o1","orgs",{name:"One",type:"department",parent_id:"c1"}),row("o2","orgs",{name:"Two",type:"department",parent_id:"c1"})];users=[{...member,status:"active",portal_id:null},{...member,id:"u2",username:"two",org_id:"o2",status:"active",portal_id:null}];audits=[];sqlWrites=[];cache.clear();sets.clear();failRevoke=false;beforeNextBegin=null;nextXmin=0;activeXmin=null;afterNextCommit=null;failNextRecordRead=false;denyNextScheduleLock=false;globalThis.fetch=blockFetch;});
 afterAll(()=>{globalThis.fetch=previousFetch;for(const [key,value] of [["DEMO_SEED_ENABLED",seedEnvironment.enabled],["DEMO_SEED_TENANT_ID",seedEnvironment.tenant]]){if(value===undefined)delete process.env[key!];else process.env[key!]=value;}});
+
+test('invitation resend rotates credentials, preserves scope and never leaks links to the assistant', async () => {
+ const invitation=row('invite-copy','invitations',{role:'member',org_id:'o1',status:'revoked',token_hash:'old-hash',expires_at:new Date(0).toISOString()});records.push(invitation);
+ const response=await request('/api/invitations/invite-copy/resend','POST',{});
+ expect(response.status).toBe(200);const result=await response.json();
+ expect(result.invite_url).toContain('/register#token=');expect(result.token).toBeString();
+ expect(records.find(r=>r.id==='invite-copy')!.data.token_hash).not.toBe('old-hash');
+ const {sanitize}=await import(`${root}/domains/assistant/transport.ts`);
+ expect(sanitize(result)).not.toHaveProperty('token');expect(sanitize(result)).not.toHaveProperty('invite_url');
+ records.find(r=>r.id==='invite-copy')!.data.status='used';
+ expect((await request('/api/invitations/invite-copy/resend','POST',{})).status).toBe(409);
+ expect(commandRequest(parseArgs(['invitations','validate','test-only']))).toEqual({path:'/api/auth/invitations/validate',method:'POST',body:{token:'test-only'}});
+ expect(commandRequest(parseArgs(['invitations','resend','invite-copy'])).path).toBe('/api/invitations/invite-copy/resend');
+});
+
+test('invitation creation rejects missing and foreign organizations and privileged roles', async () => {
+ records.push(row('foreign-invite-org','orgs',{name:'Foreign',type:'department'},'other','other-tenant'));
+ for(const org_id of ['missing-invite-org','foreign-invite-org'])expect((await request('/api/invitations','POST',{org_id,role:'member'})).status).toBe(400);
+ expect((await request('/api/invitations','POST',{org_id:'o1',role:'super_admin'})).status).toBe(400);
+ expect((await request('/api/invitations','POST',{org_id:'o1',role:'member'},member)).status).toBe(403);
+});
 
 test('resource lock rejection propagates a valid JSON response without entering the handler',async()=>{denyNextScheduleLock=true;const response=await request('/api/tasks/missing/action','POST',{action:'pause',reason:'busy'});expect(response.status).toBe(409);expect((await response.json()).error).toContain('busy');expect(sqlWrites).toEqual([]);});
 test('admin profile versions are not mistaken for a generic admin record id',async()=>{addAccount(center);users.find(u=>u.id==='u2')!.updated_at=new Date(0);const token=await createSession(center);const response=await app.request('/api/admin/users/u2/profile',{method:'PATCH',headers:{authorization:`Bearer ${token}`,'content-type':'application/json','if-match':new Date(0).toISOString()},body:JSON.stringify({display_name:'Checked profile',updated_at:new Date(0).toISOString()})});expect(response.status).toBe(200);expect((await response.json()).user.display_name).toBe('Checked profile');});

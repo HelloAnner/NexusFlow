@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MemberInvitations } from "./invitations";
 import { Pencil, ShieldCheck, Trash2 } from "lucide-react";
 import { Avatar, Badge, Card, Empty, PageHeader, SearchBox } from "@/components/ui";
 import { Modal, Field, inputCls, toast, errorText } from "@/components/feedback";
@@ -274,6 +275,7 @@ export default function UsersPage() {
       />
 
       <div className="p-6 pt-4">
+        <MemberInvitations orgs={orgs} />
         <Card className="overflow-hidden">
           <table className="w-full text-[12.5px]">
             <thead>

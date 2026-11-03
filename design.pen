@@ -19063,6 +19063,29 @@
                       "fontWeight": "normal"
                     }
                   ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yshz9",
+                  "name": "邀请成员入口",
+                  "fill": "$ink",
+                  "cornerRadius": 6,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "m9H2Ic",
+                      "name": "邀请成员按钮",
+                      "fill": "#FFFFFF",
+                      "content": "邀请成员",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
                 }
               ]
             },
@@ -37002,6 +37025,328 @@
           "content": "取消                                      保存",
           "fontFamily": "Inter",
           "fontSize": 13,
+          "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "lXrsE",
+      "x": 9148,
+      "y": 2000,
+      "name": "邀请成员",
+      "clip": true,
+      "width": 520,
+      "height": 710,
+      "fill": "$perm-surface",
+      "cornerRadius": 8,
+      "stroke": "$perm-line",
+      "strokeWidth": 1,
+      "layout": "vertical",
+      "gap": 16,
+      "padding": 28,
+      "children": [
+        {
+          "type": "text",
+          "id": "mAhdu",
+          "name": "邀请成员标题",
+          "fill": "$perm-text",
+          "content": "邀请成员",
+          "fontFamily": "Inter",
+          "fontSize": 20,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "H4kQd",
+          "name": "邀请成员内容0",
+          "fill": "$perm-text",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "部门 *",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "zBPJ2",
+          "name": "邀请成员内容1",
+          "fill": "$perm-muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "选择可管理部门",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "jzUMo",
+          "name": "邀请成员内容2",
+          "fill": "$perm-text",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "角色 *",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "bV9ox",
+          "name": "邀请成员内容3",
+          "fill": "$perm-muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "成员 / 项目负责人",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "QoAEy",
+          "name": "邀请成员内容4",
+          "fill": "$perm-text",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "有效期（天）",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "PgFR9",
+          "name": "邀请成员内容5",
+          "fill": "$perm-muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "7",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "a2GXVO",
+          "name": "邀请成员内容6",
+          "fill": "$perm-text",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "生成并复制邀请链接",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "N09mmY",
+          "name": "邀请成员内容7",
+          "fill": "$perm-muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "邀请链接",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "XSCLA",
+          "name": "邀请成员内容8",
+          "fill": "$perm-text",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "https://服务地址/nexusflow/register#token=…",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "AWNlH",
+          "name": "邀请成员内容9",
+          "fill": "$perm-muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "复制邀请链接",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "X4EoIc",
+          "name": "邀请成员内容10",
+          "fill": "$perm-text",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "自动复制失败时保留链接，可选中手动复制。",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "cwmz4",
+          "name": "邀请成员内容11",
+          "fill": "$perm-muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "重发后旧链接失效；已使用的邀请不可重发。",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "D9PfKY",
+      "x": 9148,
+      "y": 2770,
+      "name": "邀请注册",
+      "clip": true,
+      "width": 520,
+      "height": 710,
+      "fill": "$perm-surface",
+      "cornerRadius": 8,
+      "stroke": "$perm-line",
+      "strokeWidth": 1,
+      "layout": "vertical",
+      "gap": 16,
+      "padding": 28,
+      "children": [
+        {
+          "type": "text",
+          "id": "TcYpx",
+          "name": "邀请注册标题",
+          "fill": "$perm-text",
+          "content": "邀请注册",
+          "fontFamily": "Inter",
+          "fontSize": 20,
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "o2mdk7",
+          "name": "邀请注册内容0",
+          "fill": "$perm-text",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "加入企业空间",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "OQrDo",
+          "name": "邀请注册内容1",
+          "fill": "$perm-muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "已校验邀请 · 部门 / 角色 / 到期时间",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "Z9tW1",
+          "name": "邀请注册内容2",
+          "fill": "$perm-text",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "账号 *",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "OZuLx",
+          "name": "邀请注册内容3",
+          "fill": "$perm-muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "3–64 位字母、数字、点、下划线或短横线",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "Gv9yF",
+          "name": "邀请注册内容4",
+          "fill": "$perm-text",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "姓名 *",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "CbxiN",
+          "name": "邀请注册内容5",
+          "fill": "$perm-muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "输入姓名",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "kfEJg",
+          "name": "邀请注册内容6",
+          "fill": "$perm-text",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "密码 *",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "q25Wm",
+          "name": "邀请注册内容7",
+          "fill": "$perm-muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "12–256 位",
+          "fontFamily": "Inter",
+          "fontSize": 12,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "cGBQI",
+          "name": "邀请注册内容8",
+          "fill": "$perm-text",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "注册并加入",
+          "fontFamily": "Inter",
+          "fontSize": 13,
+          "fontWeight": "normal"
+        },
+        {
+          "type": "text",
+          "id": "GjDmX",
+          "name": "邀请注册内容9",
+          "fill": "$perm-muted",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "邀请失效时禁用提交并展示明确错误。",
+          "fontFamily": "Inter",
+          "fontSize": 12,
           "fontWeight": "normal"
         }
       ]

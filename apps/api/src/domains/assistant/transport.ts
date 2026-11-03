@@ -10,7 +10,7 @@ export type Runtime = {app:ApiApp;headers:Headers;user:User;conversationId:strin
 function canonical(value:any):any{if(value instanceof Date)return value.toISOString();if(Array.isArray(value))return value.map(canonical);if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])]));return value;}
 export const fingerprint=(value:unknown)=>createHash('sha256').update(JSON.stringify(canonical(value))).digest('hex');
 export const permissionStamp=(user:User)=>fingerprint([user.tenant_id,user.role,user.org_id,user.portal_permissions,[...(user.feature_denies||[])].sort(),user.project_overrides]);
-const sensitive=/^(password|password_hash|old_password|new_password|api_key|access_token|token|token_hash|secret|authorization|cookie|object_key|portal_internal_token|encrypted_result)$/i;
+const sensitive=/^(password|password_hash|old_password|new_password|api_key|access_token|token|token_hash|invite_url|invitation_token|secret|authorization|cookie|object_key|portal_internal_token|encrypted_result)$/i;
 export function sanitize(value:any):any {if(Array.isArray(value))return value.map(sanitize);if(value&&typeof value==="object"){if(value instanceof Date)return value.toISOString();return Object.fromEntries(Object.entries(value).filter(([key])=>!sensitive.test(key)).map(([key,v])=>[key,sanitize(v)]));}return value;}
 export function internalHeaders(source:Headers){const headers=new Headers({"content-type":"application/json"});for(const key of ["authorization","cookie","x-request-id"])if(source.has(key))headers.set(key,source.get(key)!);return headers;}
 export async function refreshUser(runtime:Runtime){
