@@ -30,7 +30,7 @@ export type HomeResponse = {
 };
 
 export type ProjectRow = { id?: string; name?: string; status?: string; progress?: number; level?: string; type?: string };
-export type ToolRow = { id?: string; name?: string; category?: string; description?: string };
+export type ToolRow = { id?: string; name?: string; category?: string; description?: string; icon?: string };
 
 // ---------- 角色 / 状态 文案 ----------
 export const ROLE_LABEL: Record<string, string> = {

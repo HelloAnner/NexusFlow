@@ -434,7 +434,7 @@ export default function HomePage() {
           >
             <div className="flex flex-col">
               {tools.map((t) => {
-                const Icon = ICONS[TOOL_ICON[str(t.id, "")] ?? ""] || Wrench;
+                const Icon = ICONS[str(t.icon, TOOL_ICON[str(t.id, "")] ?? "")] || Wrench;
                 const color = TOOL_COLOR[str(t.id, "")] || "var(--color-ink-2)";
                 return (
                   <Link
