@@ -6,6 +6,10 @@ mock.module(root+'repository.ts',()=>({db:()=>async(sql:TemplateStringsArray,...
  expect(sql.join('')).toContain("status='succeeded'");expect(values).toEqual(['conversation','tenant','user']);return rows;
 }}));
 mock.module(root+'transport.ts',()=>({callApi:async(_runtime:any,call:any)=>{reads.push(call.path);if(!current[call.path])throw Error('forbidden');return current[call.path];}}));
+mock.module(root+'operations.ts',()=>({snapshot:async(_runtime:any,spec:any,args:any)=>{
+ const key=spec.path.startsWith('/api/admin/')?'admin:'+args.id:`/api/${spec.domain}/${args.id}`;
+ if(!current[key])throw Error('forbidden');return current[key];
+}}));
 const { recentActionContext }=await import('../src/domains/assistant/context');
 const runtime=()=>({conversationId:'conversation',user:{id:'user',username:'me',tenant_id:'tenant',org_id:'org',role:'center_director',portal_permissions:null},signal:new AbortController().signal}) as any;
 beforeEach(()=>{rows=[];reads=[];current={};});
@@ -18,6 +22,11 @@ test('confirmed creates survive aggregate-history invalidation using only freshl
 test('revoked, deleted, invalid and privileged objects cannot leak through operation context',async()=>{
  rows=[{id:'revoked',data:{tool:'projects_create',result:{response:{id:'hidden',name:'secret'}}}},{id:'bad',data:{tool:'projects_create',result:{response:{id:'../escape'}}}},{id:'admin',data:{tool:'admin_status',args:{id:'secret-user'}}}];
  expect(await recentActionContext(runtime())).toEqual([]);expect(reads).toEqual(['/api/projects/hidden']);
+});
+test('account actions use the existing authorized account snapshot, never a personnel ID guess',async()=>{
+ rows=[{id:'receipt',data:{tool:'admin_profile',args:{id:'account'},result:{response:{ok:true}}}}];
+ current['admin:account']={id:'account',display_name:'当前账号名',status:'active'};
+ expect((await recentActionContext(runtime()))[0]?.object).toEqual({id:'account',name:'当前账号名',status:'active'});expect(reads).toEqual([]);
 });
 test('wrapped task results use their real object ID and cancellation is propagated',async()=>{
  rows=[{id:'receipt',data:{tool:'tasks_publish',args:{id:'task'},result:{response:{task:{id:'task'}}}}}];
