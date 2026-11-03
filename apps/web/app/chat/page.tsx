@@ -1,9 +1,10 @@
 "use client";
 import { useEffect,useLayoutEffect,useRef,useState } from "react";
-import { ArrowUp,Bookmark,ChevronDown,FileText,History,LoaderCircle,Paperclip,Pencil,Plus,Search,Share2,Square,Trash2,X } from "lucide-react";
+import { ArrowUp,ArrowUpRight,Bookmark,ChevronDown,FileText,History,LoaderCircle,Paperclip,Pencil,Plus,Search,Share2,Sparkles,Square,Trash2,X } from "lucide-react";
 import { api } from "@/lib/api";
 import { copyToClipboard } from '@/lib/clipboard';
 import { BrandIcon } from "@/components/brand-icon";
+import { useAuth } from "@/lib/auth";
 import { type ChatFile } from "@/lib/assistant";
 import { useAssistant } from "./use-assistant";
 import { FileButton,Message } from "./components";
@@ -27,7 +28,7 @@ export default function AssistantPage(){
   </div></header>
   <div className="ai-scroll" ref={scroll} onScroll={()=>{const e=scroll.current;if(e)follow.current=e.scrollHeight-e.scrollTop-e.clientHeight<100;}}>
    <div className="ai-content" aria-busy={chat.loading}>
-    {chat.loading?<p className="ai-muted" role="status">正在读取会话…</p>:chat.messages.length?chat.messages.map((m,index)=><Message key={m.id} message={m} busy={chat.busy} onError={chat.setError} onFeedback={rating=>void chat.feedback(m,rating).catch(e=>chat.setError(e.message))} onRetry={()=>{const parent=[...chat.messages.slice(0,index)].reverse().find(p=>p.role==="user");if(parent)void chat.send(parent.content,parent.files||[],m);}}/>):<section className="ai-welcome"><div className="ai-welcome-mark"><BrandIcon size={56} hero decorative/></div><h2>有什么需要协调？</h2><div className="ai-suggestions">{["检查我未来两周的任务和风险","看看我负责的项目进展","检查人员负载和排期冲突"].map(q=><button key={q} onClick={()=>setInput(q)}>{q}<ArrowUp size={14}/></button>)}</div></section>}
+    {chat.loading?<p className="ai-muted" role="status">正在读取会话…</p>:chat.messages.length?chat.messages.map((m,index)=><Message key={m.id} message={m} busy={chat.busy} onError={chat.setError} onFeedback={rating=>void chat.feedback(m,rating).catch(e=>chat.setError(e.message))} onRetry={()=>{const parent=[...chat.messages.slice(0,index)].reverse().find(p=>p.role==="user");if(parent)void chat.send(parent.content,parent.files||[],m);}}/>):<Welcome onPick={setInput}/>}
     <div ref={bottom}/>
    </div>
   </div>
@@ -49,4 +50,45 @@ export default function AssistantPage(){
    {panel==="history"?<><label className="ai-search"><Search size={15}/><input aria-label="搜索历史会话" value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索会话"/></label>{chat.conversations.filter(c=>c.title.toLowerCase().includes(query.toLowerCase())).sort((a,b)=>Number(b.favorite)-Number(a.favorite)).map(c=><div className={`ai-history ${chat.id===c.id?"active":""}`} key={c.id}><button className="ai-history-title" onClick={()=>{void chat.select(c.id);setPanel("");}}>{c.favorite&&<Bookmark size={12}/>}<span>{c.title}</span></button><button aria-label="收藏会话" aria-pressed={c.favorite} onClick={()=>void chat.update(c,{favorite:!c.favorite}).catch(e=>chat.setError(e.message))}><Bookmark size={13}/></button><button aria-label="重命名会话" onClick={()=>{const title=window.prompt("会话名称",c.title);if(title)void chat.update(c,{title}).catch(e=>chat.setError(e.message));}}><Pencil size={13}/></button><button aria-label="删除会话" onClick={()=>{if(window.confirm("删除对话记录？已经执行的业务操作不会撤销。"))void chat.remove(c).catch(e=>chat.setError(e.message));}}><Trash2 size={13}/></button></div>)}</>:chat.files.length?chat.files.map(f=><FileButton key={f.id} file={f} onError={chat.setError}/>):<p className="ai-muted">暂无文件</p>}
   </aside></div>}
  </div>;
+}
+
+const WELCOME_SUGGESTIONS = ["检查我未来两周的任务和风险", "看看我负责的项目进展", "检查人员负载和排期冲突"];
+
+// 5–11 上午，11–13 中午，13–18 下午，其余晚上 —— 与 Northline 空态问候一致。
+function timeGreeting() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 11) return "上午好";
+  if (hour >= 11 && hour < 13) return "中午好";
+  if (hour >= 13 && hour < 18) return "下午好";
+  return "晚上好";
+}
+
+function Welcome({ onPick }: { onPick: (question: string) => void }) {
+  const name = useAuth((state) => state.user?.name);
+  return (
+    <section className="ai-welcome">
+      <BrandIcon size={120} hero decorative />
+      <div className="ai-welcome-copy">
+        <h2>{name ? `${timeGreeting()}，${name}` : timeGreeting()}</h2>
+        <p className="ai-welcome-description">有什么需要协调？直接问我任务、项目、排期或风险。</p>
+        <div className="ai-suggestions">
+          <div className="ai-suggestions-head" aria-hidden="true">
+            <span className="ai-rule" />
+            <span className="ai-suggestions-label">
+              <Sparkles size={12} strokeWidth={1.8} />
+              试试这些问题
+            </span>
+            <span className="ai-rule" />
+          </div>
+          {WELCOME_SUGGESTIONS.map((question) => (
+            <button key={question} type="button" onClick={() => onPick(question)}>
+              <i className="ai-dot" aria-hidden="true" />
+              <span>{question}</span>
+              <ArrowUpRight size={14} aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }

@@ -44,11 +44,25 @@
 .ai-action>strong{font-size:13.5px}.ai-action details{margin:10px 0}
 .ai-action .ai-actions{margin-top:12px;flex-wrap:wrap}
 .ai-primary{background:var(--color-ink)!important;color:var(--color-canvas)!important}.ai-primary:hover{opacity:.85}
-.ai-welcome{padding-top:min(14vh,140px);padding-bottom:32px}
-.ai-welcome h2{font-size:26px;font-weight:600;letter-spacing:-.04em;margin:18px 0 24px}
-.ai-welcome-mark{width:56px;height:56px;display:grid;place-items:center}
-.ai-suggestions{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
-.ai-suggestions button{border-bottom:1px solid var(--color-border);padding:10px 0!important;justify-content:space-between;min-width:min(280px,100%);border-radius:0!important;color:var(--color-ink-2)}
+/* 空态与 Northline 同构：120px 品牌球 + 斜体问候标题 + 分隔线标题下挂单列推荐问。 */
+.ai-welcome{padding-top:min(14vh,150px);padding-bottom:32px;display:flex;flex-direction:column;align-items:center;gap:24px;text-align:center}
+.ai-welcome-copy{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
+.ai-welcome h2{font-size:clamp(22px,2.6vw,30px);font-style:italic;font-weight:500;letter-spacing:0;line-height:1.2;margin:0;max-width:860px}
+.ai-welcome-description{color:var(--color-ink-3);font-size:13px;line-height:1.6;margin:0;max-width:620px}
+.ai-suggestions{display:flex;flex-direction:column;gap:2px;margin-top:6px;max-width:680px;width:100%}
+.ai-suggestions-head{display:flex;align-items:center;gap:10px;color:var(--color-ink-3);font-size:11px;letter-spacing:1.5px;margin-bottom:12px}
+.ai-rule{flex:1;height:1px;background:linear-gradient(to right,transparent,var(--color-border))}
+.ai-rule:last-child{background:linear-gradient(to left,transparent,var(--color-border))}
+.ai-suggestions-label{display:flex;align-items:center;gap:6px}
+.ai-suggestions button{display:flex;align-items:center;gap:12px;width:100%;height:36px;padding:0 12px 0 14px!important;border:0;border-radius:10px!important;background:transparent;color:var(--color-ink-2);font-size:13px;text-align:left;transition:background .18s ease,color .18s ease,transform .18s ease}
+.ai-suggestions button:hover{background:var(--color-fill);color:var(--color-ink);transform:translateX(2px)}
+.ai-suggestions button span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ai-suggestions .ai-dot{border-radius:999px;flex-shrink:0;height:6px;width:6px}
+.ai-suggestions button:nth-of-type(1) .ai-dot{background:linear-gradient(135deg,#ffab4a 0%,#f0532b 100%)}
+.ai-suggestions button:nth-of-type(2) .ai-dot{background:linear-gradient(135deg,#fbbf24 0%,#f97316 100%)}
+.ai-suggestions button:nth-of-type(3) .ai-dot{background:linear-gradient(135deg,#fb7185 0%,#ef4444 100%)}
+.ai-suggestions button svg{color:var(--color-ink-3);opacity:0;transform:translateX(-4px);transition:opacity .18s ease,transform .18s ease}
+.ai-suggestions button:hover svg{opacity:1;transform:translateX(0)}
 
 /* DocuMind 紧凑输入行与工具栏，使用 NexusFlow 原有主题 token。 */
 .ai-composer-wrap{width:100%;max-width:888px;margin:0 auto;padding:8px 24px 16px;flex-shrink:0}
@@ -89,6 +103,6 @@
 .ai-preview{position:absolute;inset:16px;z-index:40;background:var(--color-panel);border:1px solid var(--color-border-strong);border-radius:10px;display:flex;flex-direction:column;padding:20px;overflow:auto}
 .ai-preview iframe{flex:1;min-height:400px;width:100%;border:0}
 .ai-preview img{object-fit:contain;max-width:100%;min-height:0;flex:1}.ai-preview pre{white-space:pre-wrap;overflow:auto;font-size:13px}
-@media(max-width:900px){.ai-header{padding:10px 16px}.ai-header .ai-actions span{display:none}.ai-content{padding:24px 16px 10px}.ai-composer-wrap{padding:6px 16px 12px}.ai-select{max-width:170px}.ai-welcome h2{font-size:24px}.ai-action{padding:13px}}
+@media(max-width:900px){.ai-header{padding:10px 16px}.ai-header .ai-actions span{display:none}.ai-content{padding:24px 16px 10px}.ai-composer-wrap{padding:6px 16px 12px}.ai-select{max-width:170px}.ai-welcome{padding-top:min(10vh,90px)}.ai-action{padding:13px}}
 @media(max-width:600px){.ai-header{gap:8px}.ai-header .ai-actions{gap:0}.ai-header button{padding:7px}.ai-composer-wrap{padding-right:12px;padding-left:12px}.ai-composer-input-row{padding:9px 10px 5px}.ai-composer-tools{padding:5px 10px 8px}.ai-select{max-width:150px}.ai-select select{font-size:11.5px}.ai-composer textarea{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.ai-workspace *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
