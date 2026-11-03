@@ -77,11 +77,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
     if (!checked) fetchMe();
   }, [checked, fetchMe]);
 
-  // 浏览器标签标题跟随租户：租户名 - 项目管理系统。
+  // 浏览器标签标题跟随租户：租户名 - 项目管理系统。带 pathname：客户端路由会重新应用 layout metadata。
   const tenantName = user?.tenantName?.trim();
   useEffect(() => {
     document.title = tenantName ? `${tenantName} - 项目管理系统` : "NexusFlow";
-  }, [tenantName]);
+  }, [tenantName, pathname]);
 
   useEffect(() => {
     if (!["/login", "/register"].includes(pathname) && checked && !user) router.replace("/login");
