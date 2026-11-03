@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { ROUTE_CACHE_INIT_SCRIPT } from '@/lib/route-cache';
-import { BRAND_ICON_URL } from "@/components/brand-icon";
+import { BRAND_ICON_URL } from "@/lib/brand-icon-url";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Shell } from "@/components/shell";
