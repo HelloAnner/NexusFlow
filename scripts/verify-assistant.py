@@ -107,7 +107,7 @@ def verify():
     natural_project=command('leader','ai','confirm',cards[0]['id'])['result']['response']
     follow_members=command('leader','chat','把验收worker加入刚才创建的项目成员，保留其他成员，先查询真实人员，生成操作卡等待我确认，不要执行。','--conversation',natural['conversation_id'])
     member_cards=[e['payload']['action'] for e in follow_members['events'] if e['event_type']=='action.proposed']
-    check(len(member_cards)==1 and member_cards[0]['tool']=='projects_update','real model routes project membership changes to the supported workflow')
+    check(len(member_cards)==1 and (member_cards[0]['tool']=='projects_update' and member_cards[0]['args'].get('id')==natural_project['id'] or member_cards[0]['tool']=='admin_project_set' and member_cards[0]['args'].get('secondary')==natural_project['id'] and member_cards[0]['args'].get('id')==worker),'real model preserves the confirmed project identity and proposes only the requested membership change')
     command('leader','ai','confirm',member_cards[0]['id'])
     check(worker in command('leader','projects','show',natural_project['id'])['member_ids'],'natural-language create and follow-up membership changes execute and read back')
     action('projects_start',project['id'],{})
