@@ -24,10 +24,10 @@ export async function currentUser(c:Context):Promise<User|null> {
     if(typeof payload.sid!=="string"||!payload.sub)return null;
     const session=await redis.get(sessionKey(payload.sid));
     if(!session||JSON.parse(session).user_id!==payload.sub)return null;
-    const rows=await sql`SELECT id,username,display_name,role,tenant_id,org_id,status,portal_id,portal_permissions FROM nexusflow.users WHERE id=${payload.sub}`;
+    const rows=await sql`SELECT id,username,display_name,role,tenant_id,org_id,status,portal_id,portal_permissions,(SELECT name FROM nexusflow.tenants WHERE id=users.tenant_id) tenant_name FROM nexusflow.users WHERE id=${payload.sub}`;
     const row=rows[0];
     if(!row||row.status!=="active")return null;
-    return {id:row.id,username:row.username,display_name:row.display_name,role:row.role,tenant_id:row.tenant_id,org_id:row.org_id,portal_permissions:row.portal_id?row.portal_permissions||[]:null};
+    return {id:row.id,username:row.username,display_name:row.display_name,role:row.role,tenant_id:row.tenant_id,org_id:row.org_id,tenant_name:row.tenant_name??null,portal_permissions:row.portal_id?row.portal_permissions||[]:null};
   } catch { return null; }
 }
 export async function login(c:Context) {
@@ -36,13 +36,13 @@ export async function login(c:Context) {
   const body=await c.req.json().catch(()=>({}));
   const username=String(body.username||"").trim();const password=String(body.password||"");
   const tenant_id=String(body.tenant_id||config.localTenantId);
-  const rows=await sql`SELECT id,username,password_hash,display_name,role,tenant_id,org_id,status FROM nexusflow.users WHERE lower(username)=lower(${username}) AND tenant_id=${tenant_id}`;
+  const rows=await sql`SELECT id,username,password_hash,display_name,role,tenant_id,org_id,status,(SELECT name FROM nexusflow.tenants WHERE id=users.tenant_id) tenant_name FROM nexusflow.users WHERE lower(username)=lower(${username}) AND tenant_id=${tenant_id}`;
   const row=rows[0];
   if(!row||row.status!=="active"||!await bcrypt.compare(password,row.password_hash))return c.json({error:"invalid credentials"},401);
   if(row.role==="super_admin"&&row.username!==config.adminUsername)return c.json({error:"invalid credentials"},401);
   const user:User={id:row.id,username:row.username,role:row.role,tenant_id:row.tenant_id,org_id:row.org_id,portal_permissions:null};
   const token=await createSession(user);
-  return c.json({access_token:token,token_type:"bearer",user:{id:user.id,username:user.username,name:row.display_name,role:user.role}},{headers:{"set-cookie":cookie(token)}});
+  return c.json({access_token:token,token_type:"bearer",user:{id:user.id,username:user.username,name:row.display_name,role:user.role,tenant_name:row.tenant_name??null}},{headers:{"set-cookie":cookie(token)}});
 }
 export async function register(c:Context) {
   if(config.loginMode==="portal")return c.json({error:"local registration disabled"},403);

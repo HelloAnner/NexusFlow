@@ -4,6 +4,8 @@ import { sql } from "./db.ts";
 export type User = {
   id:string; username:string; role:string; tenant_id:string|null; org_id:string|null; portal_permissions:string[]|null;
   display_name?:string;
+  /** 租户名，用于浏览器标签标题（租户名 - 系统名）。 */
+  tenant_name?:string|null;
   data_scope_stamp?:string;
   /** 由 rbac.withRbacContext 注入；无覆盖时不设置。 */
   feature_denies?:string[];

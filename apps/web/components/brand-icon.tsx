@@ -1,4 +1,4 @@
-export const BRAND_ICON_URL = `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/favicon.svg?v=2`;
+export const BRAND_ICON_URL = `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/favicon.svg?v=3`;
 
 // Grok 风格 blob，与 public/favicon.svg 同形同色；内联渲染以便 hero/busy 时 CSS 驱动眼睛与摆动动画。
 const EYES =

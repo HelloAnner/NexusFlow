@@ -77,6 +77,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
     if (!checked) fetchMe();
   }, [checked, fetchMe]);
 
+  // 浏览器标签标题跟随租户：租户名 - 项目管理系统。
+  const tenantName = user?.tenantName?.trim();
+  useEffect(() => {
+    document.title = tenantName ? `${tenantName} - 项目管理系统` : "NexusFlow";
+  }, [tenantName]);
+
   useEffect(() => {
     if (!["/login", "/register"].includes(pathname) && checked && !user) router.replace("/login");
   }, [pathname, checked, user, router]);
