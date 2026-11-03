@@ -46,12 +46,12 @@ export async function checkTheme(
   if (!bundle.includes("[data-theme=dark]") && !bundle.includes('[data-theme="dark"]')) throw new Error("Missing dark theme tokens in CSS");
   if (!/color-scheme:\s*dark/.test(bundle)) throw new Error("Dark theme must set color-scheme:dark");
   if (!bundle.includes("--color-canvas") || !bundle.includes("--color-ink")) throw new Error("Missing design tokens in CSS");
-  // 统一外观控件：账户菜单三段式 + 账户行小图标。
+  // 统一外观控件：账户行最右侧的小图标，一步轮换三种外观。
   for (const label of THEME_LABELS) {
     if (!bundle.includes(label)) throw new Error(`Missing theme option label: ${label}`);
   }
-  if (!bundle.includes("theme-options") || !bundle.includes("theme-toggle")) {
-    throw new Error("Missing unified theme control (.theme-options / .theme-toggle)");
+  if (!bundle.includes("theme-toggle") || !bundle.includes("点击切换到")) {
+    throw new Error("Missing unified theme control (.theme-toggle)");
   }
 
   return {
