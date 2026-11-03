@@ -192,13 +192,13 @@ export default function DepartmentsPage() {
         right={canStructure ? <button onClick={() => openCreate(null)} className="flex h-8 items-center gap-1.5 rounded-sm bg-ink px-3 text-[12.5px] font-medium text-canvas"><Plus size={14} /> 新建部门</button> : undefined}
       />
 
-      <div className="flex min-h-[520px] gap-3 p-6 pt-4">
-        <Card className="flex w-[320px] shrink-0 flex-col overflow-hidden">
-          <div className="flex items-center justify-between border-b border-border bg-fill px-3 py-2.5">
-            <span className="text-[12px] font-semibold text-ink">部门结构</span>
-            <span className="rounded-full bg-accent-soft px-1.5 text-[10.5px] font-medium leading-[17px] text-ink-3">{orgs.length}</span>
+      <div className="flex flex-col gap-3 p-6 pt-4">
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between border-b border-border bg-panel px-4 py-3">
+            <span className="text-[13.5px] font-semibold text-ink">部门结构</span>
+            <span className="text-[11.5px] font-medium text-ink-3">成员</span>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="overflow-y-auto">
             {orgs.length === 0 && <Empty text={orgQuery.isPending ? "加载中…" : "暂无部门"} />}
             <OrgTree
               nodes={(orgQuery.data ?? []) as OrgNode[]}
@@ -219,25 +219,25 @@ export default function DepartmentsPage() {
           </div>
         </Card>
 
-        <Card className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <Card className="min-w-0 overflow-hidden">
           {!selected ? (
-            <Empty text="请选择左侧部门" />
+            <Empty text="请选择上方部门" />
           ) : (
             <>
-              <div className="flex flex-wrap items-center gap-2 border-b border-border bg-fill px-4 py-2.5">
+              <div className="flex flex-wrap items-center gap-2 border-b border-border bg-panel px-4 py-3">
                 <Building2 size={15} className="text-ink-3" />
                 <span className="text-[13px] font-semibold text-ink">{selected.name}</span>
                 <Badge color="var(--color-ink-3)">{ORG_TYPE_LABEL[selected.type] ?? selected.type}</Badge>
                 <span className="text-[11.5px] text-ink-3">{members.length} 人</span>
                 <span className="flex-1" />
-                <button onClick={() => { setAdding(true); setPicked([]); setAddQ(""); }} className="flex h-7 items-center gap-1 rounded-sm border border-border bg-panel px-2.5 text-[12px] text-ink-2 hover:bg-fill"><UserPlus size={13} /> 添加成员</button>
-                <button onClick={openEdit} className="flex h-7 items-center gap-1 rounded-sm border border-border bg-panel px-2.5 text-[12px] text-ink-2 hover:bg-fill"><Pencil size={12} /> 编辑</button>
-                {canStructure && <button onClick={() => openCreate(selected.id)} className="flex h-7 items-center gap-1 rounded-sm border border-border bg-panel px-2.5 text-[12px] text-ink-2 hover:bg-fill"><Plus size={13} /> 子部门</button>}
-                {canStructure && <button onClick={() => void removeDept(selected.id)} disabled={saving} className="flex h-7 items-center gap-1 rounded-sm border border-border bg-panel px-2.5 text-[12px] text-red hover:bg-fill"><Trash2 size={12} /> 删除</button>}
+                <button onClick={() => { setAdding(true); setPicked([]); setAddQ(""); }} className="flex h-7 items-center gap-1 rounded-sm bg-ink px-2.5 text-[12px] font-medium text-canvas transition-colors hover:bg-ink/90"><UserPlus size={13} /> 添加成员</button>
+                <button onClick={openEdit} className="flex h-7 items-center gap-1 rounded-sm border border-border bg-panel px-2.5 text-[12px] text-ink-2 transition-colors hover:bg-fill"><Pencil size={12} /> 编辑</button>
+                {canStructure && <button onClick={() => openCreate(selected.id)} className="flex h-7 items-center gap-1 rounded-sm border border-border bg-panel px-2.5 text-[12px] text-ink-2 transition-colors hover:bg-fill"><Plus size={13} /> 子部门</button>}
+                {canStructure && <button onClick={() => void removeDept(selected.id)} disabled={saving} className="flex h-7 items-center gap-1 rounded-sm px-2.5 text-[12px] text-ink-3 transition-colors hover:bg-red-soft hover:text-red disabled:opacity-50"><Trash2 size={12} /> 删除</button>}
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                <table className="w-full text-[12.5px]">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] text-[12.5px]">
                   <thead>
                     <tr className="border-b border-border text-left text-[11.5px] text-ink-3">
                       <th className="px-4 py-2.5 font-medium">成员</th>
@@ -385,10 +385,10 @@ function OrgTree({
               onClick={() => onSelect(node.id)}
               onKeyDown={(e) => { if (e.key === "Enter") onSelect(node.id); }}
               className={cx(
-                "group flex h-8 cursor-pointer items-center gap-1 border-b border-border/60 border-l-2 pr-1.5 text-[12.5px] transition-colors",
+                "group flex h-9 cursor-pointer items-center gap-1 border-b border-border/60 border-l-2 pr-3 text-[12.5px] transition-colors last:border-b-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink",
                 active ? "border-l-ink bg-accent-soft" : "border-l-transparent hover:bg-fill",
               )}
-              style={{ paddingLeft: 6 + depth * 14 }}
+              style={{ paddingLeft: 12 + depth * 18 }}
             >
               <button
                 type="button"
@@ -398,13 +398,15 @@ function OrgTree({
               >
                 <ChevronRight size={12} className={cx("transition-transform", open && "rotate-90")} />
               </button>
-              <Building2 size={13} className="shrink-0 text-ink-3" />
+              <Building2 size={13} className={cx("shrink-0", active ? "text-ink" : "text-ink-3")} />
               <span className={cx("min-w-0 flex-1 truncate", active ? "font-medium text-ink" : "text-ink-2")}>{node.name}</span>
-              <span className="shrink-0 text-[11px] text-ink-3 group-hover:hidden">{countOf(node.id)}</span>
-              <span className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
-                {canStructure && <button type="button" title="新建子部门" aria-label={`在 ${node.name} 下新建子部门`} onClick={(e) => { e.stopPropagation(); onAdd(node.id); }} className="flex h-5 w-5 items-center justify-center rounded-[3px] text-ink-3 hover:bg-panel hover:text-ink"><Plus size={12} /></button>}
-                <button type="button" title="编辑部门" aria-label={`编辑 ${node.name}`} onClick={(e) => { e.stopPropagation(); onEdit(node.id); }} className="flex h-5 w-5 items-center justify-center rounded-[3px] text-ink-3 hover:bg-panel hover:text-ink"><Pencil size={11} /></button>
-                {canStructure && <button type="button" title="删除部门" aria-label={`删除 ${node.name}`} onClick={(e) => { e.stopPropagation(); onDelete(node.id); }} className="flex h-5 w-5 items-center justify-center rounded-[3px] text-ink-3 hover:bg-panel hover:text-red"><Trash2 size={11} /></button>}
+              <span className="flex w-[70px] shrink-0 items-center justify-end">
+                <span className="text-[11px] tabular-nums text-ink-3 group-hover:hidden group-focus-within:hidden">{countOf(node.id)}</span>
+                <span className="hidden items-center gap-0.5 group-hover:flex group-focus-within:flex">
+                  {canStructure && <button type="button" title="新建子部门" aria-label={`在 ${node.name} 下新建子部门`} onClick={(e) => { e.stopPropagation(); onAdd(node.id); }} className="flex h-5 w-5 items-center justify-center rounded-[3px] text-ink-3 hover:bg-panel hover:text-ink"><Plus size={12} /></button>}
+                  <button type="button" title="编辑部门" aria-label={`编辑 ${node.name}`} onClick={(e) => { e.stopPropagation(); onEdit(node.id); }} className="flex h-5 w-5 items-center justify-center rounded-[3px] text-ink-3 hover:bg-panel hover:text-ink"><Pencil size={11} /></button>
+                  {canStructure && <button type="button" title="删除部门" aria-label={`删除 ${node.name}`} onClick={(e) => { e.stopPropagation(); onDelete(node.id); }} className="flex h-5 w-5 items-center justify-center rounded-[3px] text-ink-3 hover:bg-panel hover:text-red"><Trash2 size={11} /></button>}
+                </span>
               </span>
             </div>
             {open && (

@@ -36376,17 +36376,17 @@
             {
               "type": "frame",
               "id": "Drn27",
-              "name": "部门树与成员",
+              "name": "部门结构与成员",
               "width": "fill_container",
-              "height": "fill_container",
+              "layout": "vertical",
               "gap": 12,
               "children": [
                 {
                   "type": "frame",
                   "id": "EPNN7",
-                  "name": "左侧部门结构",
-                  "width": 320,
-                  "height": "fill_container",
+                  "name": "部门结构面板",
+                  "width": "fill_container",
+                  "fill": "$admin-bg",
                   "cornerRadius": 8,
                   "stroke": "$admin-line",
                   "strokeWidth": 1,
@@ -36397,13 +36397,18 @@
                       "id": "u6R2Dy",
                       "name": "部门结构",
                       "width": "fill_container",
-                      "height": 34,
+                      "height": 40,
                       "fill": "$admin-bg",
+                      "stroke": "$admin-line",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
                       "gap": 8,
                       "padding": [
                         0,
                         12
                       ],
+                      "justifyContent": "space_between",
                       "alignItems": "center",
                       "children": [
                         {
@@ -36421,6 +36426,7 @@
                           "id": "sjXyZ",
                           "name": "部门结构人数",
                           "fill": "$admin-muted",
+                          "content": "成员",
                           "fontFamily": "Inter",
                           "fontSize": 11,
                           "fontWeight": "normal"
@@ -36432,13 +36438,14 @@
                       "id": "wortc",
                       "name": "CNPC",
                       "width": "fill_container",
-                      "height": 34,
+                      "height": 36,
                       "fill": "$admin-bg",
                       "gap": 8,
                       "padding": [
                         0,
                         12
                       ],
+                      "justifyContent": "space_between",
                       "alignItems": "center",
                       "children": [
                         {
@@ -36468,13 +36475,16 @@
                       "id": "P2i6D",
                       "name": "研究院",
                       "width": "fill_container",
-                      "height": 34,
+                      "height": 36,
                       "fill": "$admin-bg",
                       "gap": 8,
                       "padding": [
                         0,
+                        12,
+                        0,
                         26
                       ],
+                      "justifyContent": "space_between",
                       "alignItems": "center",
                       "children": [
                         {
@@ -36504,13 +36514,16 @@
                       "id": "gWRJX",
                       "name": "智能技术中心",
                       "width": "fill_container",
-                      "height": 34,
+                      "height": 36,
                       "fill": "$admin-bg",
                       "gap": 8,
                       "padding": [
                         0,
+                        12,
+                        0,
                         40
                       ],
+                      "justifyContent": "space_between",
                       "alignItems": "center",
                       "children": [
                         {
@@ -36540,13 +36553,20 @@
                       "id": "C7UOx",
                       "name": "研发部",
                       "width": "fill_container",
-                      "height": 34,
+                      "height": 36,
                       "fill": "$admin-fill",
+                      "stroke": "$admin-ink",
+                      "strokeWidth": {
+                        "left": 2
+                      },
                       "gap": 8,
                       "padding": [
                         0,
+                        12,
+                        0,
                         54
                       ],
+                      "justifyContent": "space_between",
                       "alignItems": "center",
                       "children": [
                         {
@@ -36576,13 +36596,16 @@
                       "id": "mmyWi",
                       "name": "项目部",
                       "width": "fill_container",
-                      "height": 34,
+                      "height": 36,
                       "fill": "$admin-bg",
                       "gap": 8,
                       "padding": [
                         0,
+                        12,
+                        0,
                         54
                       ],
+                      "justifyContent": "space_between",
                       "alignItems": "center",
                       "children": [
                         {
@@ -36612,13 +36635,16 @@
                       "id": "hrVJD",
                       "name": "创新工作室",
                       "width": "fill_container",
-                      "height": 34,
+                      "height": 36,
                       "fill": "$admin-bg",
                       "gap": 8,
                       "padding": [
                         0,
+                        12,
+                        0,
                         54
                       ],
+                      "justifyContent": "space_between",
                       "alignItems": "center",
                       "children": [
                         {
@@ -36648,9 +36674,9 @@
                 {
                   "type": "frame",
                   "id": "KF1mC",
-                  "name": "右侧直属成员",
+                  "name": "部门成员面板",
                   "width": "fill_container",
-                  "height": "fill_container",
+                  "fill": "$admin-bg",
                   "cornerRadius": 8,
                   "stroke": "$admin-line",
                   "strokeWidth": 1,
@@ -36661,16 +36687,24 @@
                       "id": "nYVDT",
                       "name": "所选部门操作",
                       "width": "fill_container",
-                      "fill": "$admin-fill",
-                      "padding": 12,
+                      "fill": "$admin-bg",
+                      "stroke": "$admin-line",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
+                      "padding": [
+                        10,
+                        12
+                      ],
                       "justifyContent": "space_between",
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "text",
                           "id": "sPctf",
                           "name": "所选部门",
                           "fill": "$admin-ink",
-                          "content": "研发部 · 3 人",
+                          "content": "研发部  [部门]  3 人",
                           "fontFamily": "Inter",
                           "fontSize": 13,
                           "fontWeight": "normal"
